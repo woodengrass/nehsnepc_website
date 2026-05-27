@@ -1,0 +1,154 @@
+/* ============================================================
+   sidebar.css — Right sidebar navigation styles
+   ============================================================ */
+
+/* ——— Sidebar container (positions the panel and edge line) ——— */
+.sidebar {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100%;
+  z-index: 200;
+  pointer-events: none; /* children re-enable as needed */
+}
+
+/* ——— 2px indicator line: always visible, far right edge ——— */
+.sidebar-edge {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  z-index: 201;
+}
+
+/* ——— Sliding panel ——— */
+.sidebar-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: var(--sidebar-width);
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+
+  /* Default: hidden off-screen to the right */
+  transform: translateX(var(--sidebar-width));
+  transition: transform 0.4s ease-out;
+  z-index: 200;
+  pointer-events: all;
+  overflow: visible; /* allows expanded logo to bleed outside panel bounds */
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 40px;
+  padding-bottom: 24px;
+}
+
+.sidebar-panel.open {
+  transform: translateX(0);
+}
+
+/* ——— Logo + brand name ——— */
+.sidebar-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 48px;
+  overflow: visible; /* allow hover-expanded logo to escape header bounds */
+}
+
+.sidebar-logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  /* Crops to the central lens/lettering ring */
+  clip-path: circle(38% at 50% 47%);
+  filter: grayscale(100%) brightness(0.9);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+}
+
+/* Hover: expand reveal + restore color + scale up to ~110px */
+.sidebar-logo:hover {
+  clip-path: circle(70% at 50% 47%);
+  filter: grayscale(0%) brightness(1) drop-shadow(0 0 12px rgba(180, 30, 30, 0.3));
+  transform: scale(2.115); /* 110 / 52 ≈ 2.115 — avoids layout shift */
+}
+
+.sidebar-brand {
+  font-family: var(--font-body);
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  opacity: 0.5;
+  text-align: center;
+}
+
+/* ——— Navigation links ——— */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  flex: 1;
+}
+
+.sidebar-link {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  opacity: 0.7;
+  position: relative;
+  transition: opacity var(--transition-fast);
+}
+
+/* Animated underline: slides in from left on hover */
+.sidebar-link::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--color-text);
+  transition: width var(--transition-fast);
+}
+
+.sidebar-link:hover {
+  opacity: 1;
+}
+.sidebar-link:hover::after {
+  width: 100%;
+}
+
+/* Active page: always full opacity + visible underline */
+.sidebar-link.active {
+  opacity: 1;
+}
+.sidebar-link.active::after {
+  width: 100%;
+}
+
+/* ——— Copyright footer ——— */
+.sidebar-copy {
+  font-family: var(--font-body);
+  font-size: 8px;
+  font-weight: 300;
+  letter-spacing: 0.15em;
+  color: var(--color-text);
+  opacity: 0.3;
+  text-align: center;
+  padding: 0 12px;
+}

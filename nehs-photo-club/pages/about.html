@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About — NEHS Photography Club</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Raleway:wght@200;300;400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/sidebar.css">
+</head>
+<body class="page-about">
+
+  <div class="grain-overlay" aria-hidden="true"></div>
+
+  <main class="page-placeholder">
+    <h1>About</h1>
+    <p>This page is coming soon.</p>
+  </main>
+
+  <!-- Right sidebar -->
+  <aside class="sidebar" id="sidebar" aria-label="Site navigation sidebar">
+    <div class="sidebar-edge" id="sidebarEdge" aria-hidden="true"></div>
+    <div class="sidebar-panel" id="sidebarPanel">
+      <div class="sidebar-header">
+        <img src="../assets/images/logo.png"
+             alt="NEHS Photography Club logo"
+             class="sidebar-logo">
+        <p class="sidebar-brand">NEHS Photo Club</p>
+      </div>
+      <nav class="sidebar-nav" aria-label="Sidebar navigation">
+        <a href="../index.html"   class="sidebar-link" data-page="index">Home</a>
+        <a href="about.html"      class="sidebar-link" data-page="about">About</a>
+        <a href="portfolio.html"  class="sidebar-link" data-page="portfolio">Portfolio</a>
+        <a href="contact.html"    class="sidebar-link" data-page="contact">Contact</a>
+      </nav>
+      <p class="sidebar-copy">
+        &copy; <span class="year-placeholder"></span> NEHS Photography Club
+      </p>
+    </div>
+  </aside>
+
+  <!-- Mobile navigation -->
+  <button class="hamburger" id="hamburger"
+          aria-label="Open navigation menu" aria-expanded="false">
+    <span class="hamburger-line"></span>
+    <span class="hamburger-line"></span>
+    <span class="hamburger-line"></span>
+  </button>
+
+  <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+    <button class="mobile-close" id="mobileClose"
+            aria-label="Close navigation menu">&#215;</button>
+    <a href="../index.html" class="mobile-menu-logo-link">
+      <img src="../assets/images/logo.png"
+           alt="NEHS Photography Club"
+           class="mobile-menu-logo">
+    </a>
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <a href="../index.html"  class="mobile-nav-link">Home</a>
+      <a href="about.html"     class="mobile-nav-link">About</a>
+      <a href="portfolio.html" class="mobile-nav-link">Portfolio</a>
+      <a href="contact.html"   class="mobile-nav-link">Contact</a>
+    </nav>
+  </div>
+
+  <script src="../assets/js/sidebar.js"></script>
+</body>
+</html>

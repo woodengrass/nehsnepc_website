@@ -1,0 +1,249 @@
+/* ============================================================
+   main.css — CSS custom properties and global base styles
+   ============================================================ */
+
+/* ——— Custom Properties ——— */
+:root {
+  --color-bg:        #000000;
+  --color-text:      #ffffff;
+  --font-heading:    'Cormorant Garamond', serif;
+  --font-body:       'Raleway', sans-serif;
+  --sidebar-width:   220px;
+  --transition-slow: 0.6s ease;
+  --transition-fast: 0.3s ease;
+}
+
+/* ——— Reset ——— */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-weight: 300;
+  overflow-x: hidden;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  object-fit: cover;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+}
+
+/* ——— Grain Texture Overlay (all pages) ——— */
+/* SVG feTurbulence noise; drifts slowly to animate the black */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+  animation: grainShift 8s steps(2) infinite;
+}
+
+@keyframes grainShift {
+  0%   { transform: translate(0, 0); }
+  10%  { transform: translate(-4%, -8%); }
+  20%  { transform: translate(-12%, 4%); }
+  30%  { transform: translate(6%, -20%); }
+  40%  { transform: translate(-4%, 20%); }
+  50%  { transform: translate(-12%, 8%); }
+  60%  { transform: translate(12%, 0); }
+  70%  { transform: translate(0, 12%); }
+  80%  { transform: translate(2%, 28%); }
+  90%  { transform: translate(-8%, 8%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ——— Placeholder page layout ——— */
+.page-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  flex-direction: column;
+  text-align: center;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.page-placeholder h1 {
+  font-family: var(--font-heading);
+  font-size: clamp(3rem, 8vw, 7rem);
+  font-weight: 300;
+  letter-spacing: 0.15em;
+}
+
+.page-placeholder p {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  opacity: 0.4;
+}
+
+/* ——— Hamburger button ——— */
+.hamburger {
+  display: none;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 0; /* sharp/minimal — no rounding */
+}
+
+.hamburger-line {
+  display: block;
+  width: 22px;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.85);
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  transform-origin: center;
+}
+
+.hamburger.active .hamburger-line:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+.hamburger.active .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+.hamburger.active .hamburger-line:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+/* ——— Mobile fullscreen overlay menu ——— */
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.96);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.mobile-menu.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+}
+
+.mobile-close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  font-size: 1.5rem;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
+  line-height: 1;
+}
+.mobile-close:hover { opacity: 1; }
+
+/* ——— Logo inside mobile menu ——— */
+.mobile-menu-logo-link {
+  display: block;
+  line-height: 0; /* collapse inline whitespace */
+}
+
+.mobile-menu-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  clip-path: circle(38% at 50% 47%);
+  filter: grayscale(100%) brightness(0.9);
+  transition: opacity var(--transition-fast);
+}
+
+.mobile-menu-logo-link:hover .mobile-menu-logo {
+  opacity: 0.7;
+}
+
+/* ——— Mobile nav links — Cormorant Garamond, large ——— */
+.mobile-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.8rem;
+}
+
+.mobile-nav-link {
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  font-weight: 300;
+  letter-spacing: 0.15em;
+  color: var(--color-text);
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* Stagger-reveal when menu opens */
+.mobile-menu.open .mobile-nav-link:nth-child(1) { transition-delay:   0ms; }
+.mobile-menu.open .mobile-nav-link:nth-child(2) { transition-delay:  80ms; }
+.mobile-menu.open .mobile-nav-link:nth-child(3) { transition-delay: 160ms; }
+.mobile-menu.open .mobile-nav-link:nth-child(4) { transition-delay: 240ms; }
+
+.mobile-menu.open .mobile-nav-link {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.mobile-nav-link:hover { opacity: 0.5; }
+
+/* ——— Responsive breakpoints ——— */
+@media (max-width: 767px) {
+  .sidebar,
+  .sidebar-edge {
+    display: none !important;
+  }
+  .hamburger {
+    display: flex;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobile-menu,
+  .hamburger {
+    display: none !important;
+  }
+}

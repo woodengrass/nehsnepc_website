@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEHS Photography Club</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Raleway:wght@200;300;400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/hero.css">
+  <link rel="stylesheet" href="assets/css/sidebar.css">
+</head>
+<body class="page-index">
+
+  <!-- Animated grain texture: fixed overlay on all pages -->
+  <div class="grain-overlay" aria-hidden="true"></div>
+
+  <section class="hero" id="hero" aria-label="Hero">
+
+    <!-- Background photo: fades in on scroll -->
+    <div class="hero-bg" id="heroBg"
+         style="background-image: url('assets/images/banner/hero-1.jpg');"
+         role="img" aria-label="Photography club hero image">
+    </div>
+
+    <!-- Darkening overlay above photo -->
+    <div class="hero-overlay" aria-hidden="true"></div>
+
+    <!-- Title block: animates in on load -->
+    <div class="hero-content" id="heroContent">
+      <h1 class="hero-title">
+        <span class="hero-title-line1">NEHS</span>
+        <span class="hero-title-line2">Photography Club</span>
+      </h1>
+
+      <!-- Thin line extends from centre outward (delayed) -->
+      <div class="hero-divider" aria-hidden="true"></div>
+
+      <!-- Downward chevron with infinite gentle pulse -->
+      <div class="hero-chevron" aria-label="Scroll down">
+        <svg width="22" height="13" viewBox="0 0 22 13" fill="none"
+             xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M1 1L11 11L21 1"
+                stroke="white" stroke-width="0.8"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Nav labels: stagger-reveal on scroll -->
+    <nav class="hero-nav" id="heroNav" aria-label="Main navigation">
+      <a href="index.html"           class="hero-nav-link" data-index="0">Home</a>
+      <a href="pages/about.html"     class="hero-nav-link" data-index="1">About</a>
+      <a href="pages/portfolio.html" class="hero-nav-link" data-index="2">Portfolio</a>
+      <a href="pages/contact.html"   class="hero-nav-link" data-index="3">Contact</a>
+    </nav>
+
+  </section>
+
+  <div class="scroll-spacer" aria-hidden="true"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       Right sidebar — shared across all pages
+       ═══════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar" aria-label="Site navigation sidebar">
+
+    <!-- 2px indicator line, always visible at right edge -->
+    <div class="sidebar-edge" id="sidebarEdge" aria-hidden="true"></div>
+
+    <!-- Sliding panel (translateX(220px) by default; JS adds .open) -->
+    <div class="sidebar-panel" id="sidebarPanel">
+
+      <!-- Logo + club name -->
+      <div class="sidebar-header">
+        <img src="assets/images/logo.png"
+             alt="NEHS Photography Club logo"
+             class="sidebar-logo">
+        <p class="sidebar-brand">NEHS Photo Club</p>
+      </div>
+
+      <!-- Navigation links -->
+      <nav class="sidebar-nav" aria-label="Sidebar navigation">
+        <a href="index.html"           class="sidebar-link" data-page="index">Home</a>
+        <a href="pages/about.html"     class="sidebar-link" data-page="about">About</a>
+        <a href="pages/portfolio.html" class="sidebar-link" data-page="portfolio">Portfolio</a>
+        <a href="pages/contact.html"   class="sidebar-link" data-page="contact">Contact</a>
+      </nav>
+
+      <!-- Copyright (year injected by JS) -->
+      <p class="sidebar-copy">
+        &copy; <span class="year-placeholder"></span> NEHS Photography Club
+      </p>
+
+    </div>
+  </aside>
+
+
+  <!-- ═══════════════════════════════════════════════
+       Mobile navigation (< 768px)
+       ═══════════════════════════════════════════════ -->
+
+  <!-- Hamburger toggle -->
+  <button class="hamburger" id="hamburger"
+          aria-label="Open navigation menu" aria-expanded="false">
+    <span class="hamburger-line"></span>
+    <span class="hamburger-line"></span>
+    <span class="hamburger-line"></span>
+  </button>
+
+  <!-- Fullscreen overlay menu -->
+  <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+    <button class="mobile-close" id="mobileClose"
+            aria-label="Close navigation menu">&#215;</button>
+    <!-- Logo: click closes menu + navigates home -->
+    <a href="index.html" class="mobile-menu-logo-link">
+      <img src="assets/images/logo.png"
+           alt="NEHS Photography Club"
+           class="mobile-menu-logo">
+    </a>
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <a href="index.html"           class="mobile-nav-link">Home</a>
+      <a href="pages/about.html"     class="mobile-nav-link">About</a>
+      <a href="pages/portfolio.html" class="mobile-nav-link">Portfolio</a>
+      <a href="pages/contact.html"   class="mobile-nav-link">Contact</a>
+    </nav>
+  </div>
+
+
+  <script src="assets/js/sidebar.js"></script>
+  <script src="assets/js/scroll.js"></script>
+</body>
+</html>
