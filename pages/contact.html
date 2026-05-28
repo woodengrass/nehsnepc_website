@@ -17,7 +17,7 @@
 
   <div class="grain-overlay" aria-hidden="true"></div>
 
-  <main class="contact-layout">
+  <main class="contact-layout" style="display:flex;">
 
     <!-- ——— Left column: title + accordion ——— -->
     <div class="contact-left">
@@ -25,6 +25,7 @@
       <header class="contact-header">
         <h1 class="contact-title">CONTACT</h1>
         <div class="contact-title-line" aria-hidden="true"></div>
+        <p class="contact-subtitle">「誠摯邀請各社各校與我們合辦活動／委託拍攝」</p>
       </header>
 
       <div class="accordion">
@@ -39,33 +40,19 @@
           </button>
           <div class="accordion-body" id="acc-contact-body">
             <div class="accordion-content">
-              <p class="contact-info-text">contact@nehsnepc.com</p>
+              <button id="copyEmail" class="email-copy-btn">contact@nehsnepc.com</button>
             </div>
           </div>
         </div>
 
-        <!-- Entry 2: 接拍 -->
-        <div class="accordion-item">
-          <button class="accordion-trigger"
-                  aria-expanded="false"
-                  aria-controls="acc-shoot-body">
+        <!-- Entry 2: 接拍 — opens modal instead of expanding -->
+        <div class="accordion-item" id="shootItem">
+          <button class="accordion-trigger" id="shootTrigger"
+                  aria-haspopup="dialog">
             <span class="accordion-label">接拍</span>
             <span class="accordion-icon" aria-hidden="true">+</span>
           </button>
-          <div class="accordion-body" id="acc-shoot-body">
-            <div class="accordion-content accordion-content--form">
-              <iframe
-                src="https://tally.so/embed/NpRGgl?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"
-                width="100%"
-                height="500"
-                frameborder="0"
-                marginheight="0"
-                marginwidth="0"
-                title="接拍申請表單"
-                style="background:transparent;">
-              </iframe>
-            </div>
-          </div>
+          <div class="accordion-body" aria-hidden="true"></div>
         </div>
 
         <!-- Entry 3: 社群 -->
@@ -89,7 +76,7 @@
       </div>
     </div>
 
-    <!-- ——— Right column: sticky photo ——— -->
+    <!-- ——— Right column: fixed photo ——— -->
     <div class="contact-right" aria-hidden="true">
       <img src="../assets/images/contact-bg.jpg"
            alt=""
@@ -97,6 +84,25 @@
     </div>
 
   </main>
+
+
+  <!-- ——— 接拍 modal ——— -->
+  <div class="shoot-modal" id="shootModal" role="dialog" aria-modal="true"
+       aria-label="接拍申請表單" aria-hidden="true">
+    <div class="shoot-modal-backdrop" id="shootModalBackdrop"></div>
+    <div class="shoot-modal-box">
+      <button class="shoot-modal-close" id="shootModalClose"
+              aria-label="關閉表單">&#215;</button>
+      <iframe
+        src="https://tally.so/embed/NpRGgl?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"
+        width="100%"
+        height="100%"
+        frameborder="0"
+        title="接拍申請表單"
+        style="background:transparent;flex:1;min-height:0;">
+      </iframe>
+    </div>
+  </div>
 
 
   <!-- ═══════════════════════════════════════════════
@@ -154,11 +160,15 @@
   <script src="../assets/js/sidebar.js"></script>
 
   <script>
-    /* Accordion — one panel open at a time */
     (function () {
       'use strict';
 
-      var items = document.querySelectorAll('.accordion-item');
+      /* ——— Accordion (skip the 接拍 trigger) ——— */
+      var items = Array.prototype.slice.call(
+        document.querySelectorAll('.accordion-item')
+      ).filter(function (item) {
+        return item.id !== 'shootItem';
+      });
 
       items.forEach(function (item) {
         var trigger = item.querySelector('.accordion-trigger');
@@ -167,22 +177,60 @@
         trigger.addEventListener('click', function () {
           var isOpen = item.classList.contains('open');
 
-          /* Collapse every item */
           items.forEach(function (i) {
             i.classList.remove('open');
             i.querySelector('.accordion-trigger').setAttribute('aria-expanded', 'false');
             i.querySelector('.accordion-body').style.maxHeight = '';
           });
 
-          /* Expand the clicked item if it was closed */
           if (!isOpen) {
             item.classList.add('open');
             trigger.setAttribute('aria-expanded', 'true');
-            /* Set exact scrollHeight so the max-height transition is smooth */
             body.style.maxHeight = body.scrollHeight + 'px';
           }
         });
       });
+
+      /* ——— 接拍 modal ——— */
+      var modal      = document.getElementById('shootModal');
+      var backdrop   = document.getElementById('shootModalBackdrop');
+      var shootBtn   = document.getElementById('shootTrigger');
+      var closeBtn   = document.getElementById('shootModalClose');
+
+      function openModal() {
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        closeBtn.focus();
+      }
+
+      function closeModal() {
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+        shootBtn.focus();
+      }
+
+      shootBtn.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
+      backdrop.addEventListener('click', closeModal);
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('open')) {
+          closeModal();
+        }
+      });
+
+      /* ——— Email clipboard copy ——— */
+      var copyBtn = document.getElementById('copyEmail');
+      if (copyBtn && navigator.clipboard) {
+        copyBtn.addEventListener('click', function () {
+          navigator.clipboard.writeText('contact@nehsnepc.com').then(function () {
+            var orig = copyBtn.textContent;
+            copyBtn.textContent = 'copied';
+            setTimeout(function () { copyBtn.textContent = orig; }, 1800);
+          });
+        });
+      }
+
     }());
   </script>
 

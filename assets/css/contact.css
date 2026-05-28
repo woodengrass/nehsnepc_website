@@ -1,31 +1,39 @@
 /* ============================================================
-   contact.css — Contact page layout, accordion, and content styles
+   contact.css — Contact page layout, accordion, modal, and content styles
    ============================================================ */
 
-/* ——— Two-column layout ——— */
-.contact-layout {
-  display: flex;
-  align-items: flex-start;
-  min-height: 100vh;
+/* ——— Desktop: no-scroll viewport (scoped to this page only) ——— */
+body.page-contact {
+  overflow: hidden;
+  height: 100vh;
 }
 
-/* ——— Left column: title + accordion ——— */
+/* ——— Layout wrapper ——— */
+.contact-layout {
+  height: 100vh;
+}
+
+/* ——— Left column ——— */
 .contact-left {
   width: 60%;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
   padding-left: 8vw;
   padding-right: 4vw;
-  padding-bottom: 15vh;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ——— Page title ——— */
+/* ——— Title block ——— */
 .contact-header {
-  padding-top: 15vh;
-  padding-bottom: 3.5rem;
+  padding-top: 12vh;
+  flex-shrink: 0;
 }
 
 .contact-title {
   font-family: var(--font-heading);
-  font-size: clamp(4rem, 8vw, 7rem);
+  font-size: clamp(4rem, 7vw, 6.5rem);
   font-weight: 300;
   letter-spacing: 0.15em;
   color: var(--color-text);
@@ -36,11 +44,33 @@
   width: 40px;
   height: 1px;
   background: rgba(255, 255, 255, 0.15);
-  margin-top: 1.5rem;
+  margin-top: 1.2rem;
+}
+
+.contact-subtitle {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  letter-spacing: 0.18em;
+  color: var(--color-text);
+  opacity: 0.4;
+  margin-top: 1rem;
+}
+
+/* ——— Accordion block ——— */
+.accordion {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-bottom: 8vh;
 }
 
 /* ——— Accordion items ——— */
 .accordion-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -49,16 +79,17 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.4rem 0;
+  padding: 1.2rem 0;
   background: none;
   border: none;
   cursor: pointer;
   text-align: left;
+  flex-shrink: 0;
 }
 
 .accordion-label {
   font-family: var(--font-heading);
-  font-size: 2.2rem;
+  font-size: 2rem;
   font-weight: 300;
   letter-spacing: 0.2em;
   color: var(--color-text);
@@ -70,7 +101,7 @@
   opacity: 1;
 }
 
-/* + icon — rotates to × when open */
+/* + icon — rotates to × when item is open */
 .accordion-icon {
   font-family: var(--font-body);
   font-weight: 200;
@@ -87,7 +118,7 @@
   transform: rotate(45deg);
 }
 
-/* ——— Accordion body (height transition via JS-set max-height) ——— */
+/* ——— Accordion body (max-height driven by JS) ——— */
 .accordion-body {
   max-height: 0;
   overflow: hidden;
@@ -95,7 +126,7 @@
 }
 
 .accordion-content {
-  padding: 1.5rem 0 2rem 0;
+  padding: 0.8rem 0 1.2rem 0;
   opacity: 0;
   transition: opacity 0.3s ease 0.12s;
 }
@@ -104,18 +135,38 @@
   opacity: 1;
 }
 
-/* Form entry: slightly less top padding */
-.accordion-content--form {
-  padding-top: 1rem;
-}
-
-/* ——— Plain text info (聯絡) ——— */
-.contact-info-text {
+/* ——— Email copy button (聯絡) ——— */
+.email-copy-btn {
   font-family: var(--font-body);
   font-size: 0.85rem;
   letter-spacing: 0.2em;
   color: var(--color-text);
   opacity: 0.6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  transition: opacity var(--transition-fast);
+}
+
+.email-copy-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--color-text);
+  transition: width var(--transition-fast);
+}
+
+.email-copy-btn:hover {
+  opacity: 0.85;
+}
+
+.email-copy-btn:hover::after {
+  width: 100%;
 }
 
 /* ——— Social link (社群) — underline slides from left on hover ——— */
@@ -149,32 +200,104 @@
   width: 100%;
 }
 
-/* ——— Right column: sticky photo ——— */
+/* ——— Right column: fixed photo ——— */
 .contact-right {
-  width: 40%;
-  position: sticky;
+  position: fixed;
+  right: 0;
   top: 0;
+  width: 40%;
   height: 100vh;
   overflow: hidden;
-  flex-shrink: 0;
+  z-index: 0;
 }
 
 .contact-photo {
   width: 100%;
   height: 100%;
+  filter: grayscale(5%) brightness(0.65);
   object-fit: cover;
-  filter: grayscale(40%) brightness(0.7);
   display: block;
 }
 
-/* ——— Mobile: hide photo, full-width left column ——— */
+/* ——— Modal overlay (接拍 form) ——— */
+.shoot-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.shoot-modal.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+}
+
+.shoot-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.shoot-modal-box {
+  position: relative;
+  z-index: 1;
+  width: min(680px, 88vw);
+  height: min(600px, 80vh);
+  background: rgba(10, 10, 10, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 2.5rem 2rem 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.shoot-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-size: 1.4rem;
+  opacity: 0.5;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text);
+  line-height: 1;
+  transition: opacity 0.2s ease;
+}
+
+.shoot-modal-close:hover {
+  opacity: 1;
+}
+
+/* ——— Mobile: restore scroll, hide photo ——— */
 @media (max-width: 767px) {
-  .contact-right {
-    display: none;
+  body.page-contact {
+    overflow: auto;
+    height: auto;
+  }
+
+  .contact-layout {
+    height: auto;
   }
 
   .contact-left {
     width: 100%;
+    height: auto;
+    overflow: visible;
     padding-right: 8vw;
+  }
+
+  .contact-right {
+    display: none;
   }
 }
