@@ -11,17 +11,97 @@
 
   <link rel="stylesheet" href="../assets/css/main.css">
   <link rel="stylesheet" href="../assets/css/sidebar.css">
+  <link rel="stylesheet" href="../assets/css/contact.css">
 </head>
 <body class="page-contact">
 
   <div class="grain-overlay" aria-hidden="true"></div>
 
-  <main class="page-placeholder">
-    <h1>Contact</h1>
-    <p>This page is coming soon.</p>
+  <main class="contact-layout">
+
+    <!-- ——— Left column: title + accordion ——— -->
+    <div class="contact-left">
+
+      <header class="contact-header">
+        <h1 class="contact-title">CONTACT</h1>
+        <div class="contact-title-line" aria-hidden="true"></div>
+      </header>
+
+      <div class="accordion">
+
+        <!-- Entry 1: 聯絡 -->
+        <div class="accordion-item">
+          <button class="accordion-trigger"
+                  aria-expanded="false"
+                  aria-controls="acc-contact-body">
+            <span class="accordion-label">聯絡</span>
+            <span class="accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="accordion-body" id="acc-contact-body">
+            <div class="accordion-content">
+              <p class="contact-info-text">contact@nehsnepc.com</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entry 2: 接拍 -->
+        <div class="accordion-item">
+          <button class="accordion-trigger"
+                  aria-expanded="false"
+                  aria-controls="acc-shoot-body">
+            <span class="accordion-label">接拍</span>
+            <span class="accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="accordion-body" id="acc-shoot-body">
+            <div class="accordion-content accordion-content--form">
+              <iframe
+                src="https://tally.so/embed/NpRGgl?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"
+                width="100%"
+                height="500"
+                frameborder="0"
+                marginheight="0"
+                marginwidth="0"
+                title="接拍申請表單"
+                style="background:transparent;">
+              </iframe>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entry 3: 社群 -->
+        <div class="accordion-item">
+          <button class="accordion-trigger"
+                  aria-expanded="false"
+                  aria-controls="acc-social-body">
+            <span class="accordion-label">社群</span>
+            <span class="accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="accordion-body" id="acc-social-body">
+            <div class="accordion-content">
+              <a href="https://instagram.com/nehs_nepc"
+                 target="_blank"
+                 rel="noopener"
+                 class="social-link">@nehs_nepc</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ——— Right column: sticky photo ——— -->
+    <div class="contact-right" aria-hidden="true">
+      <img src="../assets/images/contact-bg.jpg"
+           alt=""
+           class="contact-photo">
+    </div>
+
   </main>
 
-  <!-- Right sidebar -->
+
+  <!-- ═══════════════════════════════════════════════
+       Right sidebar
+       ═══════════════════════════════════════════════ -->
   <aside class="sidebar" id="sidebar" aria-label="Site navigation sidebar">
     <div class="sidebar-edge" id="sidebarEdge" aria-hidden="true"></div>
     <div class="sidebar-panel" id="sidebarPanel">
@@ -32,10 +112,10 @@
         <p class="sidebar-brand">NEHS Photo Club</p>
       </div>
       <nav class="sidebar-nav" aria-label="Sidebar navigation">
-        <a href="../index.html"   class="sidebar-link" data-page="index">Home</a>
-        <a href="about.html"      class="sidebar-link" data-page="about">About</a>
-        <a href="portfolio.html"  class="sidebar-link" data-page="portfolio">Portfolio</a>
-        <a href="contact.html"    class="sidebar-link" data-page="contact">Contact</a>
+        <a href="../index.html"  class="sidebar-link" data-page="index">Home</a>
+        <a href="about.html"     class="sidebar-link" data-page="about">About</a>
+        <a href="portfolio.html" class="sidebar-link" data-page="portfolio">Portfolio</a>
+        <a href="contact.html"   class="sidebar-link" data-page="contact">Contact</a>
       </nav>
       <p class="sidebar-copy">
         &copy; <span class="year-placeholder"></span> NEHS Photography Club
@@ -43,7 +123,10 @@
     </div>
   </aside>
 
-  <!-- Mobile navigation -->
+
+  <!-- ═══════════════════════════════════════════════
+       Mobile navigation
+       ═══════════════════════════════════════════════ -->
   <button class="hamburger" id="hamburger"
           aria-label="Open navigation menu" aria-expanded="false">
     <span class="hamburger-line"></span>
@@ -67,6 +150,41 @@
     </nav>
   </div>
 
+
   <script src="../assets/js/sidebar.js"></script>
+
+  <script>
+    /* Accordion — one panel open at a time */
+    (function () {
+      'use strict';
+
+      var items = document.querySelectorAll('.accordion-item');
+
+      items.forEach(function (item) {
+        var trigger = item.querySelector('.accordion-trigger');
+        var body    = item.querySelector('.accordion-body');
+
+        trigger.addEventListener('click', function () {
+          var isOpen = item.classList.contains('open');
+
+          /* Collapse every item */
+          items.forEach(function (i) {
+            i.classList.remove('open');
+            i.querySelector('.accordion-trigger').setAttribute('aria-expanded', 'false');
+            i.querySelector('.accordion-body').style.maxHeight = '';
+          });
+
+          /* Expand the clicked item if it was closed */
+          if (!isOpen) {
+            item.classList.add('open');
+            trigger.setAttribute('aria-expanded', 'true');
+            /* Set exact scrollHeight so the max-height transition is smooth */
+            body.style.maxHeight = body.scrollHeight + 'px';
+          }
+        });
+      });
+    }());
+  </script>
+
 </body>
 </html>
