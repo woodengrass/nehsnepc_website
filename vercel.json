@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/about", "destination": "/pages/about.html" },
+    { "source": "/portfolio", "destination": "/pages/portfolio.html" },
+    { "source": "/contact", "destination": "/pages/contact.html" }
+  ]
+}

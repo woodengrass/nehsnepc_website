@@ -10,6 +10,7 @@ body.page-contact {
 
 /* ——— Layout wrapper ——— */
 .contact-layout {
+  display: flex;
   height: 100vh;
 }
 

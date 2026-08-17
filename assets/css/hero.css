@@ -51,20 +51,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* Load animation: fade in + drift upward */
-  animation: heroFadeIn 3s ease forwards;
   will-change: opacity, transform;
-}
-
-@keyframes heroFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* ——— Title typography ——— */
@@ -101,32 +88,12 @@
   margin-top: 2.8rem;
   transform: scaleX(0);
   transform-origin: center;
-  animation: lineExpand 1.5s ease forwards;
-  animation-delay: 2s;  /* appears after title has faded in */
-}
-
-@keyframes lineExpand {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
 }
 
 /* ——— Scroll chevron ——— */
 .hero-chevron {
   margin-top: 2rem;
-  /* Fades in after line, then pulses indefinitely */
   opacity: 0;
-  animation:
-    chevronFadeIn  0.8s ease           forwards 3.2s,
-    chevronPulse   2.5s ease-in-out    infinite  4.0s;
-}
-
-@keyframes chevronFadeIn {
-  to { opacity: 0.2; }
-}
-
-@keyframes chevronPulse {
-  0%, 100% { opacity: 0.2; }
-  50%       { opacity: 0.6; }
 }
 
 .hero-chevron svg {

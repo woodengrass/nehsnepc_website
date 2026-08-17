@@ -42,6 +42,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+body.menu-open,
+body.has-modal {
+  overflow: hidden;
+}
+
 img {
   display: block;
   max-width: 100%;
@@ -220,6 +225,20 @@ button {
 }
 
 .mobile-nav-link:hover { opacity: 0.5; }
+
+:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 /* ——— Responsive breakpoints ——— */
 @media (max-width: 767px) {

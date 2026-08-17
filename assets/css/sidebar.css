@@ -78,7 +78,7 @@
 /* Hover: expand reveal + restore color + scale up to ~110px */
 .sidebar-logo:hover {
   clip-path: circle(70% at 50% 47%);
-  filter: grayscale(0%) brightness(1) drop-shadow(0 0 12px rgba(180, 30, 30, 0.3));
+  filter: grayscale(0%) brightness(1);
   transform: scale(2.115); /* 110 / 52 ≈ 2.115 — avoids layout shift */
 }
 
