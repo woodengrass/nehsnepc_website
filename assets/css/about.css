@@ -14,6 +14,7 @@ body.page-about.is-focus-locked {
   --split-offset: 16.56px;
   --story-defocus: 0;
   position: relative;
+  padding-top: 100svh;
   background: #080808;
 }
 

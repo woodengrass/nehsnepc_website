@@ -4,6 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 const FOCUS_POINT = 62;
+const STATION_SNAP_POINTS = [0.31, 0.58, 0.84];
 
 export function initAboutPage() {
   const page = document.querySelector('.obscura');
@@ -166,6 +167,23 @@ export function initAboutPage() {
     scheduleMicroprism(focusError);
   }
 
+  function adjustFocus(amount) {
+    const nextValue = currentFocusValue + amount * focusSensitivity(currentFocusValue);
+    const crossesFocus = (currentFocusValue - FOCUS_POINT) * (nextValue - FOCUS_POINT) <= 0;
+    if (crossesFocus || Math.abs(nextValue - FOCUS_POINT) <= 1.1) {
+      setFocus(FOCUS_POINT);
+      return;
+    }
+    setFocus(nextValue);
+  }
+
+  function snapToNearestStation(progress) {
+    const nearest = STATION_SNAP_POINTS.reduce((closest, point) => (
+      Math.abs(point - progress) < Math.abs(closest - progress) ? point : closest
+    ));
+    return Math.abs(nearest - progress) <= 0.055 ? nearest : progress;
+  }
+
   if (viewfinderImage.complete) renderMicroprism();
   else viewfinderImage.addEventListener('load', renderMicroprism, { once: true });
   window.addEventListener('resize', () => scheduleMicroprism(prismError));
@@ -177,7 +195,7 @@ export function initAboutPage() {
   window.addEventListener('wheel', (event) => {
     if (isExperienceUnlocked) return;
     event.preventDefault();
-    setFocus(currentFocusValue + event.deltaY * 0.03 * focusSensitivity(currentFocusValue));
+    adjustFocus(event.deltaY * 0.03);
   }, { passive: false });
   let lastTouchY = null;
   window.addEventListener('touchstart', (event) => {
@@ -188,7 +206,7 @@ export function initAboutPage() {
     event.preventDefault();
     const currentTouchY = event.touches[0]?.clientY ?? lastTouchY;
     const movement = lastTouchY - currentTouchY;
-    setFocus(currentFocusValue + movement * 0.14 * focusSensitivity(currentFocusValue));
+    adjustFocus(movement * 0.14);
     lastTouchY = currentTouchY;
   }, { passive: false });
   window.addEventListener('touchend', () => { lastTouchY = null; }, { passive: true });
@@ -196,7 +214,7 @@ export function initAboutPage() {
     if (isExperienceUnlocked || !['ArrowDown', 'PageDown', ' ', 'ArrowUp'].includes(event.key)) return;
     event.preventDefault();
     const direction = event.key === 'ArrowUp' ? -1 : 1;
-    setFocus(currentFocusValue + direction * 3 * focusSensitivity(currentFocusValue));
+    adjustFocus(direction * 3);
   });
 
   const media = gsap.matchMedia();
@@ -208,6 +226,13 @@ export function initAboutPage() {
         end: '+=650%',
         pin: true,
         scrub: 0.45,
+        snap: {
+          snapTo: snapToNearestStation,
+          delay: 0.08,
+          duration: { min: 0.2, max: 0.55 },
+          ease: 'power2.out',
+          inertia: false
+        },
         onUpdate: ({ progress }) => setArchiveProgress(progress)
       }
     });
@@ -216,8 +241,8 @@ export function initAboutPage() {
       .addLabel('enter-frame', 0)
       .to('.obscura-intro', { autoAlpha: 0, y: -24, ease: 'none', duration: 0.05 }, 0)
       .to('.obscura-hud', { opacity: 0, ease: 'none', duration: 0.05 }, 0)
-      .set(archiveCanvas, { autoAlpha: 1 }, 0)
-      .set('.obscura-image-wrap', { autoAlpha: 0 }, 0.012);
+      .set(archiveCanvas, { autoAlpha: 1 }, 0.01)
+      .set('.obscura-image-wrap', { autoAlpha: 0 }, 0.02);
   });
 
   media.add('(prefers-reduced-motion: reduce)', () => {

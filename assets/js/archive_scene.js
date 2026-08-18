@@ -28,18 +28,24 @@ const CONTACT_TEXTURE_URL = new URL('../images/generated/contact-800.webp', impo
 const CAMERA_STOPS = [
   { progress: 0, x: 0, y: 0, z: 8, roll: 0, targetX: 0, targetY: 0 },
   { progress: 0.16, x: 0.08, y: -0.04, z: 0.25, roll: -0.018, targetX: 0, targetY: 0 },
+  { progress: 0.275, x: 0.16, y: 0.08, z: -3.7, roll: 0.018, targetX: 0.08, targetY: 0 },
   { progress: 0.31, x: 0, y: 0.04, z: -4.1, roll: 0.008, targetX: 0, targetY: 0 },
+  { progress: 0.345, x: -0.12, y: 0, z: -4.5, roll: -0.012, targetX: -0.05, targetY: 0 },
   { progress: 0.45, x: -0.38, y: -0.12, z: -9.4, roll: -0.035, targetX: -0.1, targetY: 0.04 },
+  { progress: 0.545, x: -0.12, y: 0.08, z: -11.4, roll: -0.014, targetX: -0.04, targetY: 0 },
   { progress: 0.58, x: 0, y: 0.04, z: -11.8, roll: -0.008, targetX: 0, targetY: 0 },
+  { progress: 0.615, x: 0.14, y: 0, z: -12.2, roll: 0.014, targetX: 0.05, targetY: 0 },
   { progress: 0.72, x: 0.42, y: 0.14, z: -17.2, roll: 0.04, targetX: 0.12, targetY: -0.04 },
+  { progress: 0.805, x: 0.12, y: -0.06, z: -19.45, roll: 0.014, targetX: 0.04, targetY: 0 },
   { progress: 0.84, x: 0, y: -0.04, z: -19.8, roll: 0.008, targetX: 0, targetY: 0 },
+  { progress: 0.875, x: -0.12, y: 0, z: -20.2, roll: -0.014, targetX: -0.04, targetY: 0 },
   { progress: 1, x: -0.25, y: 0.04, z: -27.2, roll: -0.025, targetX: 0, targetY: 0 }
 ];
 
 const STATION_LAYOUTS = [
   {
     z: -8.1,
-    textX: -1.24,
+    textX: -1.08,
     photoX: 1.45,
     eyebrow: '01 / OBSERVE',
     heading: ['Before every frame,', 'there is a moment', 'worth noticing.'],
@@ -57,7 +63,7 @@ const STATION_LAYOUTS = [
   },
   {
     z: -23.8,
-    textX: -1.24,
+    textX: -1.08,
     photoX: 1.45,
     eyebrow: '03 / MAKE A FRAME',
     heading: ['Come closer.', 'There is room', 'in the picture.'],
@@ -178,6 +184,54 @@ function createPhotoCard(texture, frameNumber, width, height) {
   return group;
 }
 
+function createTunnelPhotoCard(sourceTexture, frameNumber, width, height, cropIndex) {
+  const frameWidth = width + 0.24;
+  const frameHeight = height + 0.42;
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = Math.max(160, Math.round(canvas.width * frameHeight / frameWidth));
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#dedbd2';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const inset = 16;
+  const labelHeight = Math.max(34, Math.round(canvas.height * 0.18));
+  const photoWidth = canvas.width - inset * 2;
+  const photoHeight = canvas.height - inset * 2 - labelHeight;
+  const image = sourceTexture.image;
+  const cropWidth = cropIndex % 2 === 0 ? 0.68 : 0.55;
+  const cropHeight = cropIndex % 3 === 0 ? 0.72 : 0.6;
+  let sourceX = Math.min(0.08 + (cropIndex % 4) * 0.075, 1 - cropWidth) * image.width;
+  let sourceY = Math.min(0.08 + (cropIndex % 3) * 0.11, 1 - cropHeight) * image.height;
+  let sourceWidth = cropWidth * image.width;
+  let sourceHeight = cropHeight * image.height;
+  const sourceAspect = sourceWidth / sourceHeight;
+  const targetAspect = photoWidth / photoHeight;
+  if (sourceAspect > targetAspect) {
+    const nextWidth = sourceHeight * targetAspect;
+    sourceX += (sourceWidth - nextWidth) * 0.5;
+    sourceWidth = nextWidth;
+  } else {
+    const nextHeight = sourceWidth / targetAspect;
+    sourceY += (sourceHeight - nextHeight) * 0.5;
+    sourceHeight = nextHeight;
+  }
+  context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, inset, inset, photoWidth, photoHeight);
+  context.fillStyle = '#171717';
+  context.font = '10px Arial, sans-serif';
+  context.letterSpacing = '2px';
+  context.fillText(`NEPC / FRAME ${String(frameNumber).padStart(2, '0')}`, inset, canvas.height - 15);
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  const card = new Mesh(
+    new PlaneGeometry(frameWidth, frameHeight),
+    new MeshBasicMaterial({ map: texture, transparent: true, side: DoubleSide })
+  );
+  card.userData.disposableTextures = [texture];
+  return card;
+}
+
 function createTextPanel(layout) {
   const canvas = document.createElement('canvas');
   canvas.width = 1800;
@@ -207,6 +261,8 @@ function createTextPanel(layout) {
 }
 
 function setObjectOpacity(object, opacity) {
+  if (Math.abs((object.userData.renderOpacity ?? -1) - opacity) < 0.004) return;
+  object.userData.renderOpacity = opacity;
   object.traverse((child) => {
     if (!child.material) return;
     child.material.opacity = opacity;
@@ -251,26 +307,29 @@ function createStation(layout, textures, stationIndex, isMobile) {
 
 function createTunnelGallery(textures, isMobile) {
   const gallery = new Group();
-  const photoCount = isMobile ? 14 : 30;
+  const photoCount = isMobile ? 18 : 36;
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
   for (let index = 0; index < photoCount; index += 1) {
-    const side = index % 2 === 0 ? -1 : 1;
     const width = 0.32 + seededRandom(index + 101) * 0.46;
     const height = 0.38 + seededRandom(index + 111) * 0.5;
-    const texture = createCropTexture(textures[index % textures.length], index + 17);
-    const photo = createPhotoCard(texture, index + 16, width, height);
-    const horizontalRange = isMobile ? 0.75 : 1.45;
-    const baseX = side * ((isMobile ? 1.25 : 2.15) + seededRandom(index + 121) * horizontalRange);
-    const baseY = (seededRandom(index + 131) - 0.5) * (isMobile ? 4.4 : 4.8);
+    const texture = textures[index % textures.length];
+    const photo = createTunnelPhotoCard(texture, index + 16, width, height, index + 17);
+    const angle = index * goldenAngle + (seededRandom(index + 121) - 0.5) * 0.42;
+    const radius = (isMobile ? 1.35 : 2.45) + seededRandom(index + 131) * (isMobile ? 0.65 : 1.25);
+    const verticalScale = isMobile ? 0.92 : 0.76;
+    const baseX = Math.cos(angle) * radius;
+    const baseY = Math.sin(angle) * radius * verticalScale;
     const baseZ = -2.3 - index * (28 / photoCount) - seededRandom(index + 141) * 0.45;
     photo.position.set(baseX, baseY, baseZ);
     photo.rotation.set(
-      (seededRandom(index + 151) - 0.5) * 0.16,
-      side * (-0.16 - seededRandom(index + 161) * 0.22),
-      (seededRandom(index + 171) - 0.5) * 0.24
+      Math.sin(angle) * 0.16 + (seededRandom(index + 151) - 0.5) * 0.08,
+      -Math.cos(angle) * 0.22 + (seededRandom(index + 161) - 0.5) * 0.08,
+      Math.sin(angle + 0.7) * 0.18 + (seededRandom(index + 171) - 0.5) * 0.12
     );
     photo.userData.tunnelBase = {
-      x: baseX,
-      y: baseY,
+      angle,
+      radius,
+      verticalScale,
       rotationX: photo.rotation.x,
       rotationY: photo.rotation.y,
       rotationZ: photo.rotation.z,
@@ -320,7 +379,7 @@ export async function createArchiveScene(canvas) {
     antialias: !isMobile,
     powerPreference: 'high-performance'
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.35 : 1.8));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.2 : 1.5));
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.setClearColor(0x070808, 1);
 
@@ -442,8 +501,9 @@ export async function createArchiveScene(canvas) {
 
     tunnelGallery.children.forEach((photo, index) => {
       const base = photo.userData.tunnelBase;
-      photo.position.x = base.x + Math.sin(seconds * base.speed + index) * 0.045;
-      photo.position.y = base.y + Math.cos(seconds * base.speed * 0.83 + index) * 0.055;
+      const angle = base.angle + Math.sin(seconds * base.speed + index) * 0.026;
+      photo.position.x = Math.cos(angle) * base.radius;
+      photo.position.y = Math.sin(angle) * base.radius * base.verticalScale;
       photo.rotation.x = base.rotationX + Math.sin(seconds * base.speed * 0.62 + index) * 0.012;
       photo.rotation.y = base.rotationY + Math.cos(seconds * base.speed * 0.55 + index) * 0.016;
       photo.rotation.z = base.rotationZ + Math.sin(seconds * base.speed * 0.48 + index) * 0.01;
