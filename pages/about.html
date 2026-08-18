@@ -11,14 +11,84 @@
 
   <link rel="stylesheet" href="../assets/css/main.css">
   <link rel="stylesheet" href="../assets/css/sidebar.css">
+  <link rel="stylesheet" href="../assets/css/about.css">
 </head>
 <body class="page-about">
 
   <div class="grain-overlay" aria-hidden="true"></div>
 
-  <main class="page-placeholder">
-    <h1>About</h1>
-    <p>This page is coming soon.</p>
+  <main class="obscura" style="--focus: 0.08;">
+    <section class="obscura-camera" aria-label="NEHS Photography Club camera obscura">
+      <div class="obscura-image-wrap" aria-hidden="true">
+        <picture class="obscura-picture">
+          <source type="image/avif"
+                  srcset="../assets/images/generated/hero-640.avif 640w, ../assets/images/generated/hero-1280.avif 1280w, ../assets/images/generated/hero-1920.avif 1920w, ../assets/images/generated/hero-2560.avif 2560w"
+                  sizes="100vw">
+          <source type="image/webp"
+                  srcset="../assets/images/generated/hero-640.webp 640w, ../assets/images/generated/hero-1280.webp 1280w, ../assets/images/generated/hero-1920.webp 1920w, ../assets/images/generated/hero-2560.webp 2560w"
+                  sizes="100vw">
+          <img class="obscura-image" src="../assets/images/generated/hero-1280.webp" alt="">
+        </picture>
+        <div class="obscura-image-wash"></div>
+        <div class="obscura-vignette"></div>
+      </div>
+      <canvas class="obscura-archive-canvas" id="archiveCanvas" aria-hidden="true"></canvas>
+
+      <div class="obscura-hud" aria-hidden="true">
+        <span class="obscura-coordinate obscura-coordinate-top">35.0123 N / 121.5429 E</span>
+        <span class="obscura-coordinate obscura-coordinate-bottom">NEPC / FRAME 01</span>
+        <span class="obscura-reading" aria-live="polite">FOCUS <b id="focusReading">08</b></span>
+        <div class="focusing-screen" aria-hidden="true">
+          <canvas class="microprism-canvas" id="microprismCanvas"></canvas>
+          <div class="split-focus">
+            <div class="split-focus-half split-focus-top">
+              <picture>
+                <source type="image/avif" srcset="../assets/images/generated/hero-640.avif">
+                <img src="../assets/images/generated/hero-640.webp" alt="">
+              </picture>
+            </div>
+            <div class="split-focus-half split-focus-bottom">
+              <picture>
+                <source type="image/avif" srcset="../assets/images/generated/hero-640.avif">
+                <img src="../assets/images/generated/hero-640.webp" alt="">
+              </picture>
+            </div>
+            <span class="split-focus-line"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="obscura-intro">
+        <p class="obscura-eyebrow">NANHU SENIOR HIGH SCHOOL / EST. 2024</p>
+        <h1>LOOK<br><i>CLOSER.</i></h1>
+        <p class="obscura-prompt" id="focusGuide">Scroll to bring the split image into focus.</p>
+      </div>
+
+      <div class="obscura-flash" aria-hidden="true"></div>
+    </section>
+
+    <section class="obscura-story" id="story" aria-label="About NEHS Photography Club">
+      <article class="obscura-panel obscura-panel-manifesto" data-word="OBSERVE">
+        <p class="obscura-index">01 / OBSERVE</p>
+        <h2>Before every frame,<br>there is a moment<br>worth noticing.</h2>
+        <p>NEHS Photography Club is a group of students learning to notice light, timing, and the small stories that would otherwise pass unnoticed.</p>
+      </article>
+
+      <article class="obscura-panel obscura-panel-practice" data-word="FRAME">
+        <p class="obscura-index">02 / PRACTICE</p>
+        <div class="obscura-statement">
+          <span>WE SHOOT</span>
+          <span>EVENTS / PORTRAITS / THE ORDINARY</span>
+          <span>TO MAKE THE FAMILIAR FEEL NEW.</span>
+        </div>
+      </article>
+
+      <article class="obscura-panel obscura-panel-contact" data-word="DEVELOP">
+        <p class="obscura-index">03 / MAKE A FRAME</p>
+        <h2>Come closer.<br>There is room<br>in the picture.</h2>
+        <a href="contact.html" class="obscura-contact-link">Start a conversation <span aria-hidden="true">&#8594;</span></a>
+      </article>
+    </section>
   </main>
 
   <site-navigation></site-navigation>

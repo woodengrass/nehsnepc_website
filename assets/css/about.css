@@ -1,0 +1,305 @@
+.page-about {
+  background: #080808;
+}
+
+body.page-about.is-focus-locked {
+  height: 100svh;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.obscura {
+  --focus: 0.08;
+  --focus-error: 0.92;
+  --split-offset: 16.56px;
+  --story-defocus: 0;
+  position: relative;
+  background: #080808;
+}
+
+.obscura-camera {
+  position: fixed;
+  inset: 0;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.obscura-image-wrap,
+.obscura-picture,
+.obscura-image,
+.obscura-image-wash,
+.obscura-vignette,
+.obscura-flash {
+  position: absolute;
+  inset: 0;
+}
+
+.obscura-image-wrap {
+  transform-origin: center;
+}
+
+.obscura-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 62%;
+  filter: blur(calc((1 - var(--focus)) * 3px + var(--story-defocus) * 14px)) grayscale(calc((1 - var(--focus)) * 0.85)) brightness(calc(0.6 + var(--focus) * 0.2 - var(--story-defocus) * 0.08));
+  transform: scale(calc(1.05 + (1 - var(--focus)) * 0.08));
+  transition: filter 160ms linear, transform 160ms linear;
+}
+
+.obscura-image-wash {
+  background: linear-gradient(90deg, rgba(8, 8, 8, 0.78) 0%, rgba(8, 8, 8, 0.16) 57%, rgba(8, 8, 8, 0.28) 100%);
+}
+
+.obscura-image-wash::after {
+  content: '';
+  position: absolute;
+  inset: -3%;
+  backdrop-filter: blur(calc(var(--focus-error) * 28px));
+  -webkit-backdrop-filter: blur(calc(var(--focus-error) * 28px));
+  mask-image: radial-gradient(circle at 50% 50%, transparent 0 14%, rgba(0, 0, 0, 0.12) 27%, #000 58%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0 14%, rgba(0, 0, 0, 0.12) 27%, #000 58%);
+  opacity: calc(0.2 + var(--focus-error) * 0.8);
+  transition: backdrop-filter 160ms linear, opacity 160ms linear;
+}
+
+.obscura-archive-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  filter: saturate(0.82) contrast(1.04);
+}
+
+.obscura-vignette {
+  box-shadow: inset 0 0 14vw 6vw rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.obscura-hud {
+  position: absolute;
+  inset: 2.6rem 3.2rem;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.44);
+  font-size: 0.55rem;
+  font-weight: 400;
+  letter-spacing: 0.17em;
+  pointer-events: none;
+}
+
+.obscura-coordinate,
+.obscura-reading {
+  position: absolute;
+}
+
+.obscura-coordinate-top { top: 0; left: 0; }
+.obscura-coordinate-bottom { bottom: 0; right: 0; }
+.obscura-reading { top: 0; right: 0; }
+.obscura-reading b { color: rgba(255, 255, 255, 0.84); font-weight: 400; }
+
+.focusing-screen {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(132px, 12vw, 184px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+}
+
+.microprism-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  filter: contrast(1.08) brightness(0.82);
+}
+
+.split-focus {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 62%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.32), inset 0 0 12px rgba(0, 0, 0, 0.28);
+  transform: translate(-50%, -50%);
+}
+
+.split-focus-half {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.split-focus-half img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  object-fit: cover;
+  object-position: center 62%;
+  filter: blur(calc(var(--focus-error) * 2.4px)) brightness(0.82) contrast(1.12);
+}
+
+.split-focus-top { clip-path: inset(0 0 50% 0); }
+.split-focus-bottom { clip-path: inset(50% 0 0 0); }
+.split-focus-top img { transform: translate(calc(-50% + var(--split-offset)), -50%); }
+.split-focus-bottom img { transform: translate(calc(-50% - var(--split-offset)), -50%); }
+
+.split-focus-line {
+  position: absolute;
+  top: 50%;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.obscura.is-focused .split-focus {
+  border-color: rgba(255, 255, 255, 0.95);
+}
+
+.obscura.is-focused .microprism-canvas {
+  filter: contrast(1.03) brightness(0.86);
+}
+
+.obscura-intro {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: clamp(2rem, 9vw, 10rem);
+  width: min(580px, 66vw);
+  transform: translateY(-50%);
+}
+
+.obscura-eyebrow,
+.obscura-prompt,
+.obscura-index,
+.obscura-statement,
+.obscura-contact-link {
+  font-family: var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.obscura-eyebrow { font-size: 0.6rem; color: rgba(255, 255, 255, 0.55); }
+
+.obscura-intro h1 {
+  margin: 1.5rem 0 2rem;
+  font-family: var(--font-heading);
+  font-size: clamp(4.5rem, 10vw, 10rem);
+  font-weight: 300;
+  line-height: 0.76;
+  letter-spacing: -0.035em;
+}
+
+.obscura-intro h1 i { font-weight: 300; }
+.obscura-prompt { max-width: 330px; color: rgba(255, 255, 255, 0.62); font-size: 0.62rem; line-height: 1.8; }
+.obscura-flash { z-index: 5; background: #fff; opacity: 0; pointer-events: none; }
+
+.obscura.is-in-story .obscura-intro,
+.obscura.is-in-story .obscura-hud {
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.obscura-story {
+  position: relative;
+  z-index: 2;
+  height: 100svh;
+  perspective: 1100px;
+  pointer-events: none;
+}
+
+.obscura.is-archive-3d .obscura-panel {
+  display: none;
+}
+
+.obscura-panel {
+  --word-shift: 0vw;
+  --word-tilt: 0deg;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: min(510px, 70vw);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(34px);
+  transform-style: preserve-3d;
+  transition: opacity 650ms ease, transform 650ms ease;
+  pointer-events: auto;
+}
+
+.obscura-panel::before {
+  content: attr(data-word);
+  position: absolute;
+  top: 50%;
+  left: -7vw;
+  color: rgba(255, 255, 255, 0.055);
+  font-family: var(--font-heading);
+  font-size: clamp(9rem, 23vw, 25rem);
+  font-weight: 300;
+  letter-spacing: -0.07em;
+  line-height: 0.7;
+  white-space: nowrap;
+  transform: translate(var(--word-shift), -50%) rotate(var(--word-tilt));
+}
+
+.obscura-panel > * { position: relative; z-index: 1; }
+.obscura-panel-manifesto { left: clamp(2rem, 9vw, 10rem); }
+.obscura-panel-practice { right: clamp(2rem, 9vw, 10rem); text-align: right; }
+.obscura-panel-practice::before { right: -6vw; left: auto; }
+.obscura-panel-contact { left: clamp(2rem, 9vw, 10rem); }
+
+.obscura-index { margin-bottom: 1.2rem; color: rgba(255, 255, 255, 0.5); font-size: 0.58rem; }
+.obscura-panel h2 { font-family: var(--font-heading); font-size: clamp(2.8rem, 5vw, 5.8rem); font-weight: 300; line-height: 0.88; letter-spacing: -0.02em; }
+.obscura-panel > p:last-child { max-width: 360px; margin-top: 2rem; color: rgba(255, 255, 255, 0.7); font-size: 0.82rem; line-height: 2; letter-spacing: 0.08em; }
+.obscura-panel-practice .obscura-statement { display: flex; flex-direction: column; gap: 0.7rem; color: rgba(255, 255, 255, 0.86); font-size: clamp(0.7rem, 1.2vw, 1rem); line-height: 1.65; }
+.obscura-panel-practice .obscura-statement span:nth-child(2) { color: rgba(255, 255, 255, 0.43); }
+
+.obscura-contact-link { width: fit-content; margin-top: 2.5rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(255, 255, 255, 0.55); color: rgba(255, 255, 255, 0.85); font-size: 0.62rem; transition: color 200ms ease, border-color 200ms ease; }
+.obscura-contact-link:hover { color: #fff; border-color: #fff; }
+.obscura-contact-link span { padding-left: 1.2rem; font-size: 1rem; }
+
+@media (max-width: 767px) {
+  .obscura-hud { inset: 1.5rem; }
+  .obscura-coordinate-top, .obscura-reading { top: 3.6rem; }
+  .obscura-coordinate-bottom { display: none; }
+  .focusing-screen { top: 26%; width: 96px; }
+  .obscura-intro { left: 2rem; width: calc(100% - 4rem); }
+  .obscura-intro h1 { font-size: clamp(4.3rem, 23vw, 7rem); }
+  .obscura-panel { width: calc(100% - 4rem); }
+  .obscura-panel::before { left: -1rem; font-size: clamp(7rem, 32vw, 11rem); }
+  .obscura-panel-practice::before { right: -1rem; left: auto; }
+  .obscura-panel-manifesto, .obscura-panel-contact { left: 2rem; }
+  .obscura-panel-practice { right: 2rem; }
+  .obscura-panel h2 { font-size: clamp(3.1rem, 14vw, 5.2rem); }
+}
+
+.obscura.reduced-motion {
+  padding-top: 100svh;
+}
+
+.obscura.reduced-motion .obscura-story {
+  height: auto;
+}
+
+.obscura.reduced-motion .obscura-panel {
+  position: relative;
+  min-height: 100svh;
+  opacity: 1;
+  transform: none;
+}

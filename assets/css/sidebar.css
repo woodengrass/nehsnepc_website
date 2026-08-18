@@ -1,21 +1,21 @@
 /* ============================================================
-   sidebar.css — Right sidebar navigation styles
+   sidebar.css — Left sidebar navigation styles
    ============================================================ */
 
 /* ——— Sidebar container (positions the panel and edge line) ——— */
 .sidebar {
   position: fixed;
-  right: 0;
+  left: 0;
   top: 0;
   height: 100%;
   z-index: 200;
   pointer-events: none; /* children re-enable as needed */
 }
 
-/* ——— 2px indicator line: always visible, far right edge ——— */
+/* ——— 2px indicator line: always visible, far left edge ——— */
 .sidebar-edge {
   position: fixed;
-  right: 0;
+  left: 0;
   top: 0;
   width: 2px;
   height: 100%;
@@ -27,17 +27,17 @@
 /* ——— Sliding panel ——— */
 .sidebar-panel {
   position: fixed;
-  right: 0;
+  left: 0;
   top: 0;
   width: var(--sidebar-width);
   height: 100%;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 
-  /* Default: hidden off-screen to the right */
-  transform: translateX(var(--sidebar-width));
+  /* Default: hidden off-screen to the left */
+  transform: translateX(calc(var(--sidebar-width) * -1));
   transition: transform 0.4s ease-out;
   z-index: 200;
   pointer-events: all;

@@ -21,10 +21,15 @@
   <section class="hero" id="hero" aria-label="Hero">
 
     <!-- Background photo: fades in on scroll -->
-    <div class="hero-bg" id="heroBg"
-         style="background-image: url('assets/images/banner/hero-1.jpg');"
-         role="img" aria-label="Photography club hero image">
-    </div>
+    <picture class="hero-bg" id="heroBg">
+      <source type="image/avif"
+              srcset="assets/images/generated/hero-640.avif 640w, assets/images/generated/hero-1280.avif 1280w, assets/images/generated/hero-1920.avif 1920w, assets/images/generated/hero-2560.avif 2560w"
+              sizes="100vw">
+      <source type="image/webp"
+              srcset="assets/images/generated/hero-640.webp 640w, assets/images/generated/hero-1280.webp 1280w, assets/images/generated/hero-1920.webp 1920w, assets/images/generated/hero-2560.webp 2560w"
+              sizes="100vw">
+      <img src="assets/images/generated/hero-1280.webp" alt="Photography club hero image">
+    </picture>
 
     <!-- Darkening overlay above photo -->
     <div class="hero-overlay" aria-hidden="true"></div>

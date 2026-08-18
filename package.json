@@ -6,12 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "images:build": "node scripts/optimize_images.js",
     "preview": "vite preview"
   },
   "dependencies": {
-    "gsap": "^3.13.0"
+    "gsap": "^3.13.0",
+    "three": "^0.185.1"
   },
   "devDependencies": {
+    "sharp": "^0.35.3",
     "vite": "^7.1.0"
   }
 }
