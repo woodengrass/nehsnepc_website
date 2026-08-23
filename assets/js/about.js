@@ -4,25 +4,28 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 const FOCUS_POINT = 62;
-const STATION_SNAP_POINTS = [0.31, 0.58, 0.84];
+const STATION_SNAP_POINTS = [0.325, 0.595, 0.855];
 
 export function initAboutPage() {
   const page = document.querySelector('.obscura');
   const focusReading = document.getElementById('focusReading');
   const microprismCanvas = document.getElementById('microprismCanvas');
   const viewfinderImage = document.querySelector('.obscura-image');
+  const imageWrap = document.querySelector('.obscura-image-wrap');
   const archiveCanvas = document.getElementById('archiveCanvas');
   const focusGuide = document.getElementById('focusGuide');
 
-  if (!page || !focusReading || !microprismCanvas || !viewfinderImage || !archiveCanvas || !focusGuide) return;
+  if (!page || !focusReading || !microprismCanvas || !viewfinderImage || !imageWrap || !archiveCanvas || !focusGuide) return;
 
   let prismFrame = null;
   let prismError = 1;
   let currentFocusValue = 8;
   let archiveProgress = 0;
+  let archiveExitProgress = 0;
   let archiveScene = null;
   let archiveLoadPromise = null;
   let isExperienceUnlocked = false;
+  let isStoryViewActive = false;
 
   document.body.classList.add('is-focus-locked');
   page.classList.add('is-archive-3d');
@@ -34,6 +37,8 @@ export function initAboutPage() {
     document.body.classList.remove('is-focus-locked');
     page.classList.add('is-unlocked');
     focusGuide.textContent = 'Focus locked. Keep scrolling to enter the frame.';
+    // 對焦完成後立即準備 3D 場景，避免使用者開始滑動時入口照片尚未載入。
+    loadArchiveScene();
     gsap.fromTo('.obscura-flash', { autoAlpha: 0.95 }, { autoAlpha: 0, duration: 0.55, ease: 'power2.out' });
   }
 
@@ -43,7 +48,8 @@ export function initAboutPage() {
       .then(({ createArchiveScene }) => createArchiveScene(archiveCanvas))
       .then((scene) => {
         archiveScene = scene;
-        archiveScene.setProgress(archiveProgress);
+        archiveScene.setProgress(archiveProgress, page.classList.contains('reduced-motion'));
+        archiveScene.setExitProgress(archiveExitProgress);
       })
       .catch((error) => {
         console.error('Unable to initialize the archive scene.', error);
@@ -51,11 +57,22 @@ export function initAboutPage() {
     return archiveLoadPromise;
   }
 
-  function setArchiveProgress(progress) {
+  function setArchiveProgress(progress, immediate = false) {
     archiveProgress = progress;
     page.classList.toggle('is-in-story', progress > 0.04);
     if (progress > 0.01) loadArchiveScene();
-    archiveScene?.setProgress(progress);
+    archiveScene?.setProgress(progress, immediate);
+  }
+
+  function setArchiveExitProgress(progress) {
+    archiveExitProgress = progress;
+    archiveScene?.setExitProgress(progress);
+
+    // 僅在故事視圖接管畫面時控制顯露比例。進度回到 0 或返回頁首後不再寫入，
+    // 避免退出 ScrollTrigger 的尾端更新覆蓋 setStoryViewActive(false)。
+    if (progress <= 0 || !isStoryViewActive) return;
+    const revealProgress = Math.max(0, Math.min(1, (progress - 0.99) / 0.01));
+    gsap.set(archiveCanvas, { autoAlpha: 1 - revealProgress });
   }
 
   function focusDistanceValue(value) {
@@ -184,6 +201,15 @@ export function initAboutPage() {
     return Math.abs(nearest - progress) <= 0.055 ? nearest : progress;
   }
 
+  function setStoryViewActive(isActive) {
+    // 3D canvas 不可放在 timeline 的時間 0 使用 .set()：GSAP 建立時間軸時會立即
+    // 套用零時刻狀態，導致使用者尚未捲動，載入完成的 canvas 就蓋掉對焦畫面。
+    // 改由 ScrollTrigger 的進出事件切換，讓初始、進入故事及返回頂部都有明確狀態。
+    isStoryViewActive = isActive;
+    gsap.set(archiveCanvas, { autoAlpha: isActive ? 1 : 0 });
+    gsap.set(imageWrap, { autoAlpha: isActive ? 0 : 1 });
+  }
+
   if (viewfinderImage.complete) renderMicroprism();
   else viewfinderImage.addEventListener('load', renderMicroprism, { once: true });
   window.addEventListener('resize', () => scheduleMicroprism(prismError));
@@ -219,13 +245,17 @@ export function initAboutPage() {
 
   const media = gsap.matchMedia();
   media.add('(prefers-reduced-motion: no-preference)', () => {
+    // 每次媒體條件建立或重建動畫時，都先保證頁首仍由對焦畫面接管。
+    setStoryViewActive(false);
     const progression = gsap.timeline({
       scrollTrigger: {
         trigger: '.obscura-story',
         start: 'top top',
         end: '+=650%',
         pin: true,
-        scrub: 0.45,
+        // ScrollTrigger 只提供原始目標進度，實際相機速度由 3D 場景的阻尼曲線控制。
+        // 避免這裡再次加入 scrub 秒數，否則兩層延遲會讓觸控板操作顯得黏滯。
+        scrub: true,
         snap: {
           snapTo: snapToNearestStation,
           delay: 0.08,
@@ -233,6 +263,9 @@ export function initAboutPage() {
           ease: 'power2.out',
           inertia: false
         },
+        onEnter: () => setStoryViewActive(true),
+        onEnterBack: () => setStoryViewActive(true),
+        onLeaveBack: () => setStoryViewActive(false),
         onUpdate: ({ progress }) => setArchiveProgress(progress)
       }
     });
@@ -240,9 +273,28 @@ export function initAboutPage() {
     progression
       .addLabel('enter-frame', 0)
       .to('.obscura-intro', { autoAlpha: 0, y: -24, ease: 'none', duration: 0.05 }, 0)
-      .to('.obscura-hud', { opacity: 0, ease: 'none', duration: 0.05 }, 0)
-      .set(archiveCanvas, { autoAlpha: 1 }, 0.01)
-      .set('.obscura-image-wrap', { autoAlpha: 0 }, 0.02);
+      .to('.obscura-hud', { opacity: 0, ease: 'none', duration: 0.05 }, 0);
+
+    const exitState = { progress: 0 };
+    const exitTimeline = gsap.timeline({
+      scrollTrigger: {
+        trigger: '.obscura-afterword',
+        start: 'top bottom',
+        end: 'top top',
+        scrub: 0.55
+      }
+    });
+
+    // 退出旋轉由 Three.js 相機在世界座標內完成，不再對整個 DOM canvas 做 2D 抽離。
+    // 3D 相機先完整左轉並把實體頁面放大到滿版；最後 1% 才快速交接 DOM，
+    // 避免兩套排版長時間半透明重疊而產生雙影。
+    exitTimeline
+      .to(exitState, {
+        progress: 1,
+        duration: 1,
+        ease: 'none',
+        onUpdate: () => setArchiveExitProgress(exitState.progress)
+      }, 0);
   });
 
   media.add('(prefers-reduced-motion: reduce)', () => {
@@ -250,7 +302,7 @@ export function initAboutPage() {
     setFocus(FOCUS_POINT);
     page.style.setProperty('--story-defocus', 0.7);
     archiveCanvas.style.opacity = '0.38';
-    setArchiveProgress(0.42);
+    setArchiveProgress(0.42, true);
     document.querySelectorAll('.obscura-panel').forEach((panel) => panel.classList.add('is-visible'));
   });
 }
