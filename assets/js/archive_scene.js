@@ -605,12 +605,21 @@ export async function createArchiveScene(canvas) {
       : (index + seededRandom(index + 21)) / baseFragmentCount;
     const exitAngle = exitDepth * Math.PI / 2;
     const exitBendRadius = isMobile ? 6.5 : 8;
+    const fragmentIndex = isExitFragment ? exitIndex : index;
+    const fragmentAngle = fragmentIndex * Math.PI * (3 - Math.sqrt(5))
+      + (seededRandom(fragmentIndex + 1) - 0.5) * 0.34;
+    const fragmentRadius = isExitFragment
+      ? (isMobile ? 2.6 : 5) + seededRandom(fragmentIndex + 11) * (isMobile ? 2.4 : 5)
+      : ((isMobile ? 2.2 : 4.4) + seededRandom(fragmentIndex + 11) * (isMobile ? 1.8 : 3.8))
+        * (1 + baseDepth * (isMobile ? 0.18 : 0.3));
+    // 建立時將碎片固定在隧道軸外圍的橢圓環殼；最小半徑會保留中央閱讀通道。
+    // 座標寫入後不再跟隨相機重算，因此前進時仍保有真實近大遠小與穿越感。
     const baseX = isExitFragment
-        ? -exitBendRadius * (1 - Math.cos(exitAngle)) + (seededRandom(exitIndex + 411) - 0.5) * (isMobile ? 2.2 : 4)
-        : (seededRandom(index + 1) - 0.5) * (isMobile ? 3.8 : 6);
+      ? -exitBendRadius * (1 - Math.cos(exitAngle)) + Math.cos(fragmentAngle) * fragmentRadius
+      : Math.cos(fragmentAngle) * fragmentRadius;
     const baseY = isExitFragment
-        ? exitDepth * 0.7 + (seededRandom(exitIndex + 421) - 0.5) * (isMobile ? 3.6 : 5.2)
-        : (seededRandom(index + 11) - 0.5) * (isMobile ? 3.4 : 4.2);
+      ? exitDepth * 0.7 + Math.sin(fragmentAngle) * fragmentRadius * (isMobile ? 0.88 : 0.72)
+      : Math.sin(fragmentAngle) * fragmentRadius * (isMobile ? 0.9 : 0.72);
     const baseZ = isExitFragment
       ? -27 - exitBendRadius * Math.sin(exitAngle)
       : -0.8 - baseDepth * 25.8;
