@@ -28,7 +28,8 @@ const CAMERA_PROGRESS_STIFFNESS = 90;
 const CAMERA_PROGRESS_DAMPING = 19;
 const EXIT_CORNER_Z = -35;
 const EXIT_PAGE_X = -12;
-const EXIT_TURN_END = 0.48;
+const EXIT_TURN_END = 0.38;
+const EXIT_CORNER_END = 0.48;
 const EXIT_PAGE_REVEAL_START = 0.78;
 const EXIT_PAGE_REVEAL_END = 0.86;
 const EXIT_PAGE_DESKTOP_HEIGHT = 6.6;
@@ -50,7 +51,8 @@ const CAMERA_STOPS = [
   { progress: 0.82, x: 0.12, y: -0.06, z: -19.8, roll: 0.014, targetX: 0.04, targetY: 0 },
   { progress: 0.855, x: 0, y: -0.04, z: -20.15, roll: 0.008, targetX: 0, targetY: 0 },
   { progress: 0.89, x: -0.12, y: 0, z: -20.55, roll: -0.014, targetX: -0.04, targetY: 0 },
-  { progress: 1, x: -0.25, y: 0.04, z: -27.2, roll: -0.025, targetX: 0, targetY: 0 }
+  // 第三站後只保留短距離離場，避免相機穿過文字平面後才開始左轉。
+  { progress: 1, x: -0.25, y: 0.04, z: -22, roll: -0.025, targetX: 0, targetY: 0 }
 ];
 
 const STATION_LAYOUTS = [
@@ -576,7 +578,8 @@ export async function createArchiveScene(canvas) {
   scene.add(tunnelGallery, dustField);
 
   const baseFragmentCount = isMobile ? 60 : 190;
-  const exitFragmentCount = isMobile ? 90 : 220;
+  const originalExitFragmentCount = isMobile ? 90 : 220;
+  const exitFragmentCount = isMobile ? 120 : 280;
   const fragmentCount = baseFragmentCount + exitFragmentCount;
   const exitPageHeight = isMobile ? EXIT_PAGE_MOBILE_HEIGHT : EXIT_PAGE_DESKTOP_HEIGHT;
   const exitPageWidth = exitPageHeight * (isMobile ? EXIT_PAGE_MOBILE_ASPECT : EXIT_PAGE_DESKTOP_ASPECT);
@@ -598,7 +601,10 @@ export async function createArchiveScene(canvas) {
   for (let index = 0; index < fragmentCount; index += 1) {
     const isExitFragment = index >= baseFragmentCount;
     const exitIndex = index - baseFragmentCount;
-    const exitDepth = isExitFragment ? seededRandom(exitIndex + 401) : 0;
+    // 新增碎片只補在彎道入口，既有碎片仍維持原本完整彎道分布與頁面目標。
+    const exitDepth = isExitFragment
+      ? seededRandom(exitIndex + 401) * (exitIndex >= originalExitFragmentCount ? 0.42 : 1)
+      : 0;
     // 前三站沿深度切成等量區間，每區只加入少量隨機偏移，避免純隨機造成大片空洞。
     const baseDepth = isExitFragment
       ? 0
@@ -730,7 +736,9 @@ export async function createArchiveScene(canvas) {
     const cameraState = interpolateCamera(progress);
     const turnProgress = MathUtils.clamp(exitProgress / EXIT_TURN_END, 0, 1);
     const turnAmount = smoothStep(turnProgress);
-    const approachProgress = MathUtils.clamp((exitProgress - EXIT_TURN_END) / (1 - EXIT_TURN_END), 0, 1);
+    const cornerProgress = MathUtils.clamp(exitProgress / EXIT_CORNER_END, 0, 1);
+    const cornerAmount = smoothStep(cornerProgress);
+    const approachProgress = MathUtils.clamp((exitProgress - EXIT_CORNER_END) / (1 - EXIT_CORNER_END), 0, 1);
     const approachAmount = smoothStep(approachProgress);
     const exitPageReveal = smoothStep(MathUtils.clamp(
       (exitProgress - EXIT_PAGE_REVEAL_START) / (EXIT_PAGE_REVEAL_END - EXIT_PAGE_REVEAL_START),
@@ -745,13 +753,13 @@ export async function createArchiveScene(canvas) {
     exitPage.material.opacity = exitPageReveal;
 
     // 第四頁轉場直接改變 PerspectiveCamera 的世界座標與觀看方向。
-    // 前 48% 沿彎道持續前進並完成精確 90 度左轉；後 52% 保持面向正左側，
-    // 再沿負 X 軸靠近實體第四頁。頁面因透視自然放大，不使用 CSS scale。
+    // 前 38% 完成精確 90 度左轉，48% 才抵達彎角，避免旋轉加快時同步越過入口碎片。
+    // 後 52% 保持面向正左側，再沿負 X 軸靠近實體第四頁。頁面因透視自然放大。
     const pointerInfluence = isMobile ? 0 : 1 - turnAmount;
-    const exitCameraZ = MathUtils.lerp(cameraState.z, EXIT_CORNER_Z, turnAmount);
-    const cornerCameraX = cameraState.x - turnAmount * (isMobile ? 0.5 : 1.2);
+    const exitCameraZ = MathUtils.lerp(cameraState.z, EXIT_CORNER_Z, cornerAmount);
+    const cornerCameraX = cameraState.x - cornerAmount * (isMobile ? 0.5 : 1.2);
     const exitCameraX = cornerCameraX - approachAmount * (isMobile ? 3.5 : 2.8);
-    const exitCameraY = MathUtils.lerp(cameraState.y, 0, turnAmount);
+    const exitCameraY = MathUtils.lerp(cameraState.y, 0, cornerAmount);
     camera.position.set(
       exitCameraX + pointerOffsetX * 0.025 * pointerInfluence,
       exitCameraY - pointerOffsetY * 0.018 * pointerInfluence,
@@ -772,7 +780,9 @@ export async function createArchiveScene(canvas) {
     stations.forEach((station, stationIndex) => {
       const idealCameraZ = station.position.z + 4;
       const distance = Math.abs(camera.position.z - idealCameraZ);
-      const opacity = smoothStep(1 - MathUtils.clamp((distance - 0.6) / 5.5, 0, 1));
+      const hasPassedStation = camera.position.z < idealCameraZ;
+      const fadeDistance = hasPassedStation ? 1.4 : 5.5;
+      const opacity = smoothStep(1 - MathUtils.clamp((distance - 0.6) / fadeDistance, 0, 1));
 
       // 每站只有主文字與主照片負責章節切換。周邊照片維持完整不透明，
       // 避免滑動時整個空間一起淡出，讓使用者持續感受到相片隧道的深度。
