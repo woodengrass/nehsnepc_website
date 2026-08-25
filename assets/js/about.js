@@ -71,7 +71,8 @@ export function initAboutPage() {
     // 僅在故事視圖接管畫面時控制顯露比例。進度回到 0 或返回頁首後不再寫入，
     // 避免退出 ScrollTrigger 的尾端更新覆蓋 setStoryViewActive(false)。
     if (progress <= 0 || !isStoryViewActive) return;
-    const revealProgress = Math.max(0, Math.min(1, (progress - 0.99) / 0.01));
+    const rawRevealProgress = Math.max(0, Math.min(1, (progress - 0.99) / 0.01));
+    const revealProgress = rawRevealProgress * rawRevealProgress * (3 - 2 * rawRevealProgress);
     gsap.set(archiveCanvas, { autoAlpha: 1 - revealProgress });
   }
 
@@ -286,8 +287,8 @@ export function initAboutPage() {
     });
 
     // 退出旋轉由 Three.js 相機在世界座標內完成，不再對整個 DOM canvas 做 2D 抽離。
-    // 3D 相機先完整左轉並把實體頁面放大到滿版；最後 1% 才快速交接 DOM，
-    // 避免兩套排版長時間半透明重疊而產生雙影。
+    // 3D 相機先完整左轉並把實體頁面推進到滿版；最後 1% 以平滑曲線交接 DOM，
+    // 避免單幀切換造成彈跳，也不讓兩套排版長時間半透明重疊。
     exitTimeline
       .to(exitState, {
         progress: 1,

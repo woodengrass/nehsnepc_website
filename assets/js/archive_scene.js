@@ -89,6 +89,10 @@ function smoothStep(value) {
   return value * value * (3 - 2 * value);
 }
 
+function smootherStep(value) {
+  return value * value * value * (value * (value * 6 - 15) + 10);
+}
+
 function interpolateCamera(progress) {
   let endIndex = CAMERA_STOPS.findIndex((stop) => stop.progress >= progress);
   if (endIndex <= 0) endIndex = 1;
@@ -580,9 +584,11 @@ export async function createArchiveScene(canvas) {
   const baseFragmentCount = isMobile ? 60 : 190;
   const originalExitFragmentCount = isMobile ? 90 : 220;
   const exitFragmentCount = isMobile ? 120 : 280;
+  const approachFragmentStart = originalExitFragmentCount;
   const fragmentCount = baseFragmentCount + exitFragmentCount;
   const exitPageHeight = isMobile ? EXIT_PAGE_MOBILE_HEIGHT : EXIT_PAGE_DESKTOP_HEIGHT;
   const exitPageWidth = exitPageHeight * (isMobile ? EXIT_PAGE_MOBILE_ASPECT : EXIT_PAGE_DESKTOP_ASPECT);
+  let exitPageCameraDistance = 8;
   const fragments = new InstancedMesh(
     new PlaneGeometry(0.09, 0.065),
     new MeshBasicMaterial({
@@ -601,7 +607,8 @@ export async function createArchiveScene(canvas) {
   for (let index = 0; index < fragmentCount; index += 1) {
     const isExitFragment = index >= baseFragmentCount;
     const exitIndex = index - baseFragmentCount;
-    // 新增碎片只補在彎道入口，既有碎片仍維持原本完整彎道分布與頁面目標。
+    const isApproachFragment = isExitFragment && exitIndex >= approachFragmentStart;
+    // 新增碎片建立固定的負 X 軸接近走廊；既有碎片維持原本完整彎道分布。
     const exitDepth = isExitFragment
       ? seededRandom(exitIndex + 401) * (exitIndex >= originalExitFragmentCount ? 0.42 : 1)
       : 0;
@@ -614,19 +621,28 @@ export async function createArchiveScene(canvas) {
     const fragmentIndex = isExitFragment ? exitIndex : index;
     const fragmentAngle = fragmentIndex * Math.PI * (3 - Math.sqrt(5))
       + (seededRandom(fragmentIndex + 1) - 0.5) * 0.34;
-    const fragmentRadius = isExitFragment
+    const fragmentRadius = isApproachFragment
+      ? (isMobile ? 1.2 : 2) + seededRandom(fragmentIndex + 11) * (isMobile ? 1.8 : 3.5)
+      : isExitFragment
       ? (isMobile ? 2.6 : 5) + seededRandom(fragmentIndex + 11) * (isMobile ? 2.4 : 5)
       : ((isMobile ? 2.2 : 4.4) + seededRandom(fragmentIndex + 11) * (isMobile ? 1.8 : 3.8))
         * (1 + baseDepth * (isMobile ? 0.18 : 0.3));
     // 建立時將碎片固定在隧道軸外圍的橢圓環殼；最小半徑會保留中央閱讀通道。
     // 座標寫入後不再跟隨相機重算，因此前進時仍保有真實近大遠小與穿越感。
-    const baseX = isExitFragment
+    const approachDepth = seededRandom(fragmentIndex + 481);
+    const baseX = isApproachFragment
+      ? MathUtils.lerp(-2.2, EXIT_PAGE_X + 1.2, approachDepth)
+      : isExitFragment
       ? -exitBendRadius * (1 - Math.cos(exitAngle)) + Math.cos(fragmentAngle) * fragmentRadius
       : Math.cos(fragmentAngle) * fragmentRadius;
-    const baseY = isExitFragment
+    const baseY = isApproachFragment
+      ? Math.sin(fragmentAngle) * fragmentRadius * 0.72
+      : isExitFragment
       ? exitDepth * 0.7 + Math.sin(fragmentAngle) * fragmentRadius * (isMobile ? 0.88 : 0.72)
       : Math.sin(fragmentAngle) * fragmentRadius * (isMobile ? 0.9 : 0.72);
-    const baseZ = isExitFragment
+    const baseZ = isApproachFragment
+      ? EXIT_CORNER_Z + Math.cos(fragmentAngle) * fragmentRadius
+      : isExitFragment
       ? -27 - exitBendRadius * Math.sin(exitAngle)
       : -0.8 - baseDepth * 25.8;
     let normalizedX = seededRandom(exitIndex + 431);
@@ -639,6 +655,12 @@ export async function createArchiveScene(canvas) {
       else normalizedY = 1;
     }
     const targetLocalX = (normalizedX - 0.5) * exitPageWidth;
+    const targetEdgeDistance = Math.min(
+      normalizedX,
+      1 - normalizedX,
+      normalizedY,
+      1 - normalizedY
+    );
     const state = {
       isExitFragment,
       x: baseX,
@@ -652,7 +674,11 @@ export async function createArchiveScene(canvas) {
       rotationZ: seededRandom(index + 51) * Math.PI,
       speed: 0.2 + seededRandom(index + 61) * 0.35,
       scale: 0.8 + seededRandom(index + 71) * 1.5,
-      targetScale: 0.9 + seededRandom(index + 81) * 1.4
+      targetScale: 0.9 + seededRandom(index + 81) * 1.4,
+      // 邊框先穩定、內部後補齊；每個碎片的微幅錯開可避免整片同時吸附。
+      gatherStart: 0.48 + targetEdgeDistance * 0.12 + seededRandom(index + 461) * 0.06
+        + (isApproachFragment ? 0.05 : 0),
+      gatherEnd: 0.7 + targetEdgeDistance * 0.1 + seededRandom(index + 471) * 0.025
     };
     fragmentStates.push(state);
   }
@@ -696,8 +722,11 @@ export async function createArchiveScene(canvas) {
     updatePortalTexture(portalTexture, width, height);
     const portalHeight = 2 * (8 - portal.position.z) * Math.tan(MathUtils.degToRad(camera.fov / 2));
     portal.scale.set(portalHeight * camera.aspect, portalHeight, 1);
-    const exitPageHeight = isMobile ? EXIT_PAGE_MOBILE_HEIGHT : EXIT_PAGE_DESKTOP_HEIGHT;
     exitPage.scale.set(exitPageHeight * exitPage.userData.aspect, exitPageHeight, 1);
+    const halfVerticalFov = Math.tan(MathUtils.degToRad(camera.fov / 2));
+    const verticalCoverDistance = exitPageHeight / (2 * halfVerticalFov);
+    const horizontalCoverDistance = exitPageWidth / (2 * halfVerticalFov * camera.aspect);
+    exitPageCameraDistance = Math.min(verticalCoverDistance, horizontalCoverDistance);
   }
 
   function render(time = performance.now()) {
@@ -738,27 +767,32 @@ export async function createArchiveScene(canvas) {
     const turnAmount = smoothStep(turnProgress);
     const cornerProgress = MathUtils.clamp(exitProgress / EXIT_CORNER_END, 0, 1);
     const cornerAmount = smoothStep(cornerProgress);
-    const approachProgress = MathUtils.clamp((exitProgress - EXIT_CORNER_END) / (1 - EXIT_CORNER_END), 0, 1);
-    const approachAmount = smoothStep(approachProgress);
-    const exitPageReveal = smoothStep(MathUtils.clamp(
+    const approachProgress = MathUtils.clamp(
+      (exitProgress - EXIT_PAGE_REVEAL_START) / (1 - EXIT_PAGE_REVEAL_START),
+      0,
+      1
+    );
+    const approachAmount = smootherStep(approachProgress);
+    const exitPageReveal = smootherStep(MathUtils.clamp(
       (exitProgress - EXIT_PAGE_REVEAL_START) / (EXIT_PAGE_REVEAL_END - EXIT_PAGE_REVEAL_START),
       0,
       1
     ));
-    const fragmentGather = smoothStep(MathUtils.clamp(exitProgress / EXIT_PAGE_REVEAL_END, 0, 1));
 
-    // 完成左轉後仍先保留純粒子走廊，直到接近底部才顯現最終頁面。
+    // 完成左轉後仍先保留純粒子走廊；碎片匯聚後提早顯現實體頁面，
+    // 讓後續相機前進自然將頁面逐步放大，而不是在交接前直接跳成滿版。
     // 反向捲動時同一進度會將頁面淡回完全不可見，不會提早洩漏第四頁內容。
     exitPage.visible = exitPageReveal > 0;
     exitPage.material.opacity = exitPageReveal;
 
     // 第四頁轉場直接改變 PerspectiveCamera 的世界座標與觀看方向。
-    // 前 38% 完成精確 90 度左轉，48% 才抵達彎角，避免旋轉加快時同步越過入口碎片。
-    // 後 52% 保持面向正左側，再沿負 X 軸靠近實體第四頁。頁面因透視自然放大。
+    // 前 38% 完成精確 90 度左轉，48% 抵達彎角後等待碎片匯聚；頁面開始顯現時，
+    // 相機才沿負 X 軸持續靠近，直到實體紙面自然覆蓋視野後再交接 DOM。
     const pointerInfluence = isMobile ? 0 : 1 - turnAmount;
     const exitCameraZ = MathUtils.lerp(cameraState.z, EXIT_CORNER_Z, cornerAmount);
     const cornerCameraX = cameraState.x - cornerAmount * (isMobile ? 0.5 : 1.2);
-    const exitCameraX = cornerCameraX - approachAmount * (isMobile ? 3.5 : 2.8);
+    const finalExitCameraX = EXIT_PAGE_X + exitPageCameraDistance;
+    const exitCameraX = MathUtils.lerp(cornerCameraX, finalExitCameraX, approachAmount);
     const exitCameraY = MathUtils.lerp(cameraState.y, 0, cornerAmount);
     camera.position.set(
       exitCameraX + pointerOffsetX * 0.025 * pointerInfluence,
@@ -815,6 +849,13 @@ export async function createArchiveScene(canvas) {
     dustField.position.y = Math.sin(seconds * 0.11) * 0.05;
 
     fragmentStates.forEach((state, index) => {
+      const fragmentGather = state.isExitFragment
+        ? smootherStep(MathUtils.clamp(
+          (exitProgress - state.gatherStart) / (state.gatherEnd - state.gatherStart),
+          0,
+          1
+        ))
+        : 0;
       const driftAmount = state.isExitFragment ? 1 - fragmentGather : 1;
       let fragmentX = state.x + Math.sin(seconds * state.speed + index) * 0.12 * driftAmount;
       let fragmentY = state.y + Math.cos(seconds * state.speed * 0.8 + index) * 0.1 * driftAmount;
