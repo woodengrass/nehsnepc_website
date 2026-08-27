@@ -279,8 +279,8 @@ function createPhotoCard(texture, frameNumber, width, height) {
 }
 
 function createTunnelPhotoCard(sourceTexture, frameNumber, width, height, cropIndex) {
-  const frameWidth = width + 0.24;
-  const frameHeight = height + 0.42;
+  const frameWidth = width + 0.16;
+  const frameHeight = height + 0.3;
   const canvas = document.createElement('canvas');
   canvas.width = 256;
   canvas.height = Math.max(160, Math.round(canvas.width * frameHeight / frameWidth));
@@ -288,8 +288,8 @@ function createTunnelPhotoCard(sourceTexture, frameNumber, width, height, cropIn
   context.fillStyle = '#dedbd2';
   context.fillRect(0, 0, canvas.width, canvas.height);
 
-  const inset = 16;
-  const labelHeight = Math.max(34, Math.round(canvas.height * 0.18));
+  const inset = 12;
+  const labelHeight = Math.max(30, Math.round(canvas.height * 0.15));
   const photoWidth = canvas.width - inset * 2;
   const photoHeight = canvas.height - inset * 2 - labelHeight;
   const image = sourceTexture.image;
@@ -401,10 +401,10 @@ function createStation(layout, textures, stationIndex, isMobile) {
   station.add(textPanel, mainPhoto);
 
   const satellites = [
-    { x: -2.75, y: 1.45, z: -0.65, width: 0.72, height: 0.52, rotation: -0.12 },
-    { x: 2.72, y: 1.35, z: -0.9, width: 0.62, height: 0.82, rotation: 0.1 },
-    { x: -2.62, y: -1.42, z: 0.3, width: 0.55, height: 0.72, rotation: 0.08 },
-    { x: 2.68, y: -1.38, z: -0.35, width: 0.75, height: 0.5, rotation: -0.08 }
+    { x: -3.15, y: 1.65, z: -0.65, width: 0.72, height: 0.52, rotation: -0.12 },
+    { x: 3.12, y: 1.58, z: -0.9, width: 0.62, height: 0.82, rotation: 0.1 },
+    { x: -3.08, y: -1.65, z: 0.3, width: 0.55, height: 0.72, rotation: 0.08 },
+    { x: 3.14, y: -1.62, z: -0.35, width: 0.75, height: 0.5, rotation: -0.08 }
   ];
   // 手機畫面較窄，不配置固定衛星照片，避免透視移動時壓到標題與主照片。
   satellites.slice(0, isMobile ? 0 : satellites.length).forEach((item, index) => {
@@ -414,7 +414,7 @@ function createStation(layout, textures, stationIndex, isMobile) {
     photo.position.set(item.x, item.y, item.z);
     photo.rotation.z = item.rotation;
     // 周邊照片只作為空間線索，縮小後避免在觀看點壓過主標題與主照片。
-    photo.scale.setScalar(0.65);
+    photo.scale.setScalar(0.52);
     photo.userData.driftSeed = stationIndex * 7 + index;
     station.add(photo);
   });
@@ -430,22 +430,22 @@ function createStation(layout, textures, stationIndex, isMobile) {
 
 function createTunnelGallery(textures, isMobile) {
   const gallery = new Group();
-  const photoCount = isMobile ? 10 : 28;
+  const photoCount = isMobile ? 8 : 20;
   const goldenAngle = Math.PI * (3 - Math.sqrt(5));
   for (let index = 0; index < photoCount; index += 1) {
-    const mobileScale = isMobile ? 0.75 : 1;
-    const width = (0.18 + seededRandom(index + 101) * 0.28) * mobileScale;
-    const height = (0.22 + seededRandom(index + 111) * 0.3) * mobileScale;
+    const galleryScale = isMobile ? 0.6 : 0.78;
+    const width = (0.18 + seededRandom(index + 101) * 0.28) * galleryScale;
+    const height = (0.22 + seededRandom(index + 111) * 0.3) * galleryScale;
     const texture = textures[index % textures.length];
     const photo = createTunnelPhotoCard(texture, index + 16, width, height, index + 17);
     const angle = index * goldenAngle + (seededRandom(index + 121) - 0.5) * 0.42;
     // 周邊照片全程維持不透明，因此以較大的環形半徑留出中央閱讀軸，
     // 而不是在每個章節靠淡出清空畫面。手機半徑也獨立放大以避免遮住垂直文字。
-    const radius = 3.15 + seededRandom(index + 131) * 1.4;
+    const radius = 4 + seededRandom(index + 131) * 1.5;
     const verticalScale = isMobile ? 0.98 : 0.82;
     // 手機使用左右側廊分布，避免圓環的近零 X 分量讓照片穿過中央閱讀軸。
     const baseX = isMobile
-      ? (index % 2 === 0 ? -1 : 1) * (3.8 + seededRandom(index + 131) * 1.2)
+      ? (index % 2 === 0 ? -1 : 1) * (4.4 + seededRandom(index + 131) * 1.2)
       : Math.cos(angle) * radius;
     const baseY = isMobile
       ? (seededRandom(index + 136) - 0.5) * 5.5
@@ -474,7 +474,7 @@ function createTunnelGallery(textures, isMobile) {
 }
 
 function createDustField(isMobile) {
-  const pointCount = isMobile ? 100 : 260;
+  const pointCount = isMobile ? 70 : 175;
   const exitPointCount = isMobile ? 70 : 160;
   const positions = [];
   for (let index = 0; index < pointCount; index += 1) {
@@ -582,7 +582,7 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
   const dustField = createDustField(isMobile);
   scene.add(tunnelGallery, dustField);
 
-  const baseFragmentCount = isMobile ? 60 : 190;
+  const baseFragmentCount = isMobile ? 40 : 125;
   const originalExitFragmentCount = isMobile ? 90 : 220;
   const exitFragmentCount = isMobile ? 120 : 280;
   const approachFragmentStart = originalExitFragmentCount;
