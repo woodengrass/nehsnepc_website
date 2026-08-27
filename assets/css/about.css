@@ -292,6 +292,17 @@ body.page-about.is-focus-locked {
   background: #d8d3c8;
 }
 
+.obscura-afterword.is-projecting {
+  z-index: 2;
+  transform-origin: left top;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.obscura-afterword.is-projection-interactive {
+  pointer-events: auto;
+}
+
 .obscura-afterword::before {
   content: '';
   position: absolute;

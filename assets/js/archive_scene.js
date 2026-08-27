@@ -19,6 +19,7 @@ import {
   Scene,
   SRGBColorSpace,
   TextureLoader,
+  Vector3,
   WebGLRenderer
 } from 'three';
 
@@ -519,7 +520,7 @@ function seededRandom(seed) {
   return value - Math.floor(value);
 }
 
-export async function createArchiveScene(canvas) {
+export async function createArchiveScene(canvas, onExitPageFrame) {
   const isMobile = window.matchMedia('(max-width: 767px)').matches;
   const renderer = new WebGLRenderer({
     canvas,
@@ -587,8 +588,15 @@ export async function createArchiveScene(canvas) {
   const approachFragmentStart = originalExitFragmentCount;
   const fragmentCount = baseFragmentCount + exitFragmentCount;
   const exitPageHeight = isMobile ? EXIT_PAGE_MOBILE_HEIGHT : EXIT_PAGE_DESKTOP_HEIGHT;
-  const exitPageWidth = exitPageHeight * (isMobile ? EXIT_PAGE_MOBILE_ASPECT : EXIT_PAGE_DESKTOP_ASPECT);
+  const fallbackExitPageAspect = isMobile ? EXIT_PAGE_MOBILE_ASPECT : EXIT_PAGE_DESKTOP_ASPECT;
+  let exitPageWidth = exitPageHeight * (canvas.clientWidth / canvas.clientHeight || fallbackExitPageAspect);
   let exitPageCameraDistance = 8;
+  const exitPageCorners = [
+    new Vector3(-0.5, -0.5, 0),
+    new Vector3(0.5, -0.5, 0),
+    new Vector3(-0.5, 0.5, 0),
+    new Vector3(0.5, 0.5, 0)
+  ];
   const fragments = new InstancedMesh(
     new PlaneGeometry(0.09, 0.065),
     new MeshBasicMaterial({
@@ -688,6 +696,7 @@ export async function createArchiveScene(canvas) {
   let targetProgress = 0;
   let progressVelocity = 0;
   let exitProgress = 0;
+  let isExitPageFrameActive = false;
   let pointerTargetX = 0;
   let pointerTargetY = 0;
   let pointerOffsetX = 0;
@@ -722,7 +731,8 @@ export async function createArchiveScene(canvas) {
     updatePortalTexture(portalTexture, width, height);
     const portalHeight = 2 * (8 - portal.position.z) * Math.tan(MathUtils.degToRad(camera.fov / 2));
     portal.scale.set(portalHeight * camera.aspect, portalHeight, 1);
-    exitPage.scale.set(exitPageHeight * exitPage.userData.aspect, exitPageHeight, 1);
+    exitPageWidth = exitPageHeight * camera.aspect;
+    exitPage.scale.set(exitPageWidth, exitPageHeight, 1);
     const halfVerticalFov = Math.tan(MathUtils.degToRad(camera.fov / 2));
     const verticalCoverDistance = exitPageHeight / (2 * halfVerticalFov);
     const horizontalCoverDistance = exitPageWidth / (2 * halfVerticalFov * camera.aspect);
@@ -782,8 +792,9 @@ export async function createArchiveScene(canvas) {
     // 完成左轉後仍先保留純粒子走廊；碎片匯聚後提早顯現實體頁面，
     // 讓後續相機前進自然將頁面逐步放大，而不是在交接前直接跳成滿版。
     // 反向捲動時同一進度會將頁面淡回完全不可見，不會提早洩漏第四頁內容。
-    exitPage.visible = exitPageReveal > 0;
-    exitPage.material.opacity = exitPageReveal;
+    // 最終排版改由真正的 DOM 頁面貼合投影，canvas 紙面不再繪製第二套文字。
+    exitPage.visible = false;
+    exitPage.material.opacity = 0;
 
     // 第四頁轉場直接改變 PerspectiveCamera 的世界座標與觀看方向。
     // 前 38% 完成精確 90 度左轉，48% 抵達彎角後等待碎片匯聚；頁面開始顯現時，
@@ -810,6 +821,32 @@ export async function createArchiveScene(canvas) {
     );
     camera.rotation.z += cameraState.roll * (1 - turnAmount);
     portal.visible = camera.position.z > portal.position.z + 0.03;
+
+    if (onExitPageFrame && exitPageReveal > 0) {
+      isExitPageFrameActive = true;
+      camera.updateMatrixWorld();
+      exitPage.updateMatrixWorld();
+      const projectedCorners = exitPageCorners.map((corner) => (
+        corner.clone().applyMatrix4(exitPage.matrixWorld).project(camera)
+      ));
+      const projectedX = projectedCorners.map((corner) => (corner.x * 0.5 + 0.5) * canvas.clientWidth);
+      const projectedY = projectedCorners.map((corner) => (-corner.y * 0.5 + 0.5) * canvas.clientHeight);
+      const left = Math.min(...projectedX);
+      const right = Math.max(...projectedX);
+      const top = Math.min(...projectedY);
+      const bottom = Math.max(...projectedY);
+      onExitPageFrame({
+        left,
+        top,
+        width: right - left,
+        height: bottom - top,
+        opacity: exitPageReveal,
+        progress: exitProgress
+      });
+    } else if (onExitPageFrame && isExitPageFrameActive) {
+      isExitPageFrameActive = false;
+      onExitPageFrame({ opacity: 0, progress: exitProgress });
+    }
 
     stations.forEach((station, stationIndex) => {
       const idealCameraZ = station.position.z + 4;
@@ -924,6 +961,7 @@ export async function createArchiveScene(canvas) {
     setExitProgress,
     destroy() {
       disposed = true;
+      if (isExitPageFrameActive) onExitPageFrame?.({ opacity: 0, progress: 0 });
       if (animationFrame) window.cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
       if (!isMobile) {

@@ -14,8 +14,9 @@ export function initAboutPage() {
   const imageWrap = document.querySelector('.obscura-image-wrap');
   const archiveCanvas = document.getElementById('archiveCanvas');
   const focusGuide = document.getElementById('focusGuide');
+  const afterword = document.querySelector('.obscura-afterword');
 
-  if (!page || !focusReading || !microprismCanvas || !viewfinderImage || !imageWrap || !archiveCanvas || !focusGuide) return;
+  if (!page || !focusReading || !microprismCanvas || !viewfinderImage || !imageWrap || !archiveCanvas || !focusGuide || !afterword) return;
 
   let prismFrame = null;
   let prismError = 1;
@@ -26,6 +27,37 @@ export function initAboutPage() {
   let archiveLoadPromise = null;
   let isExperienceUnlocked = false;
   let isStoryViewActive = false;
+  let afterwordLayout = null;
+
+  function resetAfterwordProjection() {
+    afterword.classList.remove('is-projecting', 'is-projection-interactive');
+    afterword.style.removeProperty('opacity');
+    afterword.style.removeProperty('transform');
+  }
+
+  function projectAfterword({ left, top, width, height, opacity, progress }) {
+    if (opacity <= 0 || progress <= 0) {
+      resetAfterwordProjection();
+      return;
+    }
+
+    if (!afterwordLayout) {
+      afterwordLayout = {
+        left: afterword.offsetLeft,
+        top: afterword.offsetTop,
+        width: afterword.offsetWidth,
+        height: afterword.offsetHeight
+      };
+    }
+    const naturalLeft = afterwordLayout.left - window.scrollX;
+    const naturalTop = afterwordLayout.top - window.scrollY;
+    const scaleX = width / afterwordLayout.width;
+    const scaleY = height / afterwordLayout.height;
+    afterword.classList.add('is-projecting');
+    afterword.classList.toggle('is-projection-interactive', progress >= 0.99);
+    afterword.style.opacity = String(opacity);
+    afterword.style.transform = `translate3d(${left - naturalLeft}px, ${top - naturalTop}px, 0) scale(${scaleX}, ${scaleY})`;
+  }
 
   document.body.classList.add('is-focus-locked');
   page.classList.add('is-archive-3d');
@@ -45,7 +77,7 @@ export function initAboutPage() {
   function loadArchiveScene() {
     if (archiveLoadPromise) return archiveLoadPromise;
     archiveLoadPromise = import('./archive_scene.js')
-      .then(({ createArchiveScene }) => createArchiveScene(archiveCanvas))
+      .then(({ createArchiveScene }) => createArchiveScene(archiveCanvas, projectAfterword))
       .then((scene) => {
         archiveScene = scene;
         archiveScene.setProgress(archiveProgress, page.classList.contains('reduced-motion'));
@@ -209,11 +241,15 @@ export function initAboutPage() {
     isStoryViewActive = isActive;
     gsap.set(archiveCanvas, { autoAlpha: isActive ? 1 : 0 });
     gsap.set(imageWrap, { autoAlpha: isActive ? 0 : 1 });
+    if (!isActive) resetAfterwordProjection();
   }
 
   if (viewfinderImage.complete) renderMicroprism();
   else viewfinderImage.addEventListener('load', renderMicroprism, { once: true });
-  window.addEventListener('resize', () => scheduleMicroprism(prismError));
+  window.addEventListener('resize', () => {
+    afterwordLayout = null;
+    scheduleMicroprism(prismError);
+  });
   if ('requestIdleCallback' in window) window.requestIdleCallback(loadArchiveScene, { timeout: 1500 });
   else window.setTimeout(loadArchiveScene, 500);
   window.addEventListener('beforeunload', () => archiveScene?.destroy(), { once: true });
@@ -286,9 +322,8 @@ export function initAboutPage() {
       }
     });
 
-    // 退出旋轉由 Three.js 相機在世界座標內完成，不再對整個 DOM canvas 做 2D 抽離。
-    // 3D 相機先完整左轉並把實體頁面推進到滿版；最後 1% 以平滑曲線交接 DOM，
-    // 避免單幀切換造成彈跳，也不讓兩套排版長時間半透明重疊。
+    // Three.js 回傳實體紙面的螢幕投影，真正的 DOM 頁面從遠處一路貼合該範圍。
+    // 相機靠近到滿版時 transform 自然回到原始版面，因此不需要切換第二套排版。
     exitTimeline
       .to(exitState, {
         progress: 1,
