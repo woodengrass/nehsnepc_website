@@ -18,6 +18,14 @@ body.page-about.is-focus-locked {
   background: #080808;
 }
 
+/* 保留額外捲動距離，讓第四頁能由相機推進完成，而不是壓縮在單一視窗內。 */
+.obscura::after {
+  content: '';
+  display: block;
+  height: 20svh;
+  background: #d8d3c8;
+}
+
 .obscura-camera {
   position: fixed;
   inset: 0;
@@ -415,6 +423,10 @@ body.page-about.is-focus-locked {
 
 .obscura.reduced-motion {
   padding-top: 100svh;
+}
+
+.obscura.reduced-motion::after {
+  display: none;
 }
 
 .obscura.reduced-motion .obscura-camera {

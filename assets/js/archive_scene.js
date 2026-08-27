@@ -852,7 +852,7 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
       const idealCameraZ = station.position.z + 4;
       const distance = Math.abs(camera.position.z - idealCameraZ);
       const hasPassedStation = camera.position.z < idealCameraZ;
-      const fadeDistance = hasPassedStation ? 1.4 : 5.5;
+      const fadeDistance = hasPassedStation ? 4.2 : 5.5;
       const opacity = smoothStep(1 - MathUtils.clamp((distance - 0.6) / fadeDistance, 0, 1));
 
       // 每站只有主文字與主照片負責章節切換。周邊照片維持完整不透明，

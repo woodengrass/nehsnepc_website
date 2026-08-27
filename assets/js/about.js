@@ -317,7 +317,8 @@ export function initAboutPage() {
       scrollTrigger: {
         trigger: '.obscura-afterword',
         start: 'top bottom',
-        end: 'top top',
+        // 多保留 20% 視窗高度，讓同一個 DOM 頁面隨相機靠近時有更完整的推進距離。
+        end: 'top -20%',
         scrub: 0.55
       }
     });
