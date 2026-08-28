@@ -64,7 +64,8 @@ const STATION_LAYOUTS = [
     eyebrow: '01 / OBSERVE',
     heading: ['Before every frame,', 'there is a moment', 'worth noticing.'],
     body: ['We learn to notice light, timing, and the small stories', 'that would otherwise pass unnoticed.'],
-    textureIndex: 0
+    textureIndex: 0,
+    mobile: { textX: 0, textY: 0.92, photoX: 0.1, photoY: -0.94, scale: 0.66 }
   },
   {
     z: -15.8,
@@ -73,7 +74,8 @@ const STATION_LAYOUTS = [
     eyebrow: '02 / PRACTICE',
     heading: ['WE SHOOT', 'THE ORDINARY', 'TO MAKE IT NEW.'],
     body: ['EVENTS / PORTRAITS / THE ORDINARY'],
-    textureIndex: 1
+    textureIndex: 1,
+    mobile: { textX: 0, textY: 0.78, photoX: -0.1, photoY: -1.02, scale: 0.66, textAlign: 'right' }
   },
   {
     z: -23.8,
@@ -82,7 +84,8 @@ const STATION_LAYOUTS = [
     eyebrow: '03 / MAKE A FRAME',
     heading: ['Come closer.', 'There is room', 'in the picture.'],
     body: ['NEHS PHOTOGRAPHY CLUB / EST. 2024'],
-    textureIndex: 0
+    textureIndex: 0,
+    mobile: { textX: 0, textY: 0.64, photoX: 0.08, photoY: -0.86, scale: 0.68 }
   }
 ];
 
@@ -333,6 +336,7 @@ function createTextPanel(layout, isMobile) {
   const context = canvas.getContext('2d');
   const leftPadding = 90;
   let textX = leftPadding;
+  const isRightAlignedMobileText = isMobile && layout.mobile?.textAlign === 'right';
 
   // 桌面左側文字站的照片位於右方。先量出最長標題，再平移整個左對齊文字塊，
   // 讓標題右緣與照片的距離等同第二站。手機採上下排列，不套用水平間距校正。
@@ -340,6 +344,10 @@ function createTextPanel(layout, isMobile) {
     context.font = '104px Georgia, serif';
     const longestHeading = Math.max(...layout.heading.map((line) => context.measureText(line).width));
     textX = canvas.width - leftPadding - longestHeading;
+  }
+  if (isRightAlignedMobileText) {
+    textX = canvas.width - leftPadding;
+    context.textAlign = 'right';
   }
   context.fillStyle = 'rgba(255, 255, 255, 0.58)';
   context.font = '30px Arial, sans-serif';
@@ -351,7 +359,8 @@ function createTextPanel(layout, isMobile) {
   context.fillStyle = 'rgba(255, 255, 255, 0.68)';
   context.font = '27px Arial, sans-serif';
   context.letterSpacing = '2px';
-  layout.body.forEach((line, index) => context.fillText(line, textX + 4, 800 + index * 48));
+  const bodyX = isRightAlignedMobileText ? textX - 4 : textX + 4;
+  layout.body.forEach((line, index) => context.fillText(line, bodyX, 800 + index * 48));
 
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
@@ -367,7 +376,8 @@ function createTextPanel(layout, isMobile) {
     })
   );
   panel.position.set(layout.textX, 0.05, 0);
-  panel.renderOrder = 4;
+  // 文字必須維持在所有相框之前，避免前景小照片切斷標題造成無法閱讀。
+  panel.renderOrder = 20;
   panel.userData.disposableTextures = [texture];
   return panel;
 }
@@ -560,9 +570,10 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
     };
     const station = createStation(responsiveLayout, textures, index, isMobile);
     if (isMobile) {
-      station.scale.setScalar(0.68);
-      station.children[0].position.set(0, 0.82, 0);
-      station.children[1].position.set(0, -0.72, 0);
+      const mobileLayout = layout.mobile;
+      station.scale.setScalar(mobileLayout.scale);
+      station.children[0].position.set(mobileLayout.textX, mobileLayout.textY, 0);
+      station.children[1].position.set(mobileLayout.photoX, mobileLayout.photoY, 0);
       station.children.slice(2).forEach((photo, photoIndex) => {
         const direction = photoIndex % 2 === 0 ? -1 : 1;
         photo.position.set(direction * 1.38, -1.52, -0.65);
