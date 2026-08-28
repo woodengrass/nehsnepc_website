@@ -217,10 +217,12 @@ body.page-about.is-focus-locked {
 
 .obscura-intro h1 i { font-weight: 300; }
 .obscura-prompt { max-width: 330px; color: rgba(255, 255, 255, 0.62); font-size: 0.62rem; line-height: 1.8; }
+.obscura-mobile-entry { display: none; }
 .obscura-flash { z-index: 5; background: #fff; opacity: 0; pointer-events: none; }
 
 .obscura.is-in-story .obscura-intro,
-.obscura.is-in-story .obscura-hud {
+.obscura.is-in-story .obscura-hud,
+.obscura.is-in-story .obscura-mobile-entry {
   visibility: hidden !important;
   opacity: 0 !important;
 }
@@ -398,12 +400,52 @@ body.page-about.is-focus-locked {
 .obscura-afterword-actions span { padding-left: 0.8rem; }
 
 @media (max-width: 767px) {
-  .obscura-hud { inset: 1.5rem; }
-  .obscura-coordinate-top, .obscura-reading { top: 3.6rem; }
-  .obscura-coordinate-bottom { display: none; }
-  .focusing-screen { top: 26%; width: 96px; }
-  .obscura-intro { left: 2rem; width: calc(100% - 4rem); }
-  .obscura-intro h1 { font-size: clamp(4.3rem, 23vw, 7rem); }
+  /* 手機入口採獨立構圖，不沿用桌面 HUD 與大標的壓縮版。 */
+  .obscura-hud {
+    display: block;
+    inset: 0;
+  }
+  .obscura-coordinate,
+  .obscura-reading,
+  .obscura-intro { display: none; }
+  .focusing-screen { top: 30%; width: 116px; }
+  .obscura-mobile-entry {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: max(1.5rem, env(safe-area-inset-top)) 1.5rem max(1.75rem, env(safe-area-inset-bottom));
+    color: rgba(255, 255, 255, 0.92);
+    pointer-events: none;
+  }
+  .obscura-mobile-entry > p,
+  .obscura-mobile-entry-footer {
+    font-family: var(--font-body);
+    font-size: 0.54rem;
+    line-height: 1.65;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .obscura-mobile-entry > p { color: rgba(255, 255, 255, 0.62); }
+  .obscura-mobile-entry h1 {
+    margin: 0;
+    margin-top: 28vh;
+    font-family: var(--font-heading);
+    font-size: clamp(4.4rem, 22vw, 6.5rem);
+    font-weight: 300;
+    line-height: 0.75;
+    letter-spacing: -0.055em;
+  }
+  .obscura-mobile-entry h1 i { font-weight: 300; }
+  .obscura-mobile-entry-footer {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.38);
+    color: rgba(255, 255, 255, 0.68);
+  }
   .obscura-panel { width: calc(100% - 4rem); }
   .obscura-panel::before { left: -1rem; font-size: clamp(7rem, 32vw, 11rem); }
   .obscura-panel-practice::before { right: -1rem; left: auto; }

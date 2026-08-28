@@ -588,6 +588,9 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
   const approachFragmentStart = originalExitFragmentCount;
   const fragmentCount = baseFragmentCount + exitFragmentCount;
   const exitPageHeight = isMobile ? EXIT_PAGE_MOBILE_HEIGHT : EXIT_PAGE_DESKTOP_HEIGHT;
+  // 手機直式紙面需要較長的顯現與推進距離，避免在出口末段才突然跳入畫面。
+  const exitPageRevealStart = isMobile ? 0.64 : EXIT_PAGE_REVEAL_START;
+  const exitPageRevealEnd = isMobile ? 0.82 : EXIT_PAGE_REVEAL_END;
   const fallbackExitPageAspect = isMobile ? EXIT_PAGE_MOBILE_ASPECT : EXIT_PAGE_DESKTOP_ASPECT;
   let exitPageWidth = exitPageHeight * (canvas.clientWidth / canvas.clientHeight || fallbackExitPageAspect);
   let exitPageCameraDistance = 8;
@@ -784,13 +787,13 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
     const cornerProgress = MathUtils.clamp(exitProgress / EXIT_CORNER_END, 0, 1);
     const cornerAmount = smoothStep(cornerProgress);
     const approachProgress = MathUtils.clamp(
-      (exitProgress - EXIT_PAGE_REVEAL_START) / (1 - EXIT_PAGE_REVEAL_START),
+      (exitProgress - exitPageRevealStart) / (1 - exitPageRevealStart),
       0,
       1
     );
     const approachAmount = smootherStep(approachProgress);
     const exitPageReveal = smootherStep(MathUtils.clamp(
-      (exitProgress - EXIT_PAGE_REVEAL_START) / (EXIT_PAGE_REVEAL_END - EXIT_PAGE_REVEAL_START),
+      (exitProgress - exitPageRevealStart) / (exitPageRevealEnd - exitPageRevealStart),
       0,
       1
     ));
