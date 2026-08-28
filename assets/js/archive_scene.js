@@ -474,7 +474,7 @@ function createTunnelGallery(textures, isMobile) {
 }
 
 function createDustField(isMobile) {
-  const pointCount = isMobile ? 70 : 175;
+  const pointCount = isMobile ? 90 : 225;
   const exitPointCount = isMobile ? 70 : 160;
   const positions = [];
   for (let index = 0; index < pointCount; index += 1) {
@@ -582,7 +582,7 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
   const dustField = createDustField(isMobile);
   scene.add(tunnelGallery, dustField);
 
-  const baseFragmentCount = isMobile ? 40 : 125;
+  const baseFragmentCount = isMobile ? 55 : 170;
   const originalExitFragmentCount = isMobile ? 90 : 220;
   const exitFragmentCount = isMobile ? 120 : 280;
   const approachFragmentStart = originalExitFragmentCount;
@@ -669,6 +669,8 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
       normalizedY,
       1 - normalizedY
     );
+    const appearStart = 0.26 + seededRandom(index + 491) * 0.22
+      + (isApproachFragment ? 0.08 : 0);
     const state = {
       isExitFragment,
       x: baseX,
@@ -683,10 +685,14 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
       speed: 0.2 + seededRandom(index + 61) * 0.35,
       scale: 0.8 + seededRandom(index + 71) * 1.5,
       targetScale: 0.9 + seededRandom(index + 81) * 1.4,
+      // 出口區保留少量常駐碎片，其餘在轉彎後逐批長出，避免底部完全變空。
+      basePresence: isExitFragment && seededRandom(index + 511) < 0.24 ? 1 : 0,
+      appearStart,
+      appearEnd: appearStart + 0.16 + seededRandom(index + 501) * 0.08,
       // 邊框先穩定、內部後補齊；每個碎片的微幅錯開可避免整片同時吸附。
-      gatherStart: 0.48 + targetEdgeDistance * 0.12 + seededRandom(index + 461) * 0.06
+      gatherStart: 0.4 + targetEdgeDistance * 0.16 + seededRandom(index + 461) * 0.08
         + (isApproachFragment ? 0.05 : 0),
-      gatherEnd: 0.7 + targetEdgeDistance * 0.1 + seededRandom(index + 471) * 0.025
+      gatherEnd: 0.78 + targetEdgeDistance * 0.1 + seededRandom(index + 471) * 0.03
     };
     fragmentStates.push(state);
   }
@@ -886,6 +892,16 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
     dustField.position.y = Math.sin(seconds * 0.11) * 0.05;
 
     fragmentStates.forEach((state, index) => {
+      const fragmentReveal = state.isExitFragment
+        ? smootherStep(MathUtils.clamp(
+          (exitProgress - state.appearStart) / (state.appearEnd - state.appearStart),
+          0,
+          1
+        ))
+        : 1;
+      const fragmentPresence = state.isExitFragment
+        ? MathUtils.lerp(state.basePresence, 1, fragmentReveal)
+        : 1;
       const fragmentGather = state.isExitFragment
         ? smootherStep(MathUtils.clamp(
           (exitProgress - state.gatherStart) / (state.gatherEnd - state.gatherStart),
@@ -924,7 +940,7 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
         rotationY,
         rotationZ
       );
-      fragmentTransform.scale.setScalar(fragmentScale);
+      fragmentTransform.scale.setScalar(fragmentScale * fragmentPresence);
       fragmentTransform.updateMatrix();
       fragments.setMatrixAt(index, fragmentTransform.matrix);
     });

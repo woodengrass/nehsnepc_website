@@ -18,11 +18,11 @@ body.page-about.is-focus-locked {
   background: #080808;
 }
 
-/* 保留額外捲動距離，讓第四頁能由相機推進完成，而不是壓縮在單一視窗內。 */
+/* 保留額外捲動距離，讓出口碎片與第四頁有足夠時間逐步組成。 */
 .obscura::after {
   content: '';
   display: block;
-  height: 20svh;
+  height: 120svh;
   background: #d8d3c8;
 }
 
