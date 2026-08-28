@@ -343,7 +343,8 @@ function createTextPanel(layout, isMobile) {
   if (!isMobile && layout.photoX > 0) {
     context.font = '104px Georgia, serif';
     const longestHeading = Math.max(...layout.heading.map((line) => context.measureText(line).width));
-    textX = canvas.width - leftPadding - longestHeading;
+    // Canvas 量測與實際字形邊界會有些微差異，右側預留額外空間避免最後字元被紋理邊界裁切。
+    textX = canvas.width - 210 - longestHeading;
   }
   if (isRightAlignedMobileText) {
     textX = canvas.width - leftPadding;
@@ -441,25 +442,26 @@ function createStation(layout, textures, stationIndex, isMobile) {
 function createTunnelGallery(textures, isMobile) {
   const gallery = new Group();
   const photoCount = isMobile ? 8 : 20;
-  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
   for (let index = 0; index < photoCount; index += 1) {
     const galleryScale = isMobile ? 0.6 : 0.78;
     const width = (0.18 + seededRandom(index + 101) * 0.28) * galleryScale;
     const height = (0.22 + seededRandom(index + 111) * 0.3) * galleryScale;
     const texture = textures[index % textures.length];
     const photo = createTunnelPhotoCard(texture, index + 16, width, height, index + 17);
-    const angle = index * goldenAngle + (seededRandom(index + 121) - 0.5) * 0.42;
-    // 周邊照片全程維持不透明，因此以較大的環形半徑留出中央閱讀軸，
-    // 而不是在每個章節靠淡出清空畫面。手機半徑也獨立放大以避免遮住垂直文字。
-    const radius = 4 + seededRandom(index + 131) * 1.5;
-    const verticalScale = isMobile ? 0.98 : 0.82;
-    // 手機使用左右側廊分布，避免圓環的近零 X 分量讓照片穿過中央閱讀軸。
+    const angle = index * Math.PI * (3 - Math.sqrt(5));
+    const horizontalSide = index % 4 < 2;
+    const side = index % 2 === 0 ? -1 : 1;
+    // 背景相片固定在左右側廊與上下外圈，中央閱讀軸永遠留給站點文字和主照片。
     const baseX = isMobile
-      ? (index % 2 === 0 ? -1 : 1) * (4.4 + seededRandom(index + 131) * 1.2)
-      : Math.cos(angle) * radius;
+      ? side * (4.4 + seededRandom(index + 131) * 1.2)
+      : horizontalSide
+        ? side * (9.5 + seededRandom(index + 131) * 2)
+        : side * (7.5 + seededRandom(index + 136) * 2.5);
     const baseY = isMobile
       ? (seededRandom(index + 136) - 0.5) * 5.5
-      : Math.sin(angle) * radius * verticalScale;
+      : horizontalSide
+        ? (seededRandom(index + 136) - 0.5) * 7.4
+        : side * (6.2 + seededRandom(index + 141) * 1.8);
     const baseZ = -2.3 - index * (28 / photoCount) - seededRandom(index + 141) * 0.45;
     photo.position.set(baseX, baseY, baseZ);
     photo.rotation.set(
@@ -469,8 +471,6 @@ function createTunnelGallery(textures, isMobile) {
     );
     photo.userData.tunnelBase = {
       angle,
-      radius,
-      verticalScale,
       x: baseX,
       y: baseY,
       rotationX: photo.rotation.x,
@@ -889,13 +889,8 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
 
     tunnelGallery.children.forEach((photo, index) => {
       const base = photo.userData.tunnelBase;
-      const angle = base.angle + Math.sin(seconds * base.speed + index) * 0.026;
-      photo.position.x = isMobile
-        ? base.x + Math.sin(seconds * base.speed + index) * 0.025
-        : Math.cos(angle) * base.radius;
-      photo.position.y = isMobile
-        ? base.y + Math.cos(seconds * base.speed + index) * 0.025
-        : Math.sin(angle) * base.radius * base.verticalScale;
+      photo.position.x = base.x + Math.sin(seconds * base.speed + index) * 0.025;
+      photo.position.y = base.y + Math.cos(seconds * base.speed + index) * 0.025;
       photo.rotation.x = base.rotationX + Math.sin(seconds * base.speed * 0.62 + index) * 0.012;
       photo.rotation.y = base.rotationY + Math.cos(seconds * base.speed * 0.55 + index) * 0.016;
       photo.rotation.z = base.rotationZ + Math.sin(seconds * base.speed * 0.48 + index) * 0.01;
