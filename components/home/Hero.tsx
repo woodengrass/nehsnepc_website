@@ -86,7 +86,7 @@ export default function Hero() {
           srcSet="/images/generated/hero-640.webp 640w, /images/generated/hero-1280.webp 1280w, /images/generated/hero-1920.webp 1920w, /images/generated/hero-2560.webp 2560w"
           sizes="100vw"
         />
-        <img src="/images/generated/hero-1280.webp" alt="Photography club hero image" />
+        <img src="/images/generated/hero-1280.webp" alt="Photography club hero image" fetchPriority="high" />
       </picture>
 
       <div className="hero-overlay" aria-hidden="true" />

@@ -6,8 +6,8 @@
 :root {
   --color-bg:        #000000;
   --color-text:      #ffffff;
-  --font-heading:    'Cormorant Garamond', serif;
-  --font-body:       'Raleway', sans-serif;
+  --font-heading:    var(--font-heading-next, 'Cormorant Garamond'), 'Cormorant Garamond', serif;
+  --font-body:       var(--font-body-next, 'Raleway'), 'Raleway', sans-serif;
   --sidebar-width:   220px;
   --transition-slow: 0.6s ease;
   --transition-fast: 0.3s ease;

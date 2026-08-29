@@ -8,6 +8,7 @@ import rehypeSlug from 'rehype-slug';
 import remarkGfm from 'remark-gfm';
 
 import { mdxComponents } from '@/components/mdx';
+import ReadingProgress from '@/components/articles/ReadingProgress';
 import { getAdjacentArticles, getAllArticles, getArticle, getCategory } from '@/lib/content';
 import { formatDate } from '@/lib/format';
 import { JsonLd, articleJsonLd, breadcrumbJsonLd } from '@/lib/seo';
@@ -53,6 +54,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   return (
     <main className="article-main">
+      <ReadingProgress />
       <JsonLd data={articleJsonLd(article)} />
       <JsonLd
         data={breadcrumbJsonLd([

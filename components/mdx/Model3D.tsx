@@ -80,6 +80,7 @@ export default function Model3D({
             src={src}
             alt={alt}
             camera-controls
+            loading="lazy"
             auto-rotate={autoRotate ? true : undefined}
             touch-action="pan-y"
             environment-image="neutral"

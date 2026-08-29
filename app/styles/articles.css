@@ -14,6 +14,26 @@
   text-transform: uppercase;
 }
 
+/* ——— Reading progress bar ——— */
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 400;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.reading-progress-bar {
+  height: 100%;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
 /* ——— Article page ——— */
 .article-main {
   min-height: 100vh;
@@ -542,6 +562,17 @@
   .article-body {
     padding: 3rem 1.4rem 4rem;
     font-size: 1rem;
+  }
+
+  /* 大圖與 3D 模型通欄出血，放大行動裝置上的視覺面積 */
+  .article-body .article-figure,
+  .article-body .article-model {
+    margin-left: -1.4rem;
+    margin-right: -1.4rem;
+  }
+
+  .article-body .article-figure img {
+    width: 100%;
   }
 
   .article-footer {
