@@ -411,11 +411,16 @@ function createStation(layout, textures, stationIndex, isMobile) {
   });
   station.add(textPanel, mainPhoto);
 
+  // 第二站的衛星相片從第一站看會投影到文字軸，因此固定放到更外側的四角。
+  const satelliteX = stationIndex === 1 ? 5.4 : 3.15;
+  const satelliteY = stationIndex === 1 ? 2.8 : 1.65;
+  const topLeftSatelliteY = stationIndex === 2 ? 4.5 : satelliteY;
+  const bottomLeftSatelliteY = stationIndex === 2 ? -4.5 : -satelliteY;
   const satellites = [
-    { x: -3.15, y: 1.65, z: -0.65, width: 0.72, height: 0.52, rotation: -0.12 },
-    { x: 3.12, y: 1.58, z: -0.9, width: 0.62, height: 0.82, rotation: 0.1 },
-    { x: -3.08, y: -1.65, z: 0.3, width: 0.55, height: 0.72, rotation: 0.08 },
-    { x: 3.14, y: -1.62, z: -0.35, width: 0.75, height: 0.5, rotation: -0.08 }
+    { x: -satelliteX, y: topLeftSatelliteY, z: -0.65, width: 0.72, height: 0.52, rotation: -0.12 },
+    { x: satelliteX, y: satelliteY - 0.07, z: -0.9, width: 0.62, height: 0.82, rotation: 0.1 },
+    { x: -satelliteX + 0.07, y: bottomLeftSatelliteY, z: 0.3, width: 0.55, height: 0.72, rotation: 0.08 },
+    { x: satelliteX - 0.01, y: -satelliteY + 0.03, z: -0.35, width: 0.75, height: 0.5, rotation: -0.08 }
   ];
   // 手機畫面較窄，不配置固定衛星照片，避免透視移動時壓到標題與主照片。
   satellites.slice(0, isMobile ? 0 : satellites.length).forEach((item, index) => {
