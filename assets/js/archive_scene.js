@@ -29,10 +29,24 @@ const CAMERA_PROGRESS_STIFFNESS = 90;
 const CAMERA_PROGRESS_DAMPING = 19;
 const EXIT_CORNER_Z = -35;
 const EXIT_PAGE_X = -12;
-const EXIT_TURN_END = 0.32;
-const EXIT_CORNER_END = 0.48;
-const EXIT_PAGE_REVEAL_START = 0.78;
-const EXIT_PAGE_REVEAL_END = 0.86;
+const EXIT_TIMING = {
+  turnEnd: 0.32,
+  cornerEnd: 0.48,
+  pageRevealStart: 0.78,
+  pageRevealEnd: 0.86,
+  fragmentAppearStart: 0.26,
+  fragmentAppearRange: 0.22,
+  fragmentAppearDuration: 0.16,
+  fragmentAppearDurationJitter: 0.08,
+  fragmentAppearApproachDelay: 0.08,
+  fragmentGatherStart: 0.34,
+  fragmentGatherStartEdgeRange: 0.16,
+  fragmentGatherStartJitter: 0.08,
+  fragmentGatherApproachDelay: 0.05,
+  fragmentGatherEnd: 0.82,
+  fragmentGatherEndEdgeRange: 0.1,
+  fragmentGatherEndJitter: 0.03
+};
 const EXIT_PAGE_DESKTOP_HEIGHT = 6.6;
 const EXIT_PAGE_MOBILE_HEIGHT = 8;
 const EXIT_PAGE_DESKTOP_ASPECT = 1.6;
@@ -65,6 +79,12 @@ const STATION_LAYOUTS = [
     heading: ['Before every frame,', 'there is a moment', 'worth noticing.'],
     body: ['We learn to notice light, timing, and the small stories', 'that would otherwise pass unnoticed.'],
     textureIndex: 0,
+    satellites: [
+      { x: -3.15, y: 1.65, z: -0.65, width: 0.72, height: 0.52, rotation: -0.12 },
+      { x: 3.15, y: 1.58, z: -0.9, width: 0.62, height: 0.82, rotation: 0.1 },
+      { x: -3.08, y: -1.65, z: 0.3, width: 0.55, height: 0.72, rotation: 0.08 },
+      { x: 3.14, y: -1.62, z: -0.35, width: 0.75, height: 0.5, rotation: -0.08 }
+    ],
     mobile: { textX: 0, textY: 0.92, photoX: 0.1, photoY: -0.94, scale: 0.66 }
   },
   {
@@ -75,6 +95,12 @@ const STATION_LAYOUTS = [
     heading: ['WE SHOOT', 'THE ORDINARY', 'TO MAKE IT NEW.'],
     body: ['EVENTS / PORTRAITS / THE ORDINARY'],
     textureIndex: 1,
+    satellites: [
+      { x: -5.4, y: 2.8, z: -0.65, width: 0.72, height: 0.52, rotation: -0.12 },
+      { x: 5.4, y: 2.73, z: -0.9, width: 0.62, height: 0.82, rotation: 0.1 },
+      { x: -5.33, y: -2.8, z: 0.3, width: 0.55, height: 0.72, rotation: 0.08 },
+      { x: 5.39, y: -2.77, z: -0.35, width: 0.75, height: 0.5, rotation: -0.08 }
+    ],
     mobile: { textX: 0, textY: 0.78, photoX: -0.1, photoY: -1.02, scale: 0.66, textAlign: 'right' }
   },
   {
@@ -85,6 +111,12 @@ const STATION_LAYOUTS = [
     heading: ['Come closer.', 'There is room', 'in the picture.'],
     body: ['NEHS PHOTOGRAPHY CLUB / EST. 2024'],
     textureIndex: 0,
+    satellites: [
+      { x: -2.25, y: 2.15, z: -3.05, width: 0.72, height: 0.52, rotation: -0.12 },
+      { x: 2.95, y: 2.4, z: -2.1, width: 0.62, height: 0.82, rotation: 0.1 },
+      { x: -2.18, y: -2.15, z: -2.1, width: 0.55, height: 0.72, rotation: 0.08 },
+      { x: 2.75, y: -1.9, z: -1.85, width: 0.75, height: 0.5, rotation: -0.08 }
+    ],
     mobile: { textX: 0, textY: 0.64, photoX: 0.08, photoY: -0.86, scale: 0.68 }
   }
 ];
@@ -411,26 +443,8 @@ function createStation(layout, textures, stationIndex, isMobile) {
   });
   station.add(textPanel, mainPhoto);
 
-  // 第二站的衛星相片從第一站看會投影到文字軸，因此固定放到更外側的四角。
-  const isFinalStation = stationIndex === 2;
-  const satelliteX = stationIndex === 1 ? 5.4 : isFinalStation ? 2.25 : 3.15;
-  const satelliteY = stationIndex === 1 ? 2.8 : isFinalStation ? 2.15 : 1.65;
-  // 最後一站的衛星相片收在站點中心附近並沿負 Z 軸後移，作為較深的背景層。
-  const satelliteDepth = isFinalStation ? -2.4 : 0;
-  const rightTopSatellite = isFinalStation
-    ? { x: 2.95, y: 2.4, z: -2.1 }
-    : { x: satelliteX, y: satelliteY - 0.07, z: -0.9 + satelliteDepth };
-  const rightBottomSatellite = isFinalStation
-    ? { x: 2.75, y: -1.9, z: -1.85 }
-    : { x: satelliteX - 0.01, y: -satelliteY + 0.03, z: -0.35 + satelliteDepth };
-  const satellites = [
-    { x: -satelliteX, y: satelliteY, z: -0.65 + satelliteDepth, width: 0.72, height: 0.52, rotation: -0.12 },
-    { ...rightTopSatellite, width: 0.62, height: 0.82, rotation: 0.1 },
-    { x: -satelliteX + 0.07, y: -satelliteY, z: 0.3 + satelliteDepth, width: 0.55, height: 0.72, rotation: 0.08 },
-    { ...rightBottomSatellite, width: 0.75, height: 0.5, rotation: -0.08 }
-  ];
   // 手機畫面較窄，不配置固定衛星照片，避免透視移動時壓到標題與主照片。
-  satellites.slice(0, isMobile ? 0 : satellites.length).forEach((item, index) => {
+  layout.satellites.slice(0, isMobile ? 0 : layout.satellites.length).forEach((item, index) => {
     const textureIndex = (layout.textureIndex + index + 1) % textures.length;
     const cropTexture = createCropTexture(textures[textureIndex], stationIndex * 4 + index + 3);
     const photo = createPhotoCard(cropTexture, stationIndex * 5 + index + 2, item.width, item.height);
@@ -602,6 +616,7 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
   });
 
   const tunnelGallery = createTunnelGallery(textures, isMobile);
+  const tunnelPhotos = tunnelGallery.children;
   const dustField = createDustField(isMobile);
   scene.add(tunnelGallery, dustField);
 
@@ -609,11 +624,10 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
   const originalExitFragmentCount = isMobile ? 90 : 220;
   const exitFragmentCount = isMobile ? 120 : 280;
   const approachFragmentStart = originalExitFragmentCount;
-  const fragmentCount = baseFragmentCount + exitFragmentCount;
   const exitPageHeight = isMobile ? EXIT_PAGE_MOBILE_HEIGHT : EXIT_PAGE_DESKTOP_HEIGHT;
   // 手機直式紙面需要較長的顯現與推進距離，避免在出口末段才突然跳入畫面。
-  const exitPageRevealStart = isMobile ? 0.64 : EXIT_PAGE_REVEAL_START;
-  const exitPageRevealEnd = isMobile ? 0.82 : EXIT_PAGE_REVEAL_END;
+  const exitPageRevealStart = isMobile ? 0.64 : EXIT_TIMING.pageRevealStart;
+  const exitPageRevealEnd = isMobile ? 0.82 : EXIT_TIMING.pageRevealEnd;
   const fallbackExitPageAspect = isMobile ? EXIT_PAGE_MOBILE_ASPECT : EXIT_PAGE_DESKTOP_ASPECT;
   let exitPageWidth = exitPageHeight * (canvas.clientWidth / canvas.clientHeight || fallbackExitPageAspect);
   let exitPageCameraDistance = 8;
@@ -623,21 +637,27 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
     new Vector3(-0.5, 0.5, 0),
     new Vector3(0.5, 0.5, 0)
   ];
-  const fragments = new InstancedMesh(
-    new PlaneGeometry(0.09, 0.065),
-    new MeshBasicMaterial({
-      color: 0xc8c4ba,
-      opacity: 0.18,
-      transparent: true,
-      fog: false,
-      wireframe: true,
-      depthWrite: false,
-      side: DoubleSide
-    }),
-    fragmentCount
-  );
+  function createFragmentMesh(count) {
+    return new InstancedMesh(
+      new PlaneGeometry(0.09, 0.065),
+      new MeshBasicMaterial({
+        color: 0xc8c4ba,
+        opacity: 0.18,
+        transparent: true,
+        fog: false,
+        wireframe: true,
+        depthWrite: false,
+        side: DoubleSide
+      }),
+      count
+    );
+  }
+
+  const baseFragments = createFragmentMesh(baseFragmentCount);
+  const exitFragments = createFragmentMesh(exitFragmentCount);
   const fragmentTransform = new Object3D();
   const fragmentStates = [];
+  const fragmentCount = baseFragmentCount + exitFragmentCount;
   for (let index = 0; index < fragmentCount; index += 1) {
     const isExitFragment = index >= baseFragmentCount;
     const exitIndex = index - baseFragmentCount;
@@ -695,10 +715,13 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
       normalizedY,
       1 - normalizedY
     );
-    const appearStart = 0.26 + seededRandom(index + 491) * 0.22
-      + (isApproachFragment ? 0.08 : 0);
+    const appearStart = EXIT_TIMING.fragmentAppearStart
+      + seededRandom(index + 491) * EXIT_TIMING.fragmentAppearRange
+      + (isApproachFragment ? EXIT_TIMING.fragmentAppearApproachDelay : 0);
     const state = {
       isExitFragment,
+      mesh: isExitFragment ? exitFragments : baseFragments,
+      matrixIndex: isExitFragment ? exitIndex : index,
       x: baseX,
       y: baseY,
       z: baseZ,
@@ -714,15 +737,20 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
       // 出口區保留少量常駐碎片，其餘在轉彎後逐批長出，避免底部完全變空。
       basePresence: isExitFragment && seededRandom(index + 511) < 0.24 ? 1 : 0,
       appearStart,
-      appearEnd: appearStart + 0.16 + seededRandom(index + 501) * 0.08,
+      appearEnd: appearStart + EXIT_TIMING.fragmentAppearDuration
+        + seededRandom(index + 501) * EXIT_TIMING.fragmentAppearDurationJitter,
       // 邊框先穩定、內部後補齊；每個碎片的微幅錯開可避免整片同時吸附。
-      gatherStart: 0.34 + targetEdgeDistance * 0.16 + seededRandom(index + 461) * 0.08
-        + (isApproachFragment ? 0.05 : 0),
-      gatherEnd: 0.82 + targetEdgeDistance * 0.1 + seededRandom(index + 471) * 0.03
+      gatherStart: EXIT_TIMING.fragmentGatherStart
+        + targetEdgeDistance * EXIT_TIMING.fragmentGatherStartEdgeRange
+        + seededRandom(index + 461) * EXIT_TIMING.fragmentGatherStartJitter
+        + (isApproachFragment ? EXIT_TIMING.fragmentGatherApproachDelay : 0),
+      gatherEnd: EXIT_TIMING.fragmentGatherEnd
+        + targetEdgeDistance * EXIT_TIMING.fragmentGatherEndEdgeRange
+        + seededRandom(index + 471) * EXIT_TIMING.fragmentGatherEndJitter
     };
     fragmentStates.push(state);
   }
-  scene.add(fragments);
+  scene.add(baseFragments, exitFragments);
 
   let progress = 0;
   let targetProgress = 0;
@@ -736,6 +764,9 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
   let previousRenderTime = null;
   let disposed = false;
   let animationFrame = null;
+  let renderFrame = 0;
+  let isPageVisible = !document.hidden;
+  let isSceneInView = true;
 
   function handlePointerMove(event) {
     pointerTargetX = MathUtils.clamp(event.clientX / window.innerWidth * 2 - 1, -1, 1);
@@ -805,9 +836,9 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
     }
 
     const cameraState = interpolateCamera(progress);
-    const turnProgress = MathUtils.clamp(exitProgress / EXIT_TURN_END, 0, 1);
+    const turnProgress = MathUtils.clamp(exitProgress / EXIT_TIMING.turnEnd, 0, 1);
     const turnAmount = smoothStep(turnProgress);
-    const cornerProgress = MathUtils.clamp(exitProgress / EXIT_CORNER_END, 0, 1);
+    const cornerProgress = MathUtils.clamp(exitProgress / EXIT_TIMING.cornerEnd, 0, 1);
     const cornerAmount = smoothStep(cornerProgress);
     const approachProgress = MathUtils.clamp(
       (exitProgress - exitPageRevealStart) / (1 - exitPageRevealStart),
@@ -880,7 +911,8 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
       onExitPageFrame({ opacity: 0, progress: exitProgress });
     }
 
-    stations.forEach((station, stationIndex) => {
+    for (let stationIndex = 0; stationIndex < stations.length; stationIndex += 1) {
+      const station = stations[stationIndex];
       const idealCameraZ = station.position.z + 4;
       const distance = Math.abs(camera.position.z - idealCameraZ);
       const hasPassedStation = camera.position.z < idealCameraZ;
@@ -891,28 +923,37 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
       // 避免滑動時整個空間一起淡出，讓使用者持續感受到相片隧道的深度。
       setObjectOpacity(station.children[0], opacity);
       setObjectOpacity(station.children[1], opacity);
-      station.userData.baseChildren.forEach((item, childIndex) => {
+      const baseChildren = station.userData.baseChildren;
+      for (let childIndex = 0; childIndex < baseChildren.length; childIndex += 1) {
+        const item = baseChildren[childIndex];
         const amplitude = childIndex < 2 ? 0.012 : 0.035;
         item.object.position.x = item.x + Math.sin(seconds * 0.32 + stationIndex + childIndex) * amplitude;
         item.object.position.y = item.y + Math.cos(seconds * 0.27 + stationIndex * 1.7 + childIndex) * amplitude;
         item.object.rotation.z = item.rotationZ + Math.sin(seconds * 0.2 + childIndex) * amplitude * 0.22;
-      });
-    });
+      }
+    }
 
-    tunnelGallery.children.forEach((photo, index) => {
+    for (let index = 0; index < tunnelPhotos.length; index += 1) {
+      const photo = tunnelPhotos[index];
       const base = photo.userData.tunnelBase;
       photo.position.x = base.x + Math.sin(seconds * base.speed + index) * 0.025;
       photo.position.y = base.y + Math.cos(seconds * base.speed + index) * 0.025;
       photo.rotation.x = base.rotationX + Math.sin(seconds * base.speed * 0.62 + index) * 0.012;
       photo.rotation.y = base.rotationY + Math.cos(seconds * base.speed * 0.55 + index) * 0.016;
       photo.rotation.z = base.rotationZ + Math.sin(seconds * base.speed * 0.48 + index) * 0.01;
-    });
+    }
     // 隧道照片、灰塵與線框碎片只做位置和旋轉變化，不再依捲動進度淡化。
     // 其材質同時停用場景霧化，確保穿越觀看點時亮度保持穩定。
     dustField.rotation.z = Math.sin(seconds * 0.055) * 0.035;
     dustField.position.y = Math.sin(seconds * 0.11) * 0.05;
 
-    fragmentStates.forEach((state, index) => {
+    const updateBaseFragments = renderFrame % 3 === 0;
+    renderFrame += 1;
+    let baseMatricesChanged = false;
+    let exitMatricesChanged = false;
+    for (let index = 0; index < fragmentStates.length; index += 1) {
+      const state = fragmentStates[index];
+      if (!state.isExitFragment && !updateBaseFragments) continue;
       const fragmentReveal = state.isExitFragment
         ? smootherStep(MathUtils.clamp(
           (exitProgress - state.appearStart) / (state.appearEnd - state.appearStart),
@@ -963,16 +1004,25 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
       );
       fragmentTransform.scale.setScalar(fragmentScale * fragmentPresence);
       fragmentTransform.updateMatrix();
-      fragments.setMatrixAt(index, fragmentTransform.matrix);
-    });
-    fragments.instanceMatrix.needsUpdate = true;
+      state.mesh.setMatrixAt(state.matrixIndex, fragmentTransform.matrix);
+      if (state.isExitFragment) exitMatricesChanged = true;
+      else baseMatricesChanged = true;
+    }
+    if (baseMatricesChanged) baseFragments.instanceMatrix.needsUpdate = true;
+    if (exitMatricesChanged) exitFragments.instanceMatrix.needsUpdate = true;
     renderer.render(scene, camera);
   }
 
-  function animate(time) {
-    if (disposed) return;
-    render(time);
+  function scheduleRender() {
+    if (disposed || animationFrame !== null || !isPageVisible || !isSceneInView) return;
     animationFrame = window.requestAnimationFrame(animate);
+  }
+
+  function animate(time) {
+    animationFrame = null;
+    if (disposed || !isPageVisible || !isSceneInView) return;
+    render(time);
+    scheduleRender();
   }
 
   function setProgress(nextProgress, immediate = false) {
@@ -988,10 +1038,26 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
     exitProgress = MathUtils.clamp(nextProgress, 0, 1);
   }
 
+  function resumeRendering() {
+    previousRenderTime = null;
+    scheduleRender();
+  }
+
+  function handleVisibilityChange() {
+    isPageVisible = !document.hidden;
+    if (isPageVisible) resumeRendering();
+  }
+
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(canvas);
+  const sceneObserver = new IntersectionObserver(([entry]) => {
+    isSceneInView = entry.isIntersecting;
+    if (isSceneInView) resumeRendering();
+  });
+  sceneObserver.observe(canvas.closest('.obscura') ?? canvas);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
   resize();
-  animationFrame = window.requestAnimationFrame(animate);
+  scheduleRender();
 
   return {
     setProgress,
@@ -999,8 +1065,10 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
     destroy() {
       disposed = true;
       if (isExitPageFrameActive) onExitPageFrame?.({ opacity: 0, progress: 0 });
-      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+      if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
+      sceneObserver.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (!isMobile) {
         window.removeEventListener('pointermove', handlePointerMove);
         window.removeEventListener('pointerleave', resetPointerOffset);
