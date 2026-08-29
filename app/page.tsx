@@ -1,8 +1,10 @@
+import Hero from '@/components/home/Hero';
+
 export default function HomePage() {
   return (
-    <main>
-      <h1>NEHS Photography Club</h1>
-      <p>Migration scaffold placeholder.</p>
-    </main>
+    <>
+      <Hero />
+      <div className="scroll-spacer" aria-hidden="true" />
+    </>
   );
 }
