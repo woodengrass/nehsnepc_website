@@ -19,7 +19,6 @@ body.page-about.is-focus-locked {
   background: #080808;
 }
 
-/* 保留額外捲動距離，讓出口碎片與第四頁有足夠時間逐步組成。 */
 .obscura::after {
   content: '';
   display: block;
@@ -222,9 +221,9 @@ body.page-about.is-focus-locked {
 .obscura-mobile-entry { display: none; }
 .obscura-flash { z-index: 5; background: #fff; opacity: 0; pointer-events: none; }
 
-.obscura.is-in-story .obscura-intro,
-.obscura.is-in-story .obscura-hud,
-.obscura.is-in-story .obscura-mobile-entry {
+.obscura.is-unlocked .obscura-intro,
+.obscura.is-unlocked .obscura-hud,
+.obscura.is-unlocked .obscura-mobile-entry {
   visibility: hidden !important;
   opacity: 0 !important;
 }
@@ -241,7 +240,6 @@ body.page-about.is-focus-locked {
   display: none;
 }
 
-/* 3D 尚未可用時，DOM 內容就是完整的閱讀與操作備援。 */
 .obscura:not(.is-archive-3d) .obscura-story {
   height: auto;
   pointer-events: auto;
@@ -302,7 +300,6 @@ body.page-about.is-focus-locked {
 .obscura-contact-link:hover { color: #fff; border-color: #fff; }
 .obscura-contact-link span { padding-left: 1.2rem; font-size: 1rem; }
 
-/* 第四頁位於固定暗房場景下方；前景向右旋出時，暖色紙面會由左側逐步顯露。 */
 .obscura-afterword {
   position: relative;
   z-index: 0;
@@ -415,7 +412,6 @@ body.page-about.is-focus-locked {
 .obscura-afterword-actions span { padding-left: 0.8rem; }
 
 @media (max-width: 767px) {
-  /* 手機入口採獨立構圖，不沿用桌面 HUD 與大標的壓縮版。 */
   .obscura-hud {
     display: block;
     inset: 0;
