@@ -28,6 +28,8 @@ export function initAboutPage() {
   let isExperienceUnlocked = false;
   let isStoryViewActive = false;
   let afterwordLayout = null;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const media = gsap.matchMedia();
 
   function resetAfterwordProjection() {
     afterword.classList.remove('is-projecting', 'is-projection-interactive');
@@ -60,7 +62,6 @@ export function initAboutPage() {
   }
 
   document.body.classList.add('is-focus-locked');
-  page.classList.add('is-archive-3d');
   window.scrollTo(0, 0);
 
   function unlockExperience() {
@@ -75,18 +76,30 @@ export function initAboutPage() {
   }
 
   function loadArchiveScene() {
+    if (prefersReducedMotion.matches) return Promise.resolve(null);
     if (archiveLoadPromise) return archiveLoadPromise;
     archiveLoadPromise = import('./archive_scene.js')
       .then(({ createArchiveScene }) => createArchiveScene(archiveCanvas, projectAfterword))
       .then((scene) => {
         archiveScene = scene;
+        page.classList.add('is-archive-3d');
         archiveScene.setProgress(archiveProgress, page.classList.contains('reduced-motion'));
         archiveScene.setExitProgress(archiveExitProgress);
+        setStoryViewActive(isStoryViewActive);
       })
       .catch((error) => {
         console.error('Unable to initialize the archive scene.', error);
+        showDomFallback();
       });
     return archiveLoadPromise;
+  }
+
+  function showDomFallback() {
+    archiveScene?.destroy();
+    archiveScene = null;
+    page.classList.remove('is-archive-3d', 'is-in-story');
+    media.revert();
+    setStoryViewActive(false);
   }
 
   function setArchiveProgress(progress, immediate = false) {
@@ -239,8 +252,9 @@ export function initAboutPage() {
     // 套用零時刻狀態，導致使用者尚未捲動，載入完成的 canvas 就蓋掉對焦畫面。
     // 改由 ScrollTrigger 的進出事件切換，讓初始、進入故事及返回頂部都有明確狀態。
     isStoryViewActive = isActive;
-    gsap.set(archiveCanvas, { autoAlpha: isActive ? 1 : 0 });
-    gsap.set(imageWrap, { autoAlpha: isActive ? 0 : 1 });
+    const showArchive = isActive && archiveScene !== null;
+    gsap.set(archiveCanvas, { autoAlpha: showArchive ? 1 : 0 });
+    gsap.set(imageWrap, { autoAlpha: showArchive ? 0 : 1 });
     if (!isActive) resetAfterwordProjection();
   }
 
@@ -250,9 +264,11 @@ export function initAboutPage() {
     afterwordLayout = null;
     scheduleMicroprism(prismError);
   });
-  if ('requestIdleCallback' in window) window.requestIdleCallback(loadArchiveScene, { timeout: 1500 });
-  else window.setTimeout(loadArchiveScene, 500);
   window.addEventListener('beforeunload', () => archiveScene?.destroy(), { once: true });
+  archiveCanvas.addEventListener('webglcontextlost', (event) => {
+    event.preventDefault();
+    showDomFallback();
+  });
 
   setFocus(8);
   window.addEventListener('wheel', (event) => {
@@ -280,7 +296,6 @@ export function initAboutPage() {
     adjustFocus(direction * 4);
   });
 
-  const media = gsap.matchMedia();
   media.add('(prefers-reduced-motion: no-preference)', () => {
     // 每次媒體條件建立或重建動畫時，都先保證頁首仍由對焦畫面接管。
     setStoryViewActive(false);
@@ -338,8 +353,9 @@ export function initAboutPage() {
     page.classList.add('reduced-motion');
     setFocus(FOCUS_POINT);
     page.style.setProperty('--story-defocus', 0.7);
-    archiveCanvas.style.opacity = '0.38';
-    setArchiveProgress(0.42, true);
-    document.querySelectorAll('.obscura-panel').forEach((panel) => panel.classList.add('is-visible'));
+    return () => {
+      page.classList.remove('reduced-motion');
+      page.style.removeProperty('--story-defocus');
+    };
   });
 }

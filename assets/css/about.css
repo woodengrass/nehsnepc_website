@@ -239,6 +239,19 @@ body.page-about.is-focus-locked {
   display: none;
 }
 
+/* 3D 尚未可用時，DOM 內容就是完整的閱讀與操作備援。 */
+.obscura:not(.is-archive-3d) .obscura-story {
+  height: auto;
+  pointer-events: auto;
+}
+
+.obscura:not(.is-archive-3d) .obscura-panel {
+  position: relative;
+  min-height: 100svh;
+  opacity: 1;
+  transform: none;
+}
+
 .obscura-panel {
   --word-shift: 0vw;
   --word-tilt: 0deg;
