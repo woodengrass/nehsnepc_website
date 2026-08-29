@@ -10,11 +10,17 @@
     "images:build": "node scripts/optimize_images.js"
   },
   "dependencies": {
+    "gray-matter": "^4.0.3",
     "gsap": "^3.13.0",
     "next": "16.3.3",
+    "next-mdx-remote": "^6.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "three": "^0.185.1"
+    "rehype-autolink-headings": "^7.1.0",
+    "rehype-slug": "^6.0.0",
+    "remark-gfm": "^4.0.1",
+    "three": "^0.185.1",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

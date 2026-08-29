@@ -136,6 +136,7 @@
 .hero-nav-link:nth-child(2) { transition-delay: 150ms; }
 .hero-nav-link:nth-child(3) { transition-delay: 300ms; }
 .hero-nav-link:nth-child(4) { transition-delay: 450ms; }
+.hero-nav-link:nth-child(5) { transition-delay: 600ms; }
 
 .hero-nav-link.visible {
   opacity: 0.75;

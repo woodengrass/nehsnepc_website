@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 const PAGES = [
   ['/', 'Home'],
   ['/about', 'About'],
+  ['/articles', 'Articles'],
   ['/portfolio', 'Portfolio'],
   ['/contact', 'Contact']
 ] as const;

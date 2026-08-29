@@ -116,8 +116,9 @@ export default function Hero() {
         {([
           ['/', 'Home', 0],
           ['/about', 'About', 1],
-          ['/portfolio', 'Portfolio', 2],
-          ['/contact', 'Contact', 3]
+          ['/articles', 'Articles', 2],
+          ['/portfolio', 'Portfolio', 3],
+          ['/contact', 'Contact', 4]
         ] as const).map(([href, label, index]) => (
           <Link
             key={href}
