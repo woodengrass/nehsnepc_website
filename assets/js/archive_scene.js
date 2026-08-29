@@ -1,0 +1,1074 @@
+import {
+  AdditiveBlending,
+  BufferGeometry,
+  CanvasTexture,
+  DoubleSide,
+  Float32BufferAttribute,
+  FogExp2,
+  FrontSide,
+  Group,
+  InstancedMesh,
+  MathUtils,
+  Mesh,
+  MeshBasicMaterial,
+  Object3D,
+  PerspectiveCamera,
+  PlaneGeometry,
+  Points,
+  PointsMaterial,
+  Scene,
+  SRGBColorSpace,
+  TextureLoader,
+  Vector3,
+  WebGLRenderer
+} from 'three';
+
+import { ABOUT_EXIT_CONTENT, ABOUT_PHOTOS, ABOUT_STATIONS, ABOUT_TUNNEL_PHOTOS } from './about_content.js';
+const CAMERA_PROGRESS_STIFFNESS = 90;
+const CAMERA_PROGRESS_DAMPING = 19;
+const EXIT_CORNER_Z = -35;
+const EXIT_PAGE_X = -12;
+const EXIT_TIMING = {
+  turnEnd: 0.32,
+  cornerEnd: 0.48,
+  pageRevealStart: 0.78,
+  pageRevealEnd: 0.86,
+  fragmentAppearStart: 0.26,
+  fragmentAppearRange: 0.22,
+  fragmentAppearDuration: 0.16,
+  fragmentAppearDurationJitter: 0.08,
+  fragmentAppearApproachDelay: 0.08,
+  fragmentGatherStart: 0.34,
+  fragmentGatherStartEdgeRange: 0.16,
+  fragmentGatherStartJitter: 0.08,
+  fragmentGatherApproachDelay: 0.05,
+  fragmentGatherEnd: 0.82,
+  fragmentGatherEndEdgeRange: 0.1,
+  fragmentGatherEndJitter: 0.03
+};
+const EXIT_PAGE_DESKTOP_HEIGHT = 6.6;
+const EXIT_PAGE_MOBILE_HEIGHT = 8;
+const EXIT_PAGE_DESKTOP_ASPECT = 1.6;
+const EXIT_PAGE_MOBILE_ASPECT = 780 / 1600;
+const CJK_SERIF_FONT = '"Noto Serif TC", "Cormorant Garamond", Georgia, serif';
+
+const CAMERA_STOPS = [
+  { progress: 0, x: 0, y: 0, z: 8, roll: 0, targetX: 0, targetY: 0 },
+  { progress: 0.16, x: 0.08, y: -0.04, z: 0.25, roll: -0.018, targetX: 0, targetY: 0 },
+  { progress: 0.29, x: 0.16, y: 0.08, z: -4.05, roll: 0.018, targetX: 0.08, targetY: 0 },
+  { progress: 0.325, x: 0, y: 0.04, z: -4.45, roll: 0.008, targetX: 0, targetY: 0 },
+  { progress: 0.36, x: -0.12, y: 0, z: -4.8, roll: -0.012, targetX: -0.05, targetY: 0 },
+  { progress: 0.45, x: -0.38, y: -0.12, z: -9.4, roll: -0.035, targetX: -0.1, targetY: 0.04 },
+  { progress: 0.56, x: -0.12, y: 0.08, z: -11.75, roll: -0.014, targetX: -0.04, targetY: 0 },
+  { progress: 0.595, x: 0, y: 0.04, z: -12.15, roll: -0.008, targetX: 0, targetY: 0 },
+  { progress: 0.63, x: 0.14, y: 0, z: -12.55, roll: 0.014, targetX: 0.05, targetY: 0 },
+  { progress: 0.72, x: 0.42, y: 0.14, z: -17.2, roll: 0.04, targetX: 0.12, targetY: -0.04 },
+  { progress: 0.82, x: 0.12, y: -0.06, z: -19.8, roll: 0.014, targetX: 0.04, targetY: 0 },
+  { progress: 0.855, x: 0, y: -0.04, z: -20.15, roll: 0.008, targetX: 0, targetY: 0 },
+  { progress: 0.89, x: -0.12, y: 0, z: -20.55, roll: -0.014, targetX: -0.04, targetY: 0 },
+  // 第二站停駐後只保留短距離離場，避免相機穿過文字平面後才開始左轉。
+  { progress: 1, x: -0.25, y: 0.04, z: -22, roll: -0.025, targetX: 0, targetY: 0 }
+];
+
+const STATION_LAYOUTS = [
+  {
+    z: -8.1,
+    textX: -1.24,
+    photoX: 1.45,
+    satellites: [
+      { x: -3.15, y: 1.65, z: -0.65, width: 0.72, height: 0.52, rotation: -0.12 },
+      { x: 3.15, y: 1.58, z: -0.9, width: 0.62, height: 0.82, rotation: 0.1 },
+      { x: -3.08, y: -1.65, z: 0.3, width: 0.55, height: 0.72, rotation: 0.08 },
+      { x: 3.14, y: -1.62, z: -0.35, width: 0.75, height: 0.5, rotation: -0.08 }
+    ],
+    mobile: { textX: 0, textY: 0.92, photoX: 0.1, photoY: -0.94, scale: 0.66 }
+  },
+  {
+    // 第二站沿用原第三站的景深與停駐位置，刪除一站後仍保留完整的轉動進場。
+    z: -23.8,
+    textX: -1.24,
+    photoX: 1.45,
+    satellites: [
+      { x: -2.25, y: 2.15, z: -3.05, width: 0.72, height: 0.52, rotation: -0.12 },
+      { x: 2.95, y: 2.4, z: -2.1, width: 0.62, height: 0.82, rotation: 0.1 },
+      { x: -2.18, y: -2.15, z: -2.1, width: 0.55, height: 0.72, rotation: 0.08 },
+      { x: 2.75, y: -1.9, z: -1.85, width: 0.75, height: 0.5, rotation: -0.08 }
+    ],
+    mobile: { textX: 0, textY: 0.64, photoX: 0.08, photoY: -0.86, scale: 0.68 }
+  },
+];
+
+function smoothStep(value) {
+  return value * value * (3 - 2 * value);
+}
+
+function smootherStep(value) {
+  return value * value * value * (value * (value * 6 - 15) + 10);
+}
+
+function interpolateCamera(progress) {
+  let endIndex = CAMERA_STOPS.findIndex((stop) => stop.progress >= progress);
+  if (endIndex <= 0) endIndex = 1;
+  const start = CAMERA_STOPS[endIndex - 1];
+  const end = CAMERA_STOPS[Math.min(endIndex, CAMERA_STOPS.length - 1)];
+  const range = end.progress - start.progress || 1;
+  const amount = smoothStep(MathUtils.clamp((progress - start.progress) / range, 0, 1));
+  const value = (property) => MathUtils.lerp(start[property], end[property], amount);
+  return {
+    x: value('x'),
+    y: value('y'),
+    z: value('z'),
+    roll: value('roll'),
+    targetX: value('targetX'),
+    targetY: value('targetY')
+  };
+}
+
+function createPortalTexture(image) {
+  const canvas = document.createElement('canvas');
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.userData.image = image;
+  texture.userData.canvas = canvas;
+  return texture;
+}
+
+function updatePortalTexture(texture, width, height) {
+  const canvas = texture.userData.canvas;
+  const image = texture.userData.image;
+  canvas.width = Math.max(1, Math.round(width));
+  canvas.height = Math.max(1, Math.round(height));
+  const context = canvas.getContext('2d');
+  const scale = Math.max(width / image.width, height / image.height);
+  const drawWidth = image.width * scale;
+  const drawHeight = image.height * scale;
+  const drawX = (width - drawWidth) * 0.5;
+  const drawY = (height - drawHeight) * 0.62;
+  context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  texture.needsUpdate = true;
+}
+
+function createPortal(texture) {
+  const portal = new Mesh(
+    new PlaneGeometry(1, 1),
+    new MeshBasicMaterial({ map: texture, side: FrontSide })
+  );
+  portal.position.z = 1.5;
+  return portal;
+}
+
+function drawCoverImage(context, image, x, y, width, height) {
+  const sourceAspect = image.width / image.height;
+  const targetAspect = width / height;
+  let sourceX = 0;
+  let sourceY = 0;
+  let sourceWidth = image.width;
+  let sourceHeight = image.height;
+
+  if (sourceAspect > targetAspect) {
+    sourceWidth = image.height * targetAspect;
+    sourceX = (image.width - sourceWidth) * 0.5;
+  } else {
+    sourceHeight = image.width / targetAspect;
+    sourceY = (image.height - sourceHeight) * 0.5;
+  }
+  context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+}
+
+function createExitPage(isMobile, image) {
+  const canvas = document.createElement('canvas');
+  canvas.width = isMobile ? 780 : 1600;
+  canvas.height = isMobile ? 1600 : 1000;
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#d8d3c8';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 3D 牆面使用與 DOM 第四頁相同的紙張、編號與標題，靠近到滿版後才能無縫交接。
+  context.strokeStyle = 'rgba(25, 24, 21, 0.09)';
+  context.lineWidth = 1;
+  for (let y = 0; y < canvas.height; y += 7) {
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(canvas.width, y);
+    context.stroke();
+  }
+
+  const frameX = isMobile ? 72 : 120;
+  const frameY = isMobile ? 100 : 205;
+  const frameWidth = isMobile ? 300 : 300;
+  const frameHeight = isMobile ? 390 : 500;
+  context.strokeStyle = 'rgba(25, 24, 21, 0.55)';
+  context.strokeRect(frameX, frameY, frameWidth, frameHeight);
+  drawCoverImage(context, image, frameX + 24, frameY + 24, frameWidth - 48, frameHeight * 0.62);
+  context.fillStyle = '#191815';
+  context.font = `${isMobile ? 86 : 104}px ${CJK_SERIF_FONT}`;
+  context.fillText('04', frameX + 34, frameY + frameHeight - 92);
+  context.font = '16px Arial, sans-serif';
+  context.letterSpacing = '4px';
+  context.fillText('NEPC / OPEN FRAME', frameX + 34, frameY + frameHeight - 42);
+
+  const copyX = isMobile ? 72 : 650;
+  const copyY = isMobile ? 650 : 195;
+  context.fillStyle = 'rgba(25, 24, 21, 0.58)';
+  context.font = '17px Arial, sans-serif';
+  context.letterSpacing = '5px';
+  context.fillText(ABOUT_EXIT_CONTENT.index, copyX, copyY);
+  context.fillStyle = '#191815';
+  context.font = `${isMobile ? 140 : 128}px ${CJK_SERIF_FONT}`;
+  const titleLines = ABOUT_EXIT_CONTENT.title;
+  titleLines.forEach((line, index) => {
+    context.fillText(line, copyX, copyY + (isMobile ? 165 : 120) + index * (isMobile ? 150 : 120));
+  });
+  context.font = `${isMobile ? 23 : 21}px Arial, sans-serif`;
+  context.letterSpacing = '1px';
+  const bodyLines = isMobile
+    ? [ABOUT_EXIT_CONTENT.body.slice(0, 45), ABOUT_EXIT_CONTENT.body.slice(45).trim()]
+    : [ABOUT_EXIT_CONTENT.body.slice(0, 64), ABOUT_EXIT_CONTENT.body.slice(64).trim()];
+  bodyLines.forEach((line, index) => {
+    context.fillText(line, copyX, copyY + (isMobile ? 610 : 350) + index * (isMobile ? 42 : 40));
+  });
+  context.font = '16px Arial, sans-serif';
+  context.letterSpacing = '4px';
+  context.fillText(ABOUT_EXIT_CONTENT.actions.map((action) => action.label.toUpperCase()).join('   /   '), copyX, copyY + (isMobile ? 780 : 470));
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  const page = new Mesh(
+    new PlaneGeometry(1, 1),
+    new MeshBasicMaterial({
+      map: texture,
+      opacity: 0,
+      transparent: true,
+      depthWrite: false,
+      fog: false,
+      side: DoubleSide
+    })
+  );
+  page.position.set(EXIT_PAGE_X, 0, EXIT_CORNER_Z);
+  page.rotation.y = Math.PI / 2;
+  page.visible = false;
+  page.userData.aspect = canvas.width / canvas.height;
+  page.userData.disposableTextures = [texture];
+  return page;
+}
+
+function createCropTexture(texture, cropIndex) {
+  const crop = texture.clone();
+  const cropWidth = cropIndex % 2 === 0 ? 0.68 : 0.55;
+  const cropHeight = cropIndex % 3 === 0 ? 0.72 : 0.6;
+  crop.repeat.set(cropWidth, cropHeight);
+  crop.offset.set(
+    MathUtils.clamp(0.08 + (cropIndex % 4) * 0.075, 0, 1 - cropWidth),
+    MathUtils.clamp(0.08 + (cropIndex % 3) * 0.11, 0, 1 - cropHeight)
+  );
+  crop.needsUpdate = true;
+  return crop;
+}
+
+function createPhotoCard(texture, width, height) {
+  const group = new Group();
+  const border = 0.08;
+  const paper = new Mesh(
+    new PlaneGeometry(width + border * 2, height + border * 2),
+    new MeshBasicMaterial({ color: 0xdedbd2, transparent: true, fog: false, side: DoubleSide })
+  );
+  group.add(paper);
+
+  const photo = new Mesh(
+    new PlaneGeometry(width, height),
+    new MeshBasicMaterial({ map: texture, transparent: true, fog: false, side: DoubleSide })
+  );
+  photo.position.z = 0.018;
+  group.add(photo);
+
+  group.userData.disposableTextures = [texture];
+  return group;
+}
+
+function createTunnelPhotoCard(sourceTexture, width, height, cropIndex) {
+  const frameWidth = width + 0.08;
+  const frameHeight = height + 0.08;
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = Math.max(160, Math.round(canvas.width * frameHeight / frameWidth));
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#dedbd2';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const inset = 7;
+  const photoWidth = canvas.width - inset * 2;
+  const photoHeight = canvas.height - inset * 2;
+  const image = sourceTexture.image;
+  const cropWidth = cropIndex % 2 === 0 ? 0.68 : 0.55;
+  const cropHeight = cropIndex % 3 === 0 ? 0.72 : 0.6;
+  let sourceX = Math.min(0.08 + (cropIndex % 4) * 0.075, 1 - cropWidth) * image.width;
+  let sourceY = Math.min(0.08 + (cropIndex % 3) * 0.11, 1 - cropHeight) * image.height;
+  let sourceWidth = cropWidth * image.width;
+  let sourceHeight = cropHeight * image.height;
+  const sourceAspect = sourceWidth / sourceHeight;
+  const targetAspect = photoWidth / photoHeight;
+  if (sourceAspect > targetAspect) {
+    const nextWidth = sourceHeight * targetAspect;
+    sourceX += (sourceWidth - nextWidth) * 0.5;
+    sourceWidth = nextWidth;
+  } else {
+    const nextHeight = sourceWidth / targetAspect;
+    sourceY += (sourceHeight - nextHeight) * 0.5;
+    sourceHeight = nextHeight;
+  }
+  context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, inset, inset, photoWidth, photoHeight);
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  const card = new Mesh(
+    new PlaneGeometry(frameWidth, frameHeight),
+    new MeshBasicMaterial({ map: texture, transparent: true, fog: false, side: DoubleSide })
+  );
+  card.userData.disposableTextures = [texture];
+  return card;
+}
+
+function wrapCanvasText(context, text, maxWidth) {
+  const lines = [];
+  let line = '';
+  for (const character of text) {
+    const nextLine = line + character;
+    if (line && context.measureText(nextLine).width > maxWidth) {
+      lines.push(line.trimEnd());
+      line = character.trimStart();
+    } else {
+      line = nextLine;
+    }
+  }
+  if (line) lines.push(line.trimEnd());
+  return lines;
+}
+
+function createTextPanel(layout, isMobile) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1800;
+  canvas.height = 1100;
+  const context = canvas.getContext('2d');
+  const leftPadding = 90;
+  let textX = leftPadding;
+  const isRightAlignedMobileText = isMobile && layout.mobile?.textAlign === 'right';
+  context.font = `104px ${CJK_SERIF_FONT}`;
+  const headingLines = wrapCanvasText(context, layout.heading, 1220);
+
+  // 桌面左側文字站的照片位於右方。先量出最長標題，再平移整個左對齊文字塊，
+  // 讓標題右緣與照片的距離等同第二站。手機採上下排列，不套用水平間距校正。
+  if (!isMobile && layout.photoX > 0) {
+    const longestHeading = Math.max(...headingLines.map((line) => context.measureText(line).width));
+    // Canvas 量測與實際字形邊界會有些微差異，右側預留額外空間避免最後字元被紋理邊界裁切。
+    textX = canvas.width - 210 - longestHeading;
+  }
+  if (isRightAlignedMobileText) {
+    textX = canvas.width - leftPadding;
+    context.textAlign = 'right';
+  }
+  context.fillStyle = 'rgba(255, 255, 255, 0.58)';
+  context.font = `64px ${CJK_SERIF_FONT}`;
+  context.letterSpacing = '8px';
+  context.fillText(layout.eyebrow, textX, 110);
+  context.fillStyle = '#f5f3ed';
+  context.font = `104px ${CJK_SERIF_FONT}`;
+  headingLines.forEach((line, index) => context.fillText(line, textX, 285 + index * 122));
+  context.fillStyle = 'rgba(255, 255, 255, 0.68)';
+  context.font = `58px ${CJK_SERIF_FONT}`;
+  context.letterSpacing = '2px';
+  const bodyX = isRightAlignedMobileText ? textX - 4 : textX + 4;
+  wrapCanvasText(context, layout.body, 1160).slice(0, 2).forEach((line, index) => {
+    context.fillText(line, bodyX, 800 + index * 54);
+  });
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  const panel = new Mesh(
+    new PlaneGeometry(2.82, 1.723),
+    new MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      fog: false,
+      side: DoubleSide
+    })
+  );
+  panel.position.set(layout.textX, 0.05, 0);
+  // 文字必須維持在所有相框之前，避免前景小照片切斷標題造成無法閱讀。
+  panel.renderOrder = 20;
+  panel.userData.disposableTextures = [texture];
+  return panel;
+}
+
+function setObjectOpacity(object, opacity) {
+  if (Math.abs((object.userData.renderOpacity ?? -1) - opacity) < 0.004) return;
+  object.userData.renderOpacity = opacity;
+  object.traverse((child) => {
+    if (!child.material) return;
+    child.material.opacity = opacity;
+    child.material.depthWrite = opacity > 0.9;
+  });
+}
+
+function createStation(layout, textures, stationIndex, isMobile) {
+  const station = new Group();
+  station.position.z = layout.z;
+  const textPanel = createTextPanel(layout, isMobile);
+  const mainTexture = createCropTexture(textures[layout.photo], stationIndex + 1);
+  const mainPhoto = createPhotoCard(mainTexture, 1.58, 1.22);
+  mainPhoto.position.set(layout.photoX, -0.02, 0);
+  mainPhoto.rotation.y = layout.photoX > 0 ? -0.08 : 0.08;
+
+  // 周邊照片不淡出後可能在透視上穿過主內容，因此主照片停用深度測試並提高繪製順序。
+  // 這只改變前後遮擋關係，不會隱藏或降低任何隧道照片與粒子的透明度。
+  mainPhoto.traverse((child) => {
+    if (!child.material) return;
+    child.material.depthTest = false;
+    child.renderOrder = 3;
+  });
+  station.add(textPanel, mainPhoto);
+
+  // 手機畫面較窄，不配置固定衛星照片，避免透視移動時壓到標題與主照片。
+  layout.satellites.slice(0, isMobile ? 0 : layout.satellites.length).forEach((item, index) => {
+    const cropTexture = createCropTexture(textures[layout.satellitePhotos[index]], stationIndex * 4 + index + 3);
+    const photo = createPhotoCard(cropTexture, item.width, item.height);
+    photo.position.set(item.x, item.y, item.z);
+    photo.rotation.z = item.rotation;
+    // 周邊照片只作為空間線索，縮小後避免在觀看點壓過主標題與主照片。
+    photo.scale.setScalar(0.52);
+    photo.userData.driftSeed = stationIndex * 7 + index;
+    station.add(photo);
+  });
+
+  station.userData.baseChildren = station.children.map((child) => ({
+    object: child,
+    x: child.position.x,
+    y: child.position.y,
+    rotationZ: child.rotation.z
+  }));
+  return station;
+}
+
+function createTunnelGallery(textures, isMobile) {
+  const gallery = new Group();
+  const photoCount = isMobile ? 8 : 20;
+  for (let index = 0; index < photoCount; index += 1) {
+    const galleryScale = isMobile ? 0.6 : 0.78;
+    const width = (0.18 + seededRandom(index + 101) * 0.28) * galleryScale;
+    const height = (0.22 + seededRandom(index + 111) * 0.3) * galleryScale;
+    const texture = textures[index % textures.length];
+    const photo = createTunnelPhotoCard(texture, width, height, index + 17);
+    const angle = index * Math.PI * (3 - Math.sqrt(5));
+    const horizontalSide = index % 4 < 2;
+    const side = index % 2 === 0 ? -1 : 1;
+    // 背景相片固定在左右側廊與上下外圈，中央閱讀軸永遠留給站點文字和主照片。
+    const baseX = isMobile
+      ? side * (4.4 + seededRandom(index + 131) * 1.2)
+      : horizontalSide
+        ? side * (9.5 + seededRandom(index + 131) * 2)
+        : side * (7.5 + seededRandom(index + 136) * 2.5);
+    const baseY = isMobile
+      ? (seededRandom(index + 136) - 0.5) * 5.5
+      : horizontalSide
+        ? (seededRandom(index + 136) - 0.5) * 7.4
+        : side * (6.2 + seededRandom(index + 141) * 1.8);
+    const baseZ = -2.3 - index * (28 / photoCount) - seededRandom(index + 141) * 0.45;
+    photo.position.set(baseX, baseY, baseZ);
+    photo.rotation.set(
+      Math.sin(angle) * 0.16 + (seededRandom(index + 151) - 0.5) * 0.08,
+      -Math.cos(angle) * 0.22 + (seededRandom(index + 161) - 0.5) * 0.08,
+      Math.sin(angle + 0.7) * 0.18 + (seededRandom(index + 171) - 0.5) * 0.12
+    );
+    photo.userData.tunnelBase = {
+      angle,
+      x: baseX,
+      y: baseY,
+      rotationX: photo.rotation.x,
+      rotationY: photo.rotation.y,
+      rotationZ: photo.rotation.z,
+      speed: 0.16 + seededRandom(index + 181) * 0.22
+    };
+    gallery.add(photo);
+  }
+  return gallery;
+}
+
+function createDustField(isMobile) {
+  const pointCount = isMobile ? 90 : 225;
+  const exitPointCount = isMobile ? 70 : 160;
+  const positions = [];
+  for (let index = 0; index < pointCount; index += 1) {
+    positions.push(
+      (seededRandom(index + 201) - 0.5) * (isMobile ? 5.5 : 9),
+      (seededRandom(index + 211) - 0.5) * 6,
+      -1 - seededRandom(index + 221) * 31
+    );
+  }
+
+  // 隧道末端的粒子沿 Z 軸繼續向前，並隨深度逐步向左彎曲。
+  // 相機左轉時，近粒子會比遠粒子移動更快，直接提供轉角後空間仍在延伸的視差。
+  for (let index = 0; index < exitPointCount; index += 1) {
+    const depth = seededRandom(index + 301);
+    const angle = depth * Math.PI / 2;
+    const bendRadius = isMobile ? 6.5 : 8;
+    positions.push(
+      -bendRadius * (1 - Math.cos(angle)) + (seededRandom(index + 311) - 0.5) * (isMobile ? 2.4 : 4.2),
+      depth * 0.7 + (seededRandom(index + 321) - 0.5) * (isMobile ? 3.8 : 5.5),
+      -27 - bendRadius * Math.sin(angle)
+    );
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
+  const points = new Points(
+    geometry,
+    new PointsMaterial({
+      color: 0xd9d4c8,
+      size: isMobile ? 0.02 : 0.017,
+      opacity: 0.24,
+      transparent: true,
+      fog: false,
+      depthWrite: false,
+      blending: AdditiveBlending,
+      sizeAttenuation: true
+    })
+  );
+  return points;
+}
+
+function seededRandom(seed) {
+  const value = Math.sin(seed * 9283.17) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+export async function createArchiveScene(canvas, onExitPageFrame) {
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  const renderer = new WebGLRenderer({
+    canvas,
+    alpha: false,
+    antialias: !isMobile,
+    powerPreference: 'high-performance'
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.2 : 1.5));
+  renderer.outputColorSpace = SRGBColorSpace;
+  renderer.setClearColor(0x070808, 1);
+
+  const scene = new Scene();
+  scene.fog = new FogExp2(0x070808, isMobile ? 0.082 : 0.068);
+  const camera = new PerspectiveCamera(isMobile ? 55 : 46, 1, 0.1, 70);
+  camera.position.set(0, 0, 8);
+
+  const textureLoader = new TextureLoader();
+  const photoSources = [...new Set(Object.values(ABOUT_PHOTOS))];
+  const textureList = await Promise.all(photoSources.map((url) => textureLoader.loadAsync(url)));
+  textureList.forEach((texture) => {
+    texture.colorSpace = SRGBColorSpace;
+    texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  });
+  const texturesByUrl = new Map(photoSources.map((url, index) => [url, textureList[index]]));
+  const textures = Object.fromEntries(
+    Object.entries(ABOUT_PHOTOS).map(([name, url]) => [name, texturesByUrl.get(url)])
+  );
+
+  const portalTexture = createPortalTexture(textures.focus.image);
+  const portal = createPortal(portalTexture);
+  const exitPage = createExitPage(isMobile, textures[ABOUT_EXIT_CONTENT.photo].image);
+  scene.add(portal, exitPage);
+
+  const stations = STATION_LAYOUTS.map((layout, index) => {
+    const responsiveLayout = {
+      ...layout,
+      ...ABOUT_STATIONS[index],
+      textX: isMobile ? layout.textX * 0.56 : layout.textX,
+      photoX: isMobile ? layout.photoX * 0.56 : layout.photoX
+    };
+    const station = createStation(responsiveLayout, textures, index, isMobile);
+    if (isMobile) {
+      const mobileLayout = layout.mobile;
+      station.scale.setScalar(mobileLayout.scale);
+      station.children[0].position.set(mobileLayout.textX, mobileLayout.textY, 0);
+      station.children[1].position.set(mobileLayout.photoX, mobileLayout.photoY, 0);
+      station.children.slice(2).forEach((photo, photoIndex) => {
+        const direction = photoIndex % 2 === 0 ? -1 : 1;
+        photo.position.set(direction * 1.38, -1.52, -0.65);
+      });
+      station.userData.baseChildren = station.children.map((child) => ({
+        object: child,
+        x: child.position.x,
+        y: child.position.y,
+        rotationZ: child.rotation.z
+      }));
+    }
+    scene.add(station);
+    return station;
+  });
+
+  const tunnelGallery = createTunnelGallery(ABOUT_TUNNEL_PHOTOS.map((photo) => textures[photo]), isMobile);
+  const tunnelPhotos = tunnelGallery.children;
+  const dustField = createDustField(isMobile);
+  scene.add(tunnelGallery, dustField);
+
+  const baseFragmentCount = isMobile ? 55 : 170;
+  const originalExitFragmentCount = isMobile ? 90 : 220;
+  const exitFragmentCount = isMobile ? 120 : 280;
+  const approachFragmentStart = originalExitFragmentCount;
+  const exitPageHeight = isMobile ? EXIT_PAGE_MOBILE_HEIGHT : EXIT_PAGE_DESKTOP_HEIGHT;
+  // 手機直式紙面需要較長的顯現與推進距離，避免在出口末段才突然跳入畫面。
+  const exitPageRevealStart = isMobile ? 0.64 : EXIT_TIMING.pageRevealStart;
+  const exitPageRevealEnd = isMobile ? 0.82 : EXIT_TIMING.pageRevealEnd;
+  const fallbackExitPageAspect = isMobile ? EXIT_PAGE_MOBILE_ASPECT : EXIT_PAGE_DESKTOP_ASPECT;
+  let exitPageWidth = exitPageHeight * (canvas.clientWidth / canvas.clientHeight || fallbackExitPageAspect);
+  let exitPageCameraDistance = 8;
+  const exitPageCorners = [
+    new Vector3(-0.5, -0.5, 0),
+    new Vector3(0.5, -0.5, 0),
+    new Vector3(-0.5, 0.5, 0),
+    new Vector3(0.5, 0.5, 0)
+  ];
+  function createFragmentMesh(count) {
+    return new InstancedMesh(
+      new PlaneGeometry(0.09, 0.065),
+      new MeshBasicMaterial({
+        color: 0xc8c4ba,
+        opacity: 0.18,
+        transparent: true,
+        fog: false,
+        wireframe: true,
+        depthWrite: false,
+        side: DoubleSide
+      }),
+      count
+    );
+  }
+
+  const baseFragments = createFragmentMesh(baseFragmentCount);
+  const exitFragments = createFragmentMesh(exitFragmentCount);
+  const fragmentTransform = new Object3D();
+  const fragmentStates = [];
+  const fragmentCount = baseFragmentCount + exitFragmentCount;
+  for (let index = 0; index < fragmentCount; index += 1) {
+    const isExitFragment = index >= baseFragmentCount;
+    const exitIndex = index - baseFragmentCount;
+    const isApproachFragment = isExitFragment && exitIndex >= approachFragmentStart;
+    // 新增碎片建立固定的負 X 軸接近走廊；既有碎片維持原本完整彎道分布。
+    const exitDepth = isExitFragment
+      ? seededRandom(exitIndex + 401) * (exitIndex >= originalExitFragmentCount ? 0.42 : 1)
+      : 0;
+    // 前三站沿深度切成等量區間，每區只加入少量隨機偏移，避免純隨機造成大片空洞。
+    const baseDepth = isExitFragment
+      ? 0
+      : (index + seededRandom(index + 21)) / baseFragmentCount;
+    const exitAngle = exitDepth * Math.PI / 2;
+    const exitBendRadius = isMobile ? 6.5 : 8;
+    const fragmentIndex = isExitFragment ? exitIndex : index;
+    const fragmentAngle = fragmentIndex * Math.PI * (3 - Math.sqrt(5))
+      + (seededRandom(fragmentIndex + 1) - 0.5) * 0.34;
+    const fragmentRadius = isApproachFragment
+      ? (isMobile ? 1.2 : 2) + seededRandom(fragmentIndex + 11) * (isMobile ? 1.8 : 3.5)
+      : isExitFragment
+      ? (isMobile ? 2.6 : 5) + seededRandom(fragmentIndex + 11) * (isMobile ? 2.4 : 5)
+      : ((isMobile ? 2.2 : 4.4) + seededRandom(fragmentIndex + 11) * (isMobile ? 1.8 : 3.8))
+        * (1 + baseDepth * (isMobile ? 0.18 : 0.3));
+    // 建立時將碎片固定在隧道軸外圍的橢圓環殼；最小半徑會保留中央閱讀通道。
+    // 座標寫入後不再跟隨相機重算，因此前進時仍保有真實近大遠小與穿越感。
+    const approachDepth = seededRandom(fragmentIndex + 481);
+    const baseX = isApproachFragment
+      ? MathUtils.lerp(-2.2, EXIT_PAGE_X + 1.2, approachDepth)
+      : isExitFragment
+      ? -exitBendRadius * (1 - Math.cos(exitAngle)) + Math.cos(fragmentAngle) * fragmentRadius
+      : Math.cos(fragmentAngle) * fragmentRadius;
+    const baseY = isApproachFragment
+      ? Math.sin(fragmentAngle) * fragmentRadius * 0.72
+      : isExitFragment
+      ? exitDepth * 0.7 + Math.sin(fragmentAngle) * fragmentRadius * (isMobile ? 0.88 : 0.72)
+      : Math.sin(fragmentAngle) * fragmentRadius * (isMobile ? 0.9 : 0.72);
+    const baseZ = isApproachFragment
+      ? EXIT_CORNER_Z + Math.cos(fragmentAngle) * fragmentRadius
+      : isExitFragment
+      ? -27 - exitBendRadius * Math.sin(exitAngle)
+      : -0.8 - baseDepth * 25.8;
+    let normalizedX = seededRandom(exitIndex + 431);
+    let normalizedY = seededRandom(exitIndex + 441);
+    if (isExitFragment && exitIndex % 3 === 0) {
+      const edge = Math.floor(seededRandom(exitIndex + 451) * 4);
+      if (edge === 0) normalizedX = 0;
+      else if (edge === 1) normalizedX = 1;
+      else if (edge === 2) normalizedY = 0;
+      else normalizedY = 1;
+    }
+    const targetLocalX = (normalizedX - 0.5) * exitPageWidth;
+    const targetEdgeDistance = Math.min(
+      normalizedX,
+      1 - normalizedX,
+      normalizedY,
+      1 - normalizedY
+    );
+    const appearStart = EXIT_TIMING.fragmentAppearStart
+      + seededRandom(index + 491) * EXIT_TIMING.fragmentAppearRange
+      + (isApproachFragment ? EXIT_TIMING.fragmentAppearApproachDelay : 0);
+    const state = {
+      isExitFragment,
+      mesh: isExitFragment ? exitFragments : baseFragments,
+      matrixIndex: isExitFragment ? exitIndex : index,
+      x: baseX,
+      y: baseY,
+      z: baseZ,
+      targetX: EXIT_PAGE_X + 0.11,
+      targetY: (0.5 - normalizedY) * exitPageHeight,
+      targetZ: EXIT_CORNER_Z - targetLocalX,
+      rotationX: seededRandom(index + 31) * Math.PI,
+      rotationY: seededRandom(index + 41) * Math.PI,
+      rotationZ: seededRandom(index + 51) * Math.PI,
+      speed: 0.2 + seededRandom(index + 61) * 0.35,
+      scale: 0.8 + seededRandom(index + 71) * 1.5,
+      targetScale: 0.9 + seededRandom(index + 81) * 1.4,
+      // 出口區保留少量常駐碎片，其餘在轉彎後逐批長出，避免底部完全變空。
+      basePresence: isExitFragment && seededRandom(index + 511) < 0.24 ? 1 : 0,
+      appearStart,
+      appearEnd: appearStart + EXIT_TIMING.fragmentAppearDuration
+        + seededRandom(index + 501) * EXIT_TIMING.fragmentAppearDurationJitter,
+      // 邊框先穩定、內部後補齊；每個碎片的微幅錯開可避免整片同時吸附。
+      gatherStart: EXIT_TIMING.fragmentGatherStart
+        + targetEdgeDistance * EXIT_TIMING.fragmentGatherStartEdgeRange
+        + seededRandom(index + 461) * EXIT_TIMING.fragmentGatherStartJitter
+        + (isApproachFragment ? EXIT_TIMING.fragmentGatherApproachDelay : 0),
+      gatherEnd: EXIT_TIMING.fragmentGatherEnd
+        + targetEdgeDistance * EXIT_TIMING.fragmentGatherEndEdgeRange
+        + seededRandom(index + 471) * EXIT_TIMING.fragmentGatherEndJitter
+    };
+    fragmentStates.push(state);
+  }
+  scene.add(baseFragments, exitFragments);
+
+  let progress = 0;
+  let targetProgress = 0;
+  let progressVelocity = 0;
+  let exitProgress = 0;
+  let isExitPageFrameActive = false;
+  let pointerTargetX = 0;
+  let pointerTargetY = 0;
+  let pointerOffsetX = 0;
+  let pointerOffsetY = 0;
+  let previousRenderTime = null;
+  let disposed = false;
+  let animationFrame = null;
+  let renderFrame = 0;
+  let isPageVisible = !document.hidden;
+  let isSceneInView = true;
+
+  function handlePointerMove(event) {
+    pointerTargetX = MathUtils.clamp(event.clientX / window.innerWidth * 2 - 1, -1, 1);
+    pointerTargetY = MathUtils.clamp(event.clientY / window.innerHeight * 2 - 1, -1, 1);
+  }
+
+  function resetPointerOffset() {
+    pointerTargetX = 0;
+    pointerTargetY = 0;
+  }
+
+  // 只有具備精準游標的桌面版註冊事件；手機不建立 listener，也不執行游標視差。
+  if (!isMobile) {
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointerleave', resetPointerOffset, { passive: true });
+  }
+
+  function resize() {
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    if (!width || !height) return;
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    updatePortalTexture(portalTexture, width, height);
+    const portalHeight = 2 * (8 - portal.position.z) * Math.tan(MathUtils.degToRad(camera.fov / 2));
+    portal.scale.set(portalHeight * camera.aspect, portalHeight, 1);
+    exitPageWidth = exitPageHeight * camera.aspect;
+    exitPage.scale.set(exitPageWidth, exitPageHeight, 1);
+    const halfVerticalFov = Math.tan(MathUtils.degToRad(camera.fov / 2));
+    const verticalCoverDistance = exitPageHeight / (2 * halfVerticalFov);
+    const horizontalCoverDistance = exitPageWidth / (2 * halfVerticalFov * camera.aspect);
+    exitPageCameraDistance = Math.min(verticalCoverDistance, horizontalCoverDistance);
+  }
+
+  function render(time = performance.now()) {
+    if (disposed) return;
+    const seconds = time * 0.001;
+    const deltaSeconds = previousRenderTime === null
+      ? 1 / 60
+      : Math.min((time - previousRenderTime) * 0.001, 1 / 30);
+    previousRenderTime = time;
+
+    // 游標只提供目標值，相機用與幀率無關的阻尼緩慢追隨，避免直接綁定座標造成抖動。
+    // 進入左轉出口時逐步降低游標影響，確保既定相機路徑不被使用者輸入扭曲。
+    const pointerBlend = 1 - Math.exp(-deltaSeconds * 3.6);
+    pointerOffsetX += (pointerTargetX - pointerOffsetX) * pointerBlend;
+    pointerOffsetY += (pointerTargetY - pointerOffsetY) * pointerBlend;
+
+    // 捲動只更新目標進度，相機則以接近臨界阻尼的速度曲線追趕目標。
+    // 距離大時彈簧力提高而加速，接近時由阻尼平順煞車；時間差上限可避免
+    // 分頁切回前景後因單幀間隔過大而瞬間跳過照片或觀看點。
+    const progressDistance = targetProgress - progress;
+    const progressAcceleration = progressDistance * CAMERA_PROGRESS_STIFFNESS
+      - progressVelocity * CAMERA_PROGRESS_DAMPING;
+    progressVelocity += progressAcceleration * deltaSeconds;
+    progress += progressVelocity * deltaSeconds;
+
+    // 在極小誤差內直接落在目標，避免浮點尾差讓相機於吸附觀看點持續微動。
+    if (Math.abs(progressDistance) < 0.00005 && Math.abs(progressVelocity) < 0.0005) {
+      progress = targetProgress;
+      progressVelocity = 0;
+    }
+    progress = MathUtils.clamp(progress, 0, 1);
+    if ((progress === 0 && progressVelocity < 0) || (progress === 1 && progressVelocity > 0)) {
+      progressVelocity = 0;
+    }
+
+    const cameraState = interpolateCamera(progress);
+    const turnProgress = MathUtils.clamp(exitProgress / EXIT_TIMING.turnEnd, 0, 1);
+    const turnAmount = smoothStep(turnProgress);
+    const cornerProgress = MathUtils.clamp(exitProgress / EXIT_TIMING.cornerEnd, 0, 1);
+    const cornerAmount = smoothStep(cornerProgress);
+    const approachProgress = MathUtils.clamp(
+      (exitProgress - exitPageRevealStart) / (1 - exitPageRevealStart),
+      0,
+      1
+    );
+    const approachAmount = smootherStep(approachProgress);
+    const exitPageReveal = smootherStep(MathUtils.clamp(
+      (exitProgress - exitPageRevealStart) / (exitPageRevealEnd - exitPageRevealStart),
+      0,
+      1
+    ));
+
+    // 完成左轉後仍先保留純粒子走廊；碎片匯聚後提早顯現實體頁面，
+    // 讓後續相機前進自然將頁面逐步放大，而不是在交接前直接跳成滿版。
+    // 反向捲動時同一進度會將頁面淡回完全不可見，不會提早洩漏第四頁內容。
+    // 最終排版改由真正的 DOM 頁面貼合投影，canvas 紙面不再繪製第二套文字。
+    exitPage.visible = false;
+    exitPage.material.opacity = 0;
+
+    // 第四頁轉場直接改變 PerspectiveCamera 的世界座標與觀看方向。
+    // 前 32% 完成精確 90 度左轉，48% 抵達彎角後等待碎片匯聚；頁面開始顯現時，
+    // 相機才沿負 X 軸持續靠近，直到實體紙面自然覆蓋視野後再交接 DOM。
+    const pointerInfluence = isMobile ? 0 : 1 - turnAmount;
+    const exitCameraZ = MathUtils.lerp(cameraState.z, EXIT_CORNER_Z, cornerAmount);
+    const cornerCameraX = cameraState.x - cornerAmount * (isMobile ? 0.5 : 1.2);
+    const finalExitCameraX = EXIT_PAGE_X + exitPageCameraDistance;
+    const exitCameraX = MathUtils.lerp(cornerCameraX, finalExitCameraX, approachAmount);
+    const exitCameraY = MathUtils.lerp(cameraState.y, 0, cornerAmount);
+    camera.position.set(
+      exitCameraX + pointerOffsetX * 0.025 * pointerInfluence,
+      exitCameraY - pointerOffsetY * 0.018 * pointerInfluence,
+      exitCameraZ
+    );
+    const turnAngle = turnAmount * Math.PI / 2;
+    const lookDirectionX = -Math.sin(turnAngle);
+    const lookDirectionZ = -Math.cos(turnAngle);
+    const turnPitch = Math.sin(turnProgress * Math.PI) * (isMobile ? 0.16 : 0.24);
+    camera.lookAt(
+      exitCameraX + lookDirectionX * 6 + pointerOffsetX * 0.04 * pointerInfluence,
+      exitCameraY + turnPitch - pointerOffsetY * 0.025 * pointerInfluence,
+      exitCameraZ + lookDirectionZ * 6
+    );
+    camera.rotation.z += cameraState.roll * (1 - turnAmount);
+    portal.visible = camera.position.z > portal.position.z + 0.03;
+
+    if (onExitPageFrame && exitPageReveal > 0) {
+      isExitPageFrameActive = true;
+      camera.updateMatrixWorld();
+      exitPage.updateMatrixWorld();
+      const projectedCorners = exitPageCorners.map((corner) => (
+        corner.clone().applyMatrix4(exitPage.matrixWorld).project(camera)
+      ));
+      const projectedX = projectedCorners.map((corner) => (corner.x * 0.5 + 0.5) * canvas.clientWidth);
+      const projectedY = projectedCorners.map((corner) => (-corner.y * 0.5 + 0.5) * canvas.clientHeight);
+      const left = Math.min(...projectedX);
+      const right = Math.max(...projectedX);
+      const top = Math.min(...projectedY);
+      const bottom = Math.max(...projectedY);
+      onExitPageFrame({
+        left,
+        top,
+        width: right - left,
+        height: bottom - top,
+        opacity: exitPageReveal,
+        progress: exitProgress
+      });
+    } else if (onExitPageFrame && isExitPageFrameActive) {
+      isExitPageFrameActive = false;
+      onExitPageFrame({ opacity: 0, progress: exitProgress });
+    }
+
+    for (let stationIndex = 0; stationIndex < stations.length; stationIndex += 1) {
+      const station = stations[stationIndex];
+      const idealCameraZ = station.position.z + 4;
+      const distance = Math.abs(camera.position.z - idealCameraZ);
+      const hasPassedStation = camera.position.z < idealCameraZ;
+      const fadeDistance = hasPassedStation ? 4.2 : 5.5;
+      const opacity = smoothStep(1 - MathUtils.clamp((distance - 0.6) / fadeDistance, 0, 1));
+
+      // 每站只有主文字與主照片負責章節切換。周邊照片維持完整不透明，
+      // 避免滑動時整個空間一起淡出，讓使用者持續感受到相片隧道的深度。
+      setObjectOpacity(station.children[0], opacity);
+      setObjectOpacity(station.children[1], opacity);
+      const baseChildren = station.userData.baseChildren;
+      for (let childIndex = 0; childIndex < baseChildren.length; childIndex += 1) {
+        const item = baseChildren[childIndex];
+        const amplitude = childIndex < 2 ? 0.012 : 0.035;
+        item.object.position.x = item.x + Math.sin(seconds * 0.32 + stationIndex + childIndex) * amplitude;
+        item.object.position.y = item.y + Math.cos(seconds * 0.27 + stationIndex * 1.7 + childIndex) * amplitude;
+        item.object.rotation.z = item.rotationZ + Math.sin(seconds * 0.2 + childIndex) * amplitude * 0.22;
+      }
+    }
+
+    for (let index = 0; index < tunnelPhotos.length; index += 1) {
+      const photo = tunnelPhotos[index];
+      const base = photo.userData.tunnelBase;
+      photo.position.x = base.x + Math.sin(seconds * base.speed + index) * 0.025;
+      photo.position.y = base.y + Math.cos(seconds * base.speed + index) * 0.025;
+      photo.rotation.x = base.rotationX + Math.sin(seconds * base.speed * 0.62 + index) * 0.012;
+      photo.rotation.y = base.rotationY + Math.cos(seconds * base.speed * 0.55 + index) * 0.016;
+      photo.rotation.z = base.rotationZ + Math.sin(seconds * base.speed * 0.48 + index) * 0.01;
+    }
+    // 隧道照片、灰塵與線框碎片只做位置和旋轉變化，不再依捲動進度淡化。
+    // 其材質同時停用場景霧化，確保穿越觀看點時亮度保持穩定。
+    dustField.rotation.z = Math.sin(seconds * 0.055) * 0.035;
+    dustField.position.y = Math.sin(seconds * 0.11) * 0.05;
+
+    const updateBaseFragments = renderFrame % 3 === 0;
+    renderFrame += 1;
+    let baseMatricesChanged = false;
+    let exitMatricesChanged = false;
+    for (let index = 0; index < fragmentStates.length; index += 1) {
+      const state = fragmentStates[index];
+      if (!state.isExitFragment && !updateBaseFragments) continue;
+      const fragmentReveal = state.isExitFragment
+        ? smootherStep(MathUtils.clamp(
+          (exitProgress - state.appearStart) / (state.appearEnd - state.appearStart),
+          0,
+          1
+        ))
+        : 1;
+      const fragmentPresence = state.isExitFragment
+        ? MathUtils.lerp(state.basePresence, 1, fragmentReveal)
+        : 1;
+      const fragmentGather = state.isExitFragment
+        ? smootherStep(MathUtils.clamp(
+          (exitProgress - state.gatherStart) / (state.gatherEnd - state.gatherStart),
+          0,
+          1
+        ))
+        : 0;
+      const driftAmount = state.isExitFragment ? 1 - fragmentGather : 1;
+      let fragmentX = state.x + Math.sin(seconds * state.speed + index) * 0.12 * driftAmount;
+      let fragmentY = state.y + Math.cos(seconds * state.speed * 0.8 + index) * 0.1 * driftAmount;
+      let fragmentZ = state.z;
+      let rotationX = state.rotationX + seconds * state.speed * 0.2 * driftAmount;
+      let rotationY = state.rotationY + seconds * state.speed * 0.28 * driftAmount;
+      let rotationZ = state.rotationZ + seconds * state.speed * 0.16 * driftAmount;
+      let fragmentScale = state.scale;
+
+      // 使用者所指的粒子是線框長方形。左轉開始後，末端實例會逐步移到頁面表面、
+      // 轉成與紙面平行並形成輪廓；小點灰塵不再參與頁面匯聚。
+      if (state.isExitFragment) {
+        fragmentX = MathUtils.lerp(fragmentX, state.targetX, fragmentGather);
+        fragmentY = MathUtils.lerp(fragmentY, state.targetY, fragmentGather);
+        fragmentZ = MathUtils.lerp(fragmentZ, state.targetZ, fragmentGather);
+        rotationX = MathUtils.lerp(rotationX, 0, fragmentGather);
+        rotationY = MathUtils.lerp(rotationY, Math.PI / 2, fragmentGather);
+        rotationZ = MathUtils.lerp(rotationZ, 0, fragmentGather);
+        fragmentScale = MathUtils.lerp(fragmentScale, state.targetScale, fragmentGather);
+      }
+
+      fragmentTransform.position.set(
+        fragmentX,
+        fragmentY,
+        fragmentZ
+      );
+      fragmentTransform.rotation.set(
+        rotationX,
+        rotationY,
+        rotationZ
+      );
+      fragmentTransform.scale.setScalar(fragmentScale * fragmentPresence);
+      fragmentTransform.updateMatrix();
+      state.mesh.setMatrixAt(state.matrixIndex, fragmentTransform.matrix);
+      if (state.isExitFragment) exitMatricesChanged = true;
+      else baseMatricesChanged = true;
+    }
+    if (baseMatricesChanged) baseFragments.instanceMatrix.needsUpdate = true;
+    if (exitMatricesChanged) exitFragments.instanceMatrix.needsUpdate = true;
+    renderer.render(scene, camera);
+  }
+
+  function scheduleRender() {
+    if (disposed || animationFrame !== null || !isPageVisible || !isSceneInView) return;
+    animationFrame = window.requestAnimationFrame(animate);
+  }
+
+  function animate(time) {
+    animationFrame = null;
+    if (disposed || !isPageVisible || !isSceneInView) return;
+    render(time);
+    scheduleRender();
+  }
+
+  function setProgress(nextProgress, immediate = false) {
+    targetProgress = MathUtils.clamp(nextProgress, 0, 1);
+    if (!immediate) return;
+
+    // reduced-motion 與初始靜態定位可略過速度曲線，確保不產生非預期移動。
+    progress = targetProgress;
+    progressVelocity = 0;
+  }
+
+  function setExitProgress(nextProgress) {
+    exitProgress = MathUtils.clamp(nextProgress, 0, 1);
+  }
+
+  function resumeRendering() {
+    previousRenderTime = null;
+    scheduleRender();
+  }
+
+  function handleVisibilityChange() {
+    isPageVisible = !document.hidden;
+    if (isPageVisible) resumeRendering();
+  }
+
+  const resizeObserver = new ResizeObserver(resize);
+  resizeObserver.observe(canvas);
+  const sceneObserver = new IntersectionObserver(([entry]) => {
+    isSceneInView = entry.isIntersecting;
+    if (isSceneInView) resumeRendering();
+  });
+  sceneObserver.observe(canvas.closest('.obscura') ?? canvas);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  resize();
+  scheduleRender();
+
+  return {
+    setProgress,
+    setExitProgress,
+    destroy() {
+      disposed = true;
+      if (isExitPageFrameActive) onExitPageFrame?.({ opacity: 0, progress: 0 });
+      if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
+      resizeObserver.disconnect();
+      sceneObserver.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (!isMobile) {
+        window.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointerleave', resetPointerOffset);
+      }
+      scene.traverse((object) => {
+        object.geometry?.dispose();
+        object.material?.dispose();
+        object.userData.disposableTextures?.forEach((texture) => texture.dispose());
+      });
+      portalTexture.dispose();
+      new Set(Object.values(textures)).forEach((texture) => texture.dispose());
+      renderer.dispose();
+    }
+  };
+}

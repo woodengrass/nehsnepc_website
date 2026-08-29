@@ -24,12 +24,19 @@ html {
   scroll-behavior: smooth;
   min-height: 100%;
   overflow-x: hidden;
+}
+
+html,
+body {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-html::-webkit-scrollbar {
-  display: none;                /* Chrome/Safari */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 body {

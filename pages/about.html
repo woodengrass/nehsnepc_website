@@ -7,18 +7,103 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Raleway:wght@200;300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Noto+Serif+TC:wght@400;500&family=Raleway:wght@200;300;400&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="../assets/css/main.css">
   <link rel="stylesheet" href="../assets/css/sidebar.css">
+  <link rel="stylesheet" href="../assets/css/about.css">
 </head>
 <body class="page-about">
 
   <div class="grain-overlay" aria-hidden="true"></div>
 
-  <main class="page-placeholder">
-    <h1>About</h1>
-    <p>This page is coming soon.</p>
+  <main class="obscura" style="--focus: 0.08;">
+    <section class="obscura-camera" aria-label="NEHS Photography Club camera obscura">
+      <div class="obscura-image-wrap" aria-hidden="true">
+        <picture class="obscura-picture">
+          <source type="image/avif"
+                  srcset="../assets/images/generated/hero-640.avif 640w, ../assets/images/generated/hero-1280.avif 1280w, ../assets/images/generated/hero-1920.avif 1920w, ../assets/images/generated/hero-2560.avif 2560w"
+                  sizes="100vw">
+          <source type="image/webp"
+                  srcset="../assets/images/generated/hero-640.webp 640w, ../assets/images/generated/hero-1280.webp 1280w, ../assets/images/generated/hero-1920.webp 1920w, ../assets/images/generated/hero-2560.webp 2560w"
+                  sizes="100vw">
+          <img class="obscura-image" src="../assets/images/generated/hero-1280.webp" alt="">
+        </picture>
+        <div class="obscura-image-wash"></div>
+        <div class="obscura-vignette"></div>
+      </div>
+      <canvas class="obscura-archive-canvas" id="archiveCanvas" aria-hidden="true"></canvas>
+
+      <div class="obscura-hud" aria-hidden="true">
+        <span class="obscura-coordinate obscura-coordinate-top">35.0123 N / 121.5429 E</span>
+        <span class="obscura-reading" aria-live="polite">FOCUS <b id="focusReading">08</b></span>
+        <div class="focusing-screen" aria-hidden="true">
+          <canvas class="microprism-canvas" id="microprismCanvas"></canvas>
+          <div class="split-focus">
+            <div class="split-focus-half split-focus-top">
+              <picture>
+                <source type="image/avif" srcset="../assets/images/generated/hero-640.avif">
+                <img src="../assets/images/generated/hero-640.webp" alt="">
+              </picture>
+            </div>
+            <div class="split-focus-half split-focus-bottom">
+              <picture>
+                <source type="image/avif" srcset="../assets/images/generated/hero-640.avif">
+                <img src="../assets/images/generated/hero-640.webp" alt="">
+              </picture>
+            </div>
+            <span class="split-focus-line"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="obscura-intro">
+        <p class="obscura-eyebrow">NANHU SENIOR HIGH SCHOOL / EST. 2024</p>
+        <h1>LOOK<br><i>CLOSER.</i></h1>
+        <p class="obscura-prompt" id="focusGuide">Scroll to bring the split image into focus.</p>
+      </div>
+
+      <div class="obscura-mobile-entry" aria-hidden="true">
+        <p>NEHS PHOTOGRAPHY CLUB<br>MANUAL FOCUS / 01</p>
+        <h1>LOOK<br><i>CLOSER.</i></h1>
+        <div class="obscura-mobile-entry-footer">
+          <span>SET 2.0m</span>
+          <span>SWIPE TO FOCUS</span>
+        </div>
+      </div>
+
+      <div class="obscura-flash" aria-hidden="true"></div>
+    </section>
+
+    <section class="obscura-story" id="story" aria-label="About NEHS Photography Club">
+      <article class="obscura-panel obscura-panel-manifesto" data-word="OBSERVE">
+        <p class="obscura-index">01 / OBSERVE</p>
+        <h2>Before every frame,<br>there is a moment<br>worth noticing.</h2>
+        <p>NEHS Photography Club is a group of students learning to notice light, timing, and the small stories that would otherwise pass unnoticed.</p>
+      </article>
+
+      <article class="obscura-panel obscura-panel-practice" data-word="FRAME">
+        <p class="obscura-index">02 / PRACTICE</p>
+        <h2>少一點艱澀術語，多一點圖像、實拍與真正能立刻用上的攝影知識</h2>
+        <p>構圖・光線・色彩・人像・風景・後製・日常</p>
+      </article>
+
+    </section>
+
+    <section class="obscura-afterword" aria-labelledby="afterwordTitle">
+        <div class="obscura-afterword-frame" aria-hidden="true">
+          <img class="obscura-afterword-photo" src="../assets/images/generated/contact-800.webp" alt="">
+        </div>
+      <div class="obscura-afterword-copy">
+        <p class="obscura-afterword-index">03 / 加入我們</p>
+        <h2 id="afterwordTitle">現在立刻<br>加入攝影社</h2>
+        <p>無論只是想紀錄日常，還是想更深入學習攝影與創作，都歡迎你加入我們。</p>
+        <div class="obscura-afterword-actions">
+          <a href="https://instagram.com/nehs_nepc" target="_blank" rel="noopener">FOLLOW US <span aria-hidden="true">&#8599;</span></a>
+          <a href="portfolio.html">VIEW OUR WORK <span aria-hidden="true">&#8594;</span></a>
+        </div>
+      </div>
+    </section>
   </main>
 
   <site-navigation></site-navigation>

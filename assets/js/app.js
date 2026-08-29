@@ -1,11 +1,9 @@
 import './navigation.js';
-import { initContactPage } from './contact.js';
-import { initHomePage } from './home.js';
 
 if (document.body.classList.contains('page-index')) {
-  initHomePage();
-}
-
-if (document.body.classList.contains('page-contact')) {
-  initContactPage();
+  import('./home.js').then(({ initHomePage }) => initHomePage());
+} else if (document.body.classList.contains('page-about')) {
+  import('./about.js').then(({ initAboutPage }) => initAboutPage());
+} else if (document.body.classList.contains('page-contact')) {
+  import('./contact.js').then(({ initContactPage }) => initContactPage());
 }
