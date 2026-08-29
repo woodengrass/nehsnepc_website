@@ -13,6 +13,7 @@ body.page-about.is-focus-locked {
   --focus-error: 0.92;
   --split-offset: 16.56px;
   --story-defocus: 0;
+  --font-about-cjk: 'Noto Serif TC', 'Cormorant Garamond', serif;
   position: relative;
   padding-top: 100svh;
   background: #080808;
@@ -204,19 +205,20 @@ body.page-about.is-focus-locked {
   text-transform: uppercase;
 }
 
-.obscura-eyebrow { font-size: 0.6rem; color: rgba(255, 255, 255, 0.55); }
+.obscura-eyebrow { font-family: var(--font-about-cjk); font-size: clamp(1rem, 1.25vw, 1.25rem); color: rgba(255, 255, 255, 0.68); }
 
 .obscura-intro h1 {
   margin: 1.5rem 0 2rem;
   font-family: var(--font-heading);
-  font-size: clamp(4.5rem, 10vw, 10rem);
+  font-size: clamp(3rem, 6.5vw, 6rem);
   font-weight: 300;
   line-height: 0.76;
   letter-spacing: -0.035em;
+  font-family: var(--font-about-cjk);
 }
 
 .obscura-intro h1 i { font-weight: 300; }
-.obscura-prompt { max-width: 330px; color: rgba(255, 255, 255, 0.62); font-size: 0.62rem; line-height: 1.8; }
+.obscura-prompt { max-width: 420px; color: rgba(255, 255, 255, 0.78); font-family: var(--font-about-cjk); font-size: clamp(1.05rem, 1.25vw, 1.3rem); line-height: 1.75; }
 .obscura-mobile-entry { display: none; }
 .obscura-flash { z-index: 5; background: #fff; opacity: 0; pointer-events: none; }
 
@@ -290,9 +292,9 @@ body.page-about.is-focus-locked {
 .obscura-panel-practice::before { right: -6vw; left: auto; }
 .obscura-panel-contact { left: clamp(2rem, 9vw, 10rem); }
 
-.obscura-index { margin-bottom: 1.2rem; color: rgba(255, 255, 255, 0.5); font-size: 0.58rem; }
+.obscura-index { margin-bottom: 1.2rem; color: rgba(255, 255, 255, 0.64); font-family: var(--font-about-cjk); font-size: 1.25rem; }
 .obscura-panel h2 { font-family: var(--font-heading); font-size: clamp(2.8rem, 5vw, 5.8rem); font-weight: 300; line-height: 0.88; letter-spacing: -0.02em; }
-.obscura-panel > p:last-child { max-width: 360px; margin-top: 2rem; color: rgba(255, 255, 255, 0.7); font-size: 0.82rem; line-height: 2; letter-spacing: 0.08em; }
+.obscura-panel > p:last-child { max-width: 500px; margin-top: 2rem; color: rgba(255, 255, 255, 0.8); font-family: var(--font-about-cjk); font-size: 1.5rem; line-height: 1.7; letter-spacing: 0.04em; }
 .obscura-panel-practice .obscura-statement { display: flex; flex-direction: column; gap: 0.7rem; color: rgba(255, 255, 255, 0.86); font-size: clamp(0.7rem, 1.2vw, 1rem); line-height: 1.65; }
 .obscura-panel-practice .obscura-statement span:nth-child(2) { color: rgba(255, 255, 255, 0.43); }
 
@@ -306,9 +308,9 @@ body.page-about.is-focus-locked {
   z-index: 0;
   min-height: 100svh;
   display: grid;
-  grid-template-columns: minmax(180px, 0.72fr) minmax(420px, 1.28fr);
+  grid-template-columns: minmax(280px, 0.8fr) minmax(520px, 1.2fr);
   align-items: center;
-  gap: clamp(3rem, 9vw, 10rem);
+  gap: clamp(3rem, 6vw, 7rem);
   padding: clamp(5rem, 10vw, 9rem);
   overflow: hidden;
   color: #191815;
@@ -344,11 +346,7 @@ body.page-about.is-focus-locked {
 }
 
 .obscura-afterword-frame {
-  width: min(23vw, 290px);
-  aspect-ratio: 0.72;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  width: min(27vw, 380px);
   padding: 1.5rem;
   border: 1px solid rgba(25, 24, 21, 0.46);
   box-shadow: 1.1rem 1.1rem 0 rgba(25, 24, 21, 0.08);
@@ -357,12 +355,13 @@ body.page-about.is-focus-locked {
   letter-spacing: 0.18em;
 }
 
-.obscura-afterword-frame span:first-child {
-  font-family: var(--font-heading);
-  font-size: clamp(5rem, 10vw, 9rem);
-  font-weight: 300;
-  letter-spacing: -0.06em;
-  line-height: 0.8;
+.obscura-afterword-photo {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  filter: saturate(0.78) contrast(1.04);
 }
 
 .obscura-afterword-index,
@@ -374,27 +373,30 @@ body.page-about.is-focus-locked {
 
 .obscura-afterword-index {
   margin-bottom: 1.6rem;
-  font-size: 0.58rem;
+  font-family: var(--font-about-cjk);
+  font-size: clamp(1rem, 1.15vw, 1.2rem);
+  letter-spacing: 0.12em;
   color: rgba(25, 24, 21, 0.58);
 }
 
 .obscura-afterword-copy h2 {
   margin: 0;
-  font-family: var(--font-heading);
-  font-size: clamp(4rem, 8vw, 8.6rem);
+  font-family: var(--font-about-cjk);
+  font-size: clamp(4.2rem, 6.2vw, 7.5rem);
   font-weight: 300;
-  line-height: 0.76;
-  letter-spacing: -0.045em;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
 }
 
 .obscura-afterword-copy h2 i { font-weight: 300; }
 
 .obscura-afterword-copy > p:last-of-type {
-  max-width: 520px;
+  max-width: 620px;
   margin-top: 2.4rem;
-  font-size: clamp(0.82rem, 1.1vw, 1rem);
-  line-height: 1.9;
-  letter-spacing: 0.045em;
+  font-family: var(--font-about-cjk);
+  font-size: clamp(1.2rem, 1.45vw, 1.5rem);
+  line-height: 1.75;
+  letter-spacing: 0.03em;
 }
 
 .obscura-afterword-actions {
@@ -446,7 +448,7 @@ body.page-about.is-focus-locked {
     margin: 0;
     margin-top: 28vh;
     font-family: var(--font-heading);
-    font-size: clamp(4.4rem, 22vw, 6.5rem);
+    font-size: clamp(3rem, 15vw, 4.6rem);
     font-weight: 300;
     line-height: 0.75;
     letter-spacing: -0.055em;
@@ -471,8 +473,10 @@ body.page-about.is-focus-locked {
     gap: 3.5rem;
     padding: 6rem 2rem 4rem;
   }
-  .obscura-afterword-frame { width: 38vw; max-width: 150px; }
-  .obscura-afterword-copy h2 { font-size: clamp(3.8rem, 18vw, 6rem); }
+  .obscura-afterword-frame { width: min(100%, 360px); }
+  .obscura-afterword-copy h2 { font-size: clamp(3.2rem, 13vw, 4.8rem); line-height: 1.1; }
+  .obscura-afterword-index { font-size: 1rem; }
+  .obscura-afterword-copy > p:last-of-type { font-size: 1.15rem; }
   .obscura-afterword-actions { flex-direction: column; align-items: flex-start; gap: 1.4rem; }
 }
 

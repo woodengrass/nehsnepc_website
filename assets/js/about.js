@@ -1,10 +1,12 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
+import { ABOUT_EXIT_CONTENT, ABOUT_FOCUS_CONTENT, ABOUT_PHOTOS, ABOUT_STATIONS } from './about_content.js';
+
 gsap.registerPlugin(ScrollTrigger);
 
 const FOCUS_POINT = 62;
-const STATION_SNAP_POINTS = [0.325, 0.595, 0.855];
+const STATION_SNAP_POINTS = [0.325, 0.855];
 
 export function initAboutPage() {
   const page = document.querySelector('.obscura');
@@ -17,6 +19,89 @@ export function initAboutPage() {
   const afterword = document.querySelector('.obscura-afterword');
 
   if (!page || !focusReading || !microprismCanvas || !viewfinderImage || !imageWrap || !archiveCanvas || !focusGuide || !afterword) return;
+
+  function setTextLines(element, lines, italicLastLine = false) {
+    element.replaceChildren();
+    lines.forEach((line, index) => {
+      if (index > 0) element.append(document.createElement('br'));
+      if (italicLastLine && index === lines.length - 1) {
+        const italic = document.createElement('i');
+        italic.textContent = line;
+        element.append(italic);
+        return;
+      }
+      element.append(document.createTextNode(line));
+    });
+  }
+
+  function applyAboutContent() {
+    const focusImages = [viewfinderImage, ...document.querySelectorAll('.split-focus-half img')];
+    focusImages.forEach((image) => {
+      image.src = ABOUT_PHOTOS.focus;
+      image.closest('picture')?.querySelectorAll('source').forEach((source) => {
+        source.srcset = ABOUT_PHOTOS.focus;
+      });
+    });
+
+    page.querySelector('.obscura-eyebrow').textContent = ABOUT_FOCUS_CONTENT.eyebrow;
+    page.querySelector('.obscura-intro h1').textContent = ABOUT_FOCUS_CONTENT.title;
+    focusGuide.textContent = ABOUT_FOCUS_CONTENT.prompt;
+    page.querySelector('.obscura-mobile-entry > p').textContent = ABOUT_FOCUS_CONTENT.eyebrow;
+    page.querySelector('.obscura-mobile-entry h1').textContent = ABOUT_FOCUS_CONTENT.title;
+    page.querySelector('.obscura-mobile-entry-footer span:last-child').textContent = ABOUT_FOCUS_CONTENT.prompt;
+
+    const panels = document.querySelectorAll('.obscura-panel');
+    ABOUT_STATIONS.forEach((station, index) => {
+      const panel = panels[index];
+      if (!panel) return;
+      panel.querySelector('.obscura-index').textContent = station.eyebrow;
+      const statement = panel.querySelector('.obscura-statement');
+      if (statement) {
+        statement.textContent = station.heading;
+      } else {
+        setTextLines(panel.querySelector('h2'), [station.heading]);
+      }
+      const paragraphs = panel.querySelectorAll(':scope > p');
+      const body = paragraphs[paragraphs.length - 1];
+      if (body && !body.classList.contains('obscura-index')) body.textContent = station.body;
+      const action = panel.querySelector('.obscura-contact-link');
+      if (action && station.action) action.firstChild.nodeValue = station.action;
+    });
+
+    afterword.querySelector('.obscura-afterword-index').textContent = ABOUT_EXIT_CONTENT.index;
+    setTextLines(afterword.querySelector('h2'), ABOUT_EXIT_CONTENT.title);
+    afterword.querySelector('.obscura-afterword-copy > p:last-of-type').textContent = ABOUT_EXIT_CONTENT.body;
+    afterword.querySelector('.obscura-afterword-photo').src = ABOUT_PHOTOS[ABOUT_EXIT_CONTENT.photo];
+    const actions = afterword.querySelectorAll('.obscura-afterword-actions a');
+    ABOUT_EXIT_CONTENT.actions.forEach((action, index) => {
+      const link = actions[index];
+        if (!link) return;
+        link.href = action.href;
+        link.target = action.external ? '_blank' : '';
+        link.rel = action.external ? 'noopener' : '';
+        link.firstChild.nodeValue = action.label;
+    });
+  }
+
+  applyAboutContent();
+
+  function updateVisitorCoordinate() {
+    const coordinate = page.querySelector('.obscura-coordinate-top');
+    coordinate.textContent = 'LOCATING...';
+    fetch('https://ipwho.is/')
+      .then((response) => response.json())
+      .then((location) => {
+        if (!location.success || typeof location.latitude !== 'number' || typeof location.longitude !== 'number') {
+          throw new Error('IP location is unavailable.');
+        }
+        const latitude = `${Math.abs(location.latitude).toFixed(2)}${location.latitude >= 0 ? ' N' : ' S'}`;
+        const longitude = `${Math.abs(location.longitude).toFixed(2)}${location.longitude >= 0 ? ' E' : ' W'}`;
+        coordinate.textContent = `${latitude} / ${longitude}`;
+      })
+      .catch(() => { coordinate.textContent = ABOUT_FOCUS_CONTENT.coordinateFallback; });
+  }
+
+  updateVisitorCoordinate();
 
   let prismFrame = null;
   let prismError = 1;
@@ -69,7 +154,7 @@ export function initAboutPage() {
     isExperienceUnlocked = true;
     document.body.classList.remove('is-focus-locked');
     page.classList.add('is-unlocked');
-    focusGuide.textContent = 'Focus locked. Keep scrolling to enter the frame.';
+    focusGuide.textContent = ABOUT_FOCUS_CONTENT.lockedPrompt;
     // 對焦完成後立即準備 3D 場景，避免使用者開始滑動時入口照片尚未載入。
     loadArchiveScene();
     gsap.fromTo('.obscura-flash', { autoAlpha: 0.95 }, { autoAlpha: 0, duration: 0.55, ease: 'power2.out' });
@@ -86,6 +171,8 @@ export function initAboutPage() {
         archiveScene.setProgress(archiveProgress, page.classList.contains('reduced-motion'));
         archiveScene.setExitProgress(archiveExitProgress);
         setStoryViewActive(isStoryViewActive);
+        // DOM 備援切換為 3D 後高度會縮短，下一幀重新量測固定捲動區間。
+        window.requestAnimationFrame(() => ScrollTrigger.refresh());
       })
       .catch((error) => {
         console.error('Unable to initialize the archive scene.', error);
@@ -303,7 +390,7 @@ export function initAboutPage() {
       scrollTrigger: {
         trigger: '.obscura-story',
         start: 'top top',
-        end: '+=650%',
+        end: '+=540%',
         pin: true,
         // ScrollTrigger 只提供原始目標進度，實際相機速度由 3D 場景的阻尼曲線控制。
         // 避免這裡再次加入 scrub 秒數，否則兩層延遲會讓觸控板操作顯得黏滯。

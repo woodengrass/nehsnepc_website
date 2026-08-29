@@ -23,8 +23,7 @@ import {
   WebGLRenderer
 } from 'three';
 
-const HERO_TEXTURE_URL = new URL('../images/generated/hero-1280.webp', import.meta.url).href;
-const CONTACT_TEXTURE_URL = new URL('../images/generated/contact-800.webp', import.meta.url).href;
+import { ABOUT_EXIT_CONTENT, ABOUT_PHOTOS, ABOUT_STATIONS, ABOUT_TUNNEL_PHOTOS } from './about_content.js';
 const CAMERA_PROGRESS_STIFFNESS = 90;
 const CAMERA_PROGRESS_DAMPING = 19;
 const EXIT_CORNER_Z = -35;
@@ -51,6 +50,7 @@ const EXIT_PAGE_DESKTOP_HEIGHT = 6.6;
 const EXIT_PAGE_MOBILE_HEIGHT = 8;
 const EXIT_PAGE_DESKTOP_ASPECT = 1.6;
 const EXIT_PAGE_MOBILE_ASPECT = 780 / 1600;
+const CJK_SERIF_FONT = '"Noto Serif TC", "Cormorant Garamond", Georgia, serif';
 
 const CAMERA_STOPS = [
   { progress: 0, x: 0, y: 0, z: 8, roll: 0, targetX: 0, targetY: 0 },
@@ -66,7 +66,7 @@ const CAMERA_STOPS = [
   { progress: 0.82, x: 0.12, y: -0.06, z: -19.8, roll: 0.014, targetX: 0.04, targetY: 0 },
   { progress: 0.855, x: 0, y: -0.04, z: -20.15, roll: 0.008, targetX: 0, targetY: 0 },
   { progress: 0.89, x: -0.12, y: 0, z: -20.55, roll: -0.014, targetX: -0.04, targetY: 0 },
-  // 第三站後只保留短距離離場，避免相機穿過文字平面後才開始左轉。
+  // 第二站停駐後只保留短距離離場，避免相機穿過文字平面後才開始左轉。
   { progress: 1, x: -0.25, y: 0.04, z: -22, roll: -0.025, targetX: 0, targetY: 0 }
 ];
 
@@ -75,10 +75,6 @@ const STATION_LAYOUTS = [
     z: -8.1,
     textX: -1.24,
     photoX: 1.45,
-    eyebrow: '01 / OBSERVE',
-    heading: ['Before every frame,', 'there is a moment', 'worth noticing.'],
-    body: ['We learn to notice light, timing, and the small stories', 'that would otherwise pass unnoticed.'],
-    textureIndex: 0,
     satellites: [
       { x: -3.15, y: 1.65, z: -0.65, width: 0.72, height: 0.52, rotation: -0.12 },
       { x: 3.15, y: 1.58, z: -0.9, width: 0.62, height: 0.82, rotation: 0.1 },
@@ -88,29 +84,10 @@ const STATION_LAYOUTS = [
     mobile: { textX: 0, textY: 0.92, photoX: 0.1, photoY: -0.94, scale: 0.66 }
   },
   {
-    z: -15.8,
-    textX: 1.24,
-    photoX: -1.45,
-    eyebrow: '02 / PRACTICE',
-    heading: ['WE SHOOT', 'THE ORDINARY', 'TO MAKE IT NEW.'],
-    body: ['EVENTS / PORTRAITS / THE ORDINARY'],
-    textureIndex: 1,
-    satellites: [
-      { x: -5.4, y: 2.8, z: -0.65, width: 0.72, height: 0.52, rotation: -0.12 },
-      { x: 5.4, y: 2.73, z: -0.9, width: 0.62, height: 0.82, rotation: 0.1 },
-      { x: -5.33, y: -2.8, z: 0.3, width: 0.55, height: 0.72, rotation: 0.08 },
-      { x: 5.39, y: -2.77, z: -0.35, width: 0.75, height: 0.5, rotation: -0.08 }
-    ],
-    mobile: { textX: 0, textY: 0.78, photoX: -0.1, photoY: -1.02, scale: 0.66, textAlign: 'right' }
-  },
-  {
+    // 第二站沿用原第三站的景深與停駐位置，刪除一站後仍保留完整的轉動進場。
     z: -23.8,
     textX: -1.24,
     photoX: 1.45,
-    eyebrow: '03 / MAKE A FRAME',
-    heading: ['Come closer.', 'There is room', 'in the picture.'],
-    body: ['NEHS PHOTOGRAPHY CLUB / EST. 2024'],
-    textureIndex: 0,
     satellites: [
       { x: -2.25, y: 2.15, z: -3.05, width: 0.72, height: 0.52, rotation: -0.12 },
       { x: 2.95, y: 2.4, z: -2.1, width: 0.62, height: 0.82, rotation: 0.1 },
@@ -118,7 +95,7 @@ const STATION_LAYOUTS = [
       { x: 2.75, y: -1.9, z: -1.85, width: 0.75, height: 0.5, rotation: -0.08 }
     ],
     mobile: { textX: 0, textY: 0.64, photoX: 0.08, photoY: -0.86, scale: 0.68 }
-  }
+  },
 ];
 
 function smoothStep(value) {
@@ -180,7 +157,25 @@ function createPortal(texture) {
   return portal;
 }
 
-function createExitPage(isMobile) {
+function drawCoverImage(context, image, x, y, width, height) {
+  const sourceAspect = image.width / image.height;
+  const targetAspect = width / height;
+  let sourceX = 0;
+  let sourceY = 0;
+  let sourceWidth = image.width;
+  let sourceHeight = image.height;
+
+  if (sourceAspect > targetAspect) {
+    sourceWidth = image.height * targetAspect;
+    sourceX = (image.width - sourceWidth) * 0.5;
+  } else {
+    sourceHeight = image.width / targetAspect;
+    sourceY = (image.height - sourceHeight) * 0.5;
+  }
+  context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+}
+
+function createExitPage(isMobile, image) {
   const canvas = document.createElement('canvas');
   canvas.width = isMobile ? 780 : 1600;
   canvas.height = isMobile ? 1600 : 1000;
@@ -204,36 +199,37 @@ function createExitPage(isMobile) {
   const frameHeight = isMobile ? 390 : 500;
   context.strokeStyle = 'rgba(25, 24, 21, 0.55)';
   context.strokeRect(frameX, frameY, frameWidth, frameHeight);
+  drawCoverImage(context, image, frameX + 24, frameY + 24, frameWidth - 48, frameHeight * 0.62);
   context.fillStyle = '#191815';
-  context.font = `${isMobile ? 124 : 150}px Georgia, serif`;
-  context.fillText('04', frameX + 42, frameY + 145);
+  context.font = `${isMobile ? 86 : 104}px ${CJK_SERIF_FONT}`;
+  context.fillText('04', frameX + 34, frameY + frameHeight - 92);
   context.font = '16px Arial, sans-serif';
   context.letterSpacing = '4px';
-  context.fillText('NEPC / OPEN FRAME', frameX + 42, frameY + frameHeight - 42);
+  context.fillText('NEPC / OPEN FRAME', frameX + 34, frameY + frameHeight - 42);
 
   const copyX = isMobile ? 72 : 650;
   const copyY = isMobile ? 650 : 195;
   context.fillStyle = 'rgba(25, 24, 21, 0.58)';
   context.font = '17px Arial, sans-serif';
   context.letterSpacing = '5px';
-  context.fillText('04 / STEP INTO THE FRAME', copyX, copyY);
+  context.fillText(ABOUT_EXIT_CONTENT.index, copyX, copyY);
   context.fillStyle = '#191815';
-  context.font = `${isMobile ? 140 : 128}px "Cormorant Garamond", Georgia, serif`;
-  const titleLines = ['THE NEXT', 'FRAME', 'IS YOURS.'];
+  context.font = `${isMobile ? 140 : 128}px ${CJK_SERIF_FONT}`;
+  const titleLines = ABOUT_EXIT_CONTENT.title;
   titleLines.forEach((line, index) => {
-    context.fillText(line, copyX, copyY + (isMobile ? 165 : 120) + index * (isMobile ? 136 : 95));
+    context.fillText(line, copyX, copyY + (isMobile ? 165 : 120) + index * (isMobile ? 150 : 120));
   });
   context.font = `${isMobile ? 23 : 21}px Arial, sans-serif`;
   context.letterSpacing = '1px';
   const bodyLines = isMobile
-    ? ['Bring your point of view. We will help you', 'turn it into a photograph worth keeping.']
-    : ['Bring your point of view. We will help you turn it into a photograph', 'worth keeping.'];
+    ? [ABOUT_EXIT_CONTENT.body.slice(0, 45), ABOUT_EXIT_CONTENT.body.slice(45).trim()]
+    : [ABOUT_EXIT_CONTENT.body.slice(0, 64), ABOUT_EXIT_CONTENT.body.slice(64).trim()];
   bodyLines.forEach((line, index) => {
-    context.fillText(line, copyX, copyY + (isMobile ? 650 : 380) + index * (isMobile ? 42 : 40));
+    context.fillText(line, copyX, copyY + (isMobile ? 610 : 350) + index * (isMobile ? 42 : 40));
   });
   context.font = '16px Arial, sans-serif';
   context.letterSpacing = '4px';
-  context.fillText('JOIN THE CLUB   /   VIEW OUR WORK', copyX, copyY + (isMobile ? 820 : 505));
+  context.fillText(ABOUT_EXIT_CONTENT.actions.map((action) => action.label.toUpperCase()).join('   /   '), copyX, copyY + (isMobile ? 780 : 470));
 
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
@@ -269,28 +265,11 @@ function createCropTexture(texture, cropIndex) {
   return crop;
 }
 
-function createLabelTexture(frameNumber) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 768;
-  canvas.height = 112;
-  const context = canvas.getContext('2d');
-  context.fillStyle = '#dedbd2';
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = '#151515';
-  context.font = '24px Arial, sans-serif';
-  context.letterSpacing = '6px';
-  context.fillText(`NEPC / FRAME ${String(frameNumber).padStart(2, '0')}`, 36, 70);
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  return texture;
-}
-
-function createPhotoCard(texture, frameNumber, width, height) {
+function createPhotoCard(texture, width, height) {
   const group = new Group();
-  const border = 0.16;
-  const labelHeight = 0.42;
+  const border = 0.08;
   const paper = new Mesh(
-    new PlaneGeometry(width + border * 2, height + border + labelHeight),
+    new PlaneGeometry(width + border * 2, height + border * 2),
     new MeshBasicMaterial({ color: 0xdedbd2, transparent: true, fog: false, side: DoubleSide })
   );
   group.add(paper);
@@ -299,23 +278,16 @@ function createPhotoCard(texture, frameNumber, width, height) {
     new PlaneGeometry(width, height),
     new MeshBasicMaterial({ map: texture, transparent: true, fog: false, side: DoubleSide })
   );
-  photo.position.set(0, labelHeight * 0.35, 0.018);
+  photo.position.z = 0.018;
   group.add(photo);
 
-  const labelTexture = createLabelTexture(frameNumber);
-  const label = new Mesh(
-    new PlaneGeometry(width, 0.24),
-    new MeshBasicMaterial({ map: labelTexture, transparent: true, fog: false, side: DoubleSide })
-  );
-  label.position.set(0, -height / 2 - 0.19, 0.02);
-  group.add(label);
-  group.userData.disposableTextures = [texture, labelTexture];
+  group.userData.disposableTextures = [texture];
   return group;
 }
 
-function createTunnelPhotoCard(sourceTexture, frameNumber, width, height, cropIndex) {
-  const frameWidth = width + 0.16;
-  const frameHeight = height + 0.3;
+function createTunnelPhotoCard(sourceTexture, width, height, cropIndex) {
+  const frameWidth = width + 0.08;
+  const frameHeight = height + 0.08;
   const canvas = document.createElement('canvas');
   canvas.width = 256;
   canvas.height = Math.max(160, Math.round(canvas.width * frameHeight / frameWidth));
@@ -323,10 +295,9 @@ function createTunnelPhotoCard(sourceTexture, frameNumber, width, height, cropIn
   context.fillStyle = '#dedbd2';
   context.fillRect(0, 0, canvas.width, canvas.height);
 
-  const inset = 12;
-  const labelHeight = Math.max(30, Math.round(canvas.height * 0.15));
+  const inset = 7;
   const photoWidth = canvas.width - inset * 2;
-  const photoHeight = canvas.height - inset * 2 - labelHeight;
+  const photoHeight = canvas.height - inset * 2;
   const image = sourceTexture.image;
   const cropWidth = cropIndex % 2 === 0 ? 0.68 : 0.55;
   const cropHeight = cropIndex % 3 === 0 ? 0.72 : 0.6;
@@ -346,10 +317,6 @@ function createTunnelPhotoCard(sourceTexture, frameNumber, width, height, cropIn
     sourceHeight = nextHeight;
   }
   context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, inset, inset, photoWidth, photoHeight);
-  context.fillStyle = '#171717';
-  context.font = '10px Arial, sans-serif';
-  context.letterSpacing = '2px';
-  context.fillText(`NEPC / FRAME ${String(frameNumber).padStart(2, '0')}`, inset, canvas.height - 15);
 
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
@@ -361,6 +328,22 @@ function createTunnelPhotoCard(sourceTexture, frameNumber, width, height, cropIn
   return card;
 }
 
+function wrapCanvasText(context, text, maxWidth) {
+  const lines = [];
+  let line = '';
+  for (const character of text) {
+    const nextLine = line + character;
+    if (line && context.measureText(nextLine).width > maxWidth) {
+      lines.push(line.trimEnd());
+      line = character.trimStart();
+    } else {
+      line = nextLine;
+    }
+  }
+  if (line) lines.push(line.trimEnd());
+  return lines;
+}
+
 function createTextPanel(layout, isMobile) {
   const canvas = document.createElement('canvas');
   canvas.width = 1800;
@@ -369,12 +352,13 @@ function createTextPanel(layout, isMobile) {
   const leftPadding = 90;
   let textX = leftPadding;
   const isRightAlignedMobileText = isMobile && layout.mobile?.textAlign === 'right';
+  context.font = `104px ${CJK_SERIF_FONT}`;
+  const headingLines = wrapCanvasText(context, layout.heading, 1220);
 
   // 桌面左側文字站的照片位於右方。先量出最長標題，再平移整個左對齊文字塊，
   // 讓標題右緣與照片的距離等同第二站。手機採上下排列，不套用水平間距校正。
   if (!isMobile && layout.photoX > 0) {
-    context.font = '104px Georgia, serif';
-    const longestHeading = Math.max(...layout.heading.map((line) => context.measureText(line).width));
+    const longestHeading = Math.max(...headingLines.map((line) => context.measureText(line).width));
     // Canvas 量測與實際字形邊界會有些微差異，右側預留額外空間避免最後字元被紋理邊界裁切。
     textX = canvas.width - 210 - longestHeading;
   }
@@ -383,17 +367,19 @@ function createTextPanel(layout, isMobile) {
     context.textAlign = 'right';
   }
   context.fillStyle = 'rgba(255, 255, 255, 0.58)';
-  context.font = '30px Arial, sans-serif';
-  context.letterSpacing = '9px';
+  context.font = `64px ${CJK_SERIF_FONT}`;
+  context.letterSpacing = '8px';
   context.fillText(layout.eyebrow, textX, 110);
   context.fillStyle = '#f5f3ed';
-  context.font = '104px Georgia, serif';
-  layout.heading.forEach((line, index) => context.fillText(line, textX, 285 + index * 122));
+  context.font = `104px ${CJK_SERIF_FONT}`;
+  headingLines.forEach((line, index) => context.fillText(line, textX, 285 + index * 122));
   context.fillStyle = 'rgba(255, 255, 255, 0.68)';
-  context.font = '27px Arial, sans-serif';
+  context.font = `58px ${CJK_SERIF_FONT}`;
   context.letterSpacing = '2px';
   const bodyX = isRightAlignedMobileText ? textX - 4 : textX + 4;
-  layout.body.forEach((line, index) => context.fillText(line, bodyX, 800 + index * 48));
+  wrapCanvasText(context, layout.body, 1160).slice(0, 2).forEach((line, index) => {
+    context.fillText(line, bodyX, 800 + index * 54);
+  });
 
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
@@ -429,8 +415,8 @@ function createStation(layout, textures, stationIndex, isMobile) {
   const station = new Group();
   station.position.z = layout.z;
   const textPanel = createTextPanel(layout, isMobile);
-  const mainTexture = createCropTexture(textures[layout.textureIndex], stationIndex + 1);
-  const mainPhoto = createPhotoCard(mainTexture, stationIndex * 5 + 1, 1.58, 1.22);
+  const mainTexture = createCropTexture(textures[layout.photo], stationIndex + 1);
+  const mainPhoto = createPhotoCard(mainTexture, 1.58, 1.22);
   mainPhoto.position.set(layout.photoX, -0.02, 0);
   mainPhoto.rotation.y = layout.photoX > 0 ? -0.08 : 0.08;
 
@@ -445,9 +431,8 @@ function createStation(layout, textures, stationIndex, isMobile) {
 
   // 手機畫面較窄，不配置固定衛星照片，避免透視移動時壓到標題與主照片。
   layout.satellites.slice(0, isMobile ? 0 : layout.satellites.length).forEach((item, index) => {
-    const textureIndex = (layout.textureIndex + index + 1) % textures.length;
-    const cropTexture = createCropTexture(textures[textureIndex], stationIndex * 4 + index + 3);
-    const photo = createPhotoCard(cropTexture, stationIndex * 5 + index + 2, item.width, item.height);
+    const cropTexture = createCropTexture(textures[layout.satellitePhotos[index]], stationIndex * 4 + index + 3);
+    const photo = createPhotoCard(cropTexture, item.width, item.height);
     photo.position.set(item.x, item.y, item.z);
     photo.rotation.z = item.rotation;
     // 周邊照片只作為空間線索，縮小後避免在觀看點壓過主標題與主照片。
@@ -473,7 +458,7 @@ function createTunnelGallery(textures, isMobile) {
     const width = (0.18 + seededRandom(index + 101) * 0.28) * galleryScale;
     const height = (0.22 + seededRandom(index + 111) * 0.3) * galleryScale;
     const texture = textures[index % textures.length];
-    const photo = createTunnelPhotoCard(texture, index + 16, width, height, index + 17);
+    const photo = createTunnelPhotoCard(texture, width, height, index + 17);
     const angle = index * Math.PI * (3 - Math.sqrt(5));
     const horizontalSide = index % 4 < 2;
     const side = index % 2 === 0 ? -1 : 1;
@@ -574,23 +559,26 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
   camera.position.set(0, 0, 8);
 
   const textureLoader = new TextureLoader();
-  const textures = await Promise.all([
-    textureLoader.loadAsync(HERO_TEXTURE_URL),
-    textureLoader.loadAsync(CONTACT_TEXTURE_URL)
-  ]);
-  textures.forEach((texture) => {
+  const photoSources = [...new Set(Object.values(ABOUT_PHOTOS))];
+  const textureList = await Promise.all(photoSources.map((url) => textureLoader.loadAsync(url)));
+  textureList.forEach((texture) => {
     texture.colorSpace = SRGBColorSpace;
     texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
   });
+  const texturesByUrl = new Map(photoSources.map((url, index) => [url, textureList[index]]));
+  const textures = Object.fromEntries(
+    Object.entries(ABOUT_PHOTOS).map(([name, url]) => [name, texturesByUrl.get(url)])
+  );
 
-  const portalTexture = createPortalTexture(textures[0].image);
+  const portalTexture = createPortalTexture(textures.focus.image);
   const portal = createPortal(portalTexture);
-  const exitPage = createExitPage(isMobile);
+  const exitPage = createExitPage(isMobile, textures[ABOUT_EXIT_CONTENT.photo].image);
   scene.add(portal, exitPage);
 
   const stations = STATION_LAYOUTS.map((layout, index) => {
     const responsiveLayout = {
       ...layout,
+      ...ABOUT_STATIONS[index],
       textX: isMobile ? layout.textX * 0.56 : layout.textX,
       photoX: isMobile ? layout.photoX * 0.56 : layout.photoX
     };
@@ -615,7 +603,7 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
     return station;
   });
 
-  const tunnelGallery = createTunnelGallery(textures, isMobile);
+  const tunnelGallery = createTunnelGallery(ABOUT_TUNNEL_PHOTOS.map((photo) => textures[photo]), isMobile);
   const tunnelPhotos = tunnelGallery.children;
   const dustField = createDustField(isMobile);
   scene.add(tunnelGallery, dustField);
@@ -1079,7 +1067,7 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
         object.userData.disposableTextures?.forEach((texture) => texture.dispose());
       });
       portalTexture.dispose();
-      textures.forEach((texture) => texture.dispose());
+      new Set(Object.values(textures)).forEach((texture) => texture.dispose());
       renderer.dispose();
     }
   };
