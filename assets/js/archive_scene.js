@@ -29,7 +29,7 @@ const CAMERA_PROGRESS_STIFFNESS = 90;
 const CAMERA_PROGRESS_DAMPING = 19;
 const EXIT_CORNER_Z = -35;
 const EXIT_PAGE_X = -12;
-const EXIT_TURN_END = 0.38;
+const EXIT_TURN_END = 0.32;
 const EXIT_CORNER_END = 0.48;
 const EXIT_PAGE_REVEAL_START = 0.78;
 const EXIT_PAGE_REVEAL_END = 0.86;
@@ -716,9 +716,9 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
       appearStart,
       appearEnd: appearStart + 0.16 + seededRandom(index + 501) * 0.08,
       // 邊框先穩定、內部後補齊；每個碎片的微幅錯開可避免整片同時吸附。
-      gatherStart: 0.4 + targetEdgeDistance * 0.16 + seededRandom(index + 461) * 0.08
+      gatherStart: 0.34 + targetEdgeDistance * 0.16 + seededRandom(index + 461) * 0.08
         + (isApproachFragment ? 0.05 : 0),
-      gatherEnd: 0.78 + targetEdgeDistance * 0.1 + seededRandom(index + 471) * 0.03
+      gatherEnd: 0.82 + targetEdgeDistance * 0.1 + seededRandom(index + 471) * 0.03
     };
     fragmentStates.push(state);
   }
@@ -829,7 +829,7 @@ export async function createArchiveScene(canvas, onExitPageFrame) {
     exitPage.material.opacity = 0;
 
     // 第四頁轉場直接改變 PerspectiveCamera 的世界座標與觀看方向。
-    // 前 38% 完成精確 90 度左轉，48% 抵達彎角後等待碎片匯聚；頁面開始顯現時，
+    // 前 32% 完成精確 90 度左轉，48% 抵達彎角後等待碎片匯聚；頁面開始顯現時，
     // 相機才沿負 X 軸持續靠近，直到實體紙面自然覆蓋視野後再交接 DOM。
     const pointerInfluence = isMobile ? 0 : 1 - turnAmount;
     const exitCameraZ = MathUtils.lerp(cameraState.z, EXIT_CORNER_Z, cornerAmount);

@@ -258,7 +258,7 @@ export function initAboutPage() {
   window.addEventListener('wheel', (event) => {
     if (isExperienceUnlocked) return;
     event.preventDefault();
-    adjustFocus(event.deltaY * 0.03);
+    adjustFocus(event.deltaY * 0.04);
   }, { passive: false });
   let lastTouchY = null;
   window.addEventListener('touchstart', (event) => {
@@ -269,7 +269,7 @@ export function initAboutPage() {
     event.preventDefault();
     const currentTouchY = event.touches[0]?.clientY ?? lastTouchY;
     const movement = lastTouchY - currentTouchY;
-    adjustFocus(movement * 0.14);
+    adjustFocus(movement * 0.18);
     lastTouchY = currentTouchY;
   }, { passive: false });
   window.addEventListener('touchend', () => { lastTouchY = null; }, { passive: true });
@@ -277,7 +277,7 @@ export function initAboutPage() {
     if (isExperienceUnlocked || !['ArrowDown', 'PageDown', ' ', 'ArrowUp'].includes(event.key)) return;
     event.preventDefault();
     const direction = event.key === 'ArrowUp' ? -1 : 1;
-    adjustFocus(direction * 3);
+    adjustFocus(direction * 4);
   });
 
   const media = gsap.matchMedia();
