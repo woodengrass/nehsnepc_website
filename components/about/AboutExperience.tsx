@@ -27,18 +27,36 @@ type ExitPageFrame = {
 
 export default function AboutExperience() {
   useEffect(() => {
-    const page = document.querySelector<HTMLElement>('.obscura');
-    const focusReading = document.getElementById('focusReading');
-    const microprismCanvas = document.getElementById('microprismCanvas') as HTMLCanvasElement | null;
-    const viewfinderImage = document.querySelector<HTMLImageElement>('.obscura-image');
-    const imageWrap = document.querySelector<HTMLElement>('.obscura-image-wrap');
-    const archiveCanvas = document.getElementById('archiveCanvas') as HTMLCanvasElement | null;
-    const focusGuide = document.getElementById('focusGuide');
-    const afterword = document.querySelector<HTMLElement>('.obscura-afterword');
+    const pageQuery = document.querySelector<HTMLElement>('.obscura');
+    const focusReadingQuery = document.getElementById('focusReading');
+    const microprismCanvasQuery = document.getElementById('microprismCanvas') as HTMLCanvasElement | null;
+    const viewfinderImageQuery = document.querySelector<HTMLImageElement>('.obscura-image');
+    const imageWrapQuery = document.querySelector<HTMLElement>('.obscura-image-wrap');
+    const archiveCanvasQuery = document.getElementById('archiveCanvas') as HTMLCanvasElement | null;
+    const focusGuideQuery = document.getElementById('focusGuide');
+    const afterwordQuery = document.querySelector<HTMLElement>('.obscura-afterword');
 
-    if (!page || !focusReading || !microprismCanvas || !viewfinderImage || !imageWrap || !archiveCanvas || !focusGuide || !afterword) {
+    if (
+      !pageQuery ||
+      !focusReadingQuery ||
+      !microprismCanvasQuery ||
+      !viewfinderImageQuery ||
+      !imageWrapQuery ||
+      !archiveCanvasQuery ||
+      !focusGuideQuery ||
+      !afterwordQuery
+    ) {
       return;
     }
+
+    const page: HTMLElement = pageQuery;
+    const focusReading: HTMLElement = focusReadingQuery;
+    const microprismCanvas: HTMLCanvasElement = microprismCanvasQuery;
+    const viewfinderImage: HTMLImageElement = viewfinderImageQuery;
+    const imageWrap: HTMLElement = imageWrapQuery;
+    const archiveCanvas: HTMLCanvasElement = archiveCanvasQuery;
+    const focusGuide: HTMLElement = focusGuideQuery;
+    const afterword: HTMLElement = afterwordQuery;
 
     let prismFrame: number | null = null;
     let prismError = 1;

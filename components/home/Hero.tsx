@@ -113,12 +113,12 @@ export default function Hero() {
       </div>
 
       <nav className="hero-nav" aria-label="Main navigation">
-        {[
+        {([
           ['/', 'Home', 0],
           ['/about', 'About', 1],
           ['/portfolio', 'Portfolio', 2],
           ['/contact', 'Contact', 3]
-        ].map(([href, label, index]) => (
+        ] as const).map(([href, label, index]) => (
           <Link
             key={href}
             href={href}
