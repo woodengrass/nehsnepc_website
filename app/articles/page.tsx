@@ -6,7 +6,8 @@ import { formatDate } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Articles',
-  description: 'NEHS 攝影社文章 — 攝影教學、社團動態與 3D 展示。'
+  description: 'NEHS 攝影社文章 — 攝影教學、社團動態與 3D 展示。',
+  alternates: { canonical: '/articles' }
 };
 
 export default function ArticlesPage() {

@@ -10,6 +10,7 @@ import remarkGfm from 'remark-gfm';
 import { mdxComponents } from '@/components/mdx';
 import { getAdjacentArticles, getAllArticles, getArticle, getCategory } from '@/lib/content';
 import { formatDate } from '@/lib/format';
+import { JsonLd, articleJsonLd, breadcrumbJsonLd } from '@/lib/seo';
 
 export function generateStaticParams() {
   // 構建期只展開正式文章；草稿由 getArticle 在開發環境動態提供。
@@ -23,7 +24,22 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: article.title,
     description: article.description,
-    authors: [{ name: article.author }]
+    authors: [{ name: article.author }],
+    keywords: article.tags,
+    alternates: {
+      canonical: `/articles/${article.slug}`
+    },
+    openGraph: {
+      type: 'article',
+      title: article.title,
+      description: article.description,
+      url: `/articles/${article.slug}`,
+      publishedTime: article.date,
+      modifiedTime: article.updated ?? article.date,
+      authors: [article.author],
+      tags: article.tags,
+      images: article.cover ? [{ url: article.cover, alt: article.coverAlt ?? article.title }] : undefined
+    }
   };
 }
 
@@ -37,6 +53,14 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   return (
     <main className="article-main">
+      <JsonLd data={articleJsonLd(article)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Articles', path: '/articles' },
+          { name: article.title, path: `/articles/${article.slug}` }
+        ])}
+      />
       <header className="article-hero">
         <Link href={`/articles/category/${article.category}`} className="article-eyebrow">
           {category?.label}

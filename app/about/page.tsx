@@ -6,7 +6,8 @@ import { ABOUT_EXIT_CONTENT, ABOUT_FOCUS_CONTENT, ABOUT_PHOTOS, ABOUT_STATIONS }
 
 export const metadata: Metadata = {
   title: 'About',
-  description: 'NEHS 攝影社 — 讓攝影不再有門檻，從看懂照片開始，慢慢拍出自己的想法。'
+  description: 'NEHS 攝影社 — 讓攝影不再有門檻，從看懂照片開始，慢慢拍出自己的想法。',
+  alternates: { canonical: '/about' }
 };
 
 const HERO_SRCSET_AVIF = '/images/generated/hero-640.avif 640w, /images/generated/hero-1280.avif 1280w, /images/generated/hero-1920.avif 1920w, /images/generated/hero-2560.avif 2560w';

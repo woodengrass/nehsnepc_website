@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Portfolio',
-  description: 'NEHS 攝影社作品集 — 敬請期待。'
+  description: 'NEHS 攝影社作品集 — 敬請期待。',
+  alternates: { canonical: '/portfolio' }
 };
 
 export default function PortfolioPage() {

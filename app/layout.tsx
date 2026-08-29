@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 import SiteNav from '@/components/SiteNav';
+import { SITE_NAME, SITE_URL, JsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 
 import './globals.css';
 import './styles/main.css';
@@ -11,11 +12,20 @@ import './styles/about.css';
 import './styles/contact.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'NEHS Photography Club',
     template: '%s — NEHS Photography Club'
   },
-  description: 'NEHS 攝影社 — LOOK CLOSER. 讓攝影不再有門檻，從看懂照片開始。'
+  description: 'NEHS 攝影社 — LOOK CLOSER. 讓攝影不再有門檻，從看懂照片開始。',
+  openGraph: {
+    type: 'website',
+    siteName: SITE_NAME,
+    locale: 'zh_TW'
+  },
+  twitter: {
+    card: 'summary_large_image'
+  }
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -25,6 +35,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {children}
         <div className="grain-overlay" aria-hidden="true" />
         <SiteNav />
+        <JsonLd data={organizationJsonLd()} />
+        <JsonLd data={websiteJsonLd()} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
