@@ -2,7 +2,9 @@
   "redirects": [
     { "source": "/index.html", "destination": "/", "permanent": true },
     { "source": "/about.html", "destination": "/about", "permanent": true },
-    { "source": "/portfolio.html", "destination": "/portfolio", "permanent": true },
+    { "source": "/portfolio.html", "destination": "/tools", "permanent": true },
+    { "source": "/portfolio", "destination": "/tools", "permanent": true },
+    { "source": "/articles/:path*", "destination": "/tutorial/:path*", "permanent": true },
     { "source": "/contact.html", "destination": "/contact", "permanent": true },
     { "source": "/pages/:path*.html", "destination": "/:path*", "permanent": true }
   ]

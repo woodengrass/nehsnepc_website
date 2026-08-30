@@ -1,9 +1,123 @@
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+@import 'tailwindcss';
+
+@theme {
+  --color-page: #f8f7f4;
+  --color-surface: #ffffff;
+  --color-ink: #0a0a0a;
+  --color-brand-red: #c41e2a;
+  --color-brand-blue: #1e4d7a;
+  --font-source: 'Noto Serif TC', 'Source Han Serif TC', 'Source Han Serif', 'Songti TC', serif;
+  --font-heading: var(--font-heading-next), 'Cormorant Garamond', serif;
+  --font-body: var(--font-body-next), 'Raleway', sans-serif;
 }
 
-body {
-  margin: 0;
+@theme inline {
+  --animate-contact-drift: contact-photo-drift 15s ease-in-out infinite alternate;
+}
+
+@layer base {
+  :root {
+    --color-bg: #f8f7f4;
+    --color-surface: #ffffff;
+    --color-text: #0a0a0a;
+    --color-muted: rgba(10, 10, 10, 0.58);
+    --color-line: rgba(10, 10, 10, 0.18);
+    --color-line-soft: rgba(10, 10, 10, 0.08);
+    --color-paper: #f8f7f4;
+    --color-ink: #0a0a0a;
+    --color-red: #c41e2a;
+    --color-blue: #1e4d7a;
+    --font-source: 'Noto Serif TC', 'Source Han Serif TC', 'Source Han Serif', 'Songti TC', serif;
+    --font-heading: var(--font-source);
+    --font-body: var(--font-source);
+    --page-pad: clamp(1.25rem, 4vw, 4.5rem);
+    --header-height: 72px;
+    --transition-slow: 700ms cubic-bezier(0.22, 1, 0.36, 1);
+    --transition-fast: 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    min-height: 100%;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    scrollbar-color: var(--color-red) var(--color-bg);
+    scrollbar-width: thin;
+  }
+
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-source);
+    font-weight: 400;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body.menu-open,
+  body.has-modal {
+    overflow: hidden;
+  }
+
+  ::selection {
+    color: var(--color-text);
+    background: var(--color-red);
+  }
+
+  img {
+    object-fit: cover;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    color: inherit;
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-text);
+    outline-offset: 4px;
+  }
+
+  @media (max-width: 767px) {
+    :root {
+      --header-height: 58px;
+      --page-pad: 1.2rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@keyframes contact-photo-drift {
+  to {
+    transform: translateX(0) scale(1.09);
+  }
 }

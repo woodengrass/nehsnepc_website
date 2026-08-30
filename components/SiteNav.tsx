@@ -5,73 +5,175 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 const PAGES = [
-  ['/', 'Home'],
-  ['/about', 'About'],
-  ['/articles', 'Articles'],
-  ['/portfolio', 'Portfolio'],
-  ['/contact', 'Contact']
+  ['/', 'Home', '首頁'],
+  ['/about', 'About', '關於'],
+  ['/tutorial', 'Tutorial', '教學'],
+  ['/tools', 'Tools', '工具'],
+  ['/contact', 'Contact', '聯絡']
 ] as const;
 
-const LOGO_WIDTHS = [96, 192, 384];
+const OPEN_MENU_LINK_CLASSES = [
+  `
+    flex
+    translate-y-0
+    flex-col
+    gap-[0.3rem]
+    text-5xl
+    font-bold
+    tracking-[-0.02em]
+    opacity-100
+    transition-[opacity,transform]
+    duration-400
+    ease-in-out
+    delay-100
+    motion-reduce:transition-none
+  `,
+  `
+    flex
+    translate-y-0
+    flex-col
+    gap-[0.3rem]
+    text-5xl
+    font-bold
+    tracking-[-0.02em]
+    opacity-100
+    transition-[opacity,transform]
+    duration-400
+    ease-in-out
+    delay-150
+    motion-reduce:transition-none
+  `,
+  `
+    flex
+    translate-y-0
+    flex-col
+    gap-[0.3rem]
+    text-5xl
+    font-bold
+    tracking-[-0.02em]
+    opacity-100
+    transition-[opacity,transform]
+    duration-400
+    ease-in-out
+    delay-200
+    motion-reduce:transition-none
+  `,
+  `
+    flex
+    translate-y-0
+    flex-col
+    gap-[0.3rem]
+    text-5xl
+    font-bold
+    tracking-[-0.02em]
+    opacity-100
+    transition-[opacity,transform]
+    duration-400
+    ease-in-out
+    delay-250
+    motion-reduce:transition-none
+  `,
+  `
+    flex
+    translate-y-0
+    flex-col
+    gap-[0.3rem]
+    text-5xl
+    font-bold
+    tracking-[-0.02em]
+    opacity-100
+    transition-[opacity,transform]
+    duration-400
+    ease-in-out
+    delay-300
+    motion-reduce:transition-none
+  `
+] as const;
 
-function logoSrcSet(extension: 'avif' | 'webp') {
-  return LOGO_WIDTHS.map((width) => `/images/generated/logo-${width}.${extension} ${width}w`).join(', ');
-}
+const CLOSED_MENU_LINK_CLASSES = [
+  `
+    flex
+    translate-y-5
+    flex-col
+    gap-[0.3rem]
+    text-5xl
+    font-bold
+    tracking-[-0.02em]
+    opacity-0
+    transition-[opacity,transform]
+    duration-400
+    ease-in-out
+    delay-100
+    motion-reduce:transition-none
+  `,
+  `
+    flex
+    translate-y-5
+    flex-col
+    gap-[0.3rem]
+    text-5xl
+    font-bold
+    tracking-[-0.02em]
+    opacity-0
+    transition-[opacity,transform]
+    duration-400
+    ease-in-out
+    delay-150
+    motion-reduce:transition-none
+  `,
+  `
+    flex
+    translate-y-5
+    flex-col
+    gap-[0.3rem]
+    text-5xl
+    font-bold
+    tracking-[-0.02em]
+    opacity-0
+    transition-[opacity,transform]
+    duration-400
+    ease-in-out
+    delay-200
+    motion-reduce:transition-none
+  `,
+  `
+    flex
+    translate-y-5
+    flex-col
+    gap-[0.3rem]
+    text-5xl
+    font-bold
+    tracking-[-0.02em]
+    opacity-0
+    transition-[opacity,transform]
+    duration-400
+    ease-in-out
+    delay-250
+    motion-reduce:transition-none
+  `,
+  `
+    flex
+    translate-y-5
+    flex-col
+    gap-[0.3rem]
+    text-5xl
+    font-bold
+    tracking-[-0.02em]
+    opacity-0
+    transition-[opacity,transform]
+    duration-400
+    ease-in-out
+    delay-300
+    motion-reduce:transition-none
+  `
+] as const;
 
 export default function SiteNav() {
   const pathname = usePathname();
-  const panelRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const closeTimer = useRef<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const panel = panelRef.current;
-    if (!panel) return;
-
-    const clearCloseTimer = () => {
-      if (closeTimer.current !== null) {
-        window.clearTimeout(closeTimer.current);
-        closeTimer.current = null;
-      }
-    };
-    const closeSidebar = () => {
-      panel.classList.remove('open');
-      closeTimer.current = null;
-    };
-    const scheduleClose = () => {
-      if (closeTimer.current !== null) return;
-      closeTimer.current = window.setTimeout(closeSidebar, 550);
-    };
-    const handlePointerMove = (event: PointerEvent) => {
-      if (event.pointerType === 'touch') return;
-      if (event.clientX <= 56) {
-        clearCloseTimer();
-        panel.classList.add('open');
-      } else if (!panel.matches(':hover')) {
-        scheduleClose();
-      }
-    };
-    const handlePanelEnter = () => clearCloseTimer();
-    const handlePanelLeave = () => scheduleClose();
-
-    document.addEventListener('pointermove', handlePointerMove);
-    panel.addEventListener('pointerenter', handlePanelEnter);
-    panel.addEventListener('pointerleave', handlePanelLeave);
-    return () => {
-      document.removeEventListener('pointermove', handlePointerMove);
-      panel.removeEventListener('pointerenter', handlePanelEnter);
-      panel.removeEventListener('pointerleave', handlePanelLeave);
-      clearCloseTimer();
-    };
-  }, []);
-
-  useEffect(() => {
-    const hamburger = hamburgerRef.current;
-    const closeButton = closeButtonRef.current;
-    if (!hamburger || !closeButton) return;
-
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setMenuOpen(false);
     };
@@ -81,83 +183,203 @@ export default function SiteNav() {
 
   useEffect(() => {
     document.body.classList.toggle('menu-open', menuOpen);
-    if (menuOpen) closeButtonRef.current?.focus();
+    return () => document.body.classList.remove('menu-open');
   }, [menuOpen]);
 
   const toggleMenu = () => setMenuOpen((open) => !open);
-
-  const renderLinks = (className: string) =>
-    PAGES.map(([href, label]) => (
-      <Link
-        key={href}
-        href={href}
-        className={`${className}${pathname === href ? ' active' : ''}`}
-        onClick={() => setMenuOpen(false)}
-      >
-        {label}
-      </Link>
-    ));
-
-  const renderLogoPicture = (className: string, alt: string) => (
-    <picture>
-      <source
-        type="image/avif"
-        srcSet={logoSrcSet('avif')}
-        sizes="(max-width: 767px) 80px, 52px"
-      />
-      <source
-        type="image/webp"
-        srcSet={logoSrcSet('webp')}
-        sizes="(max-width: 767px) 80px, 52px"
-      />
-      <img src="/images/generated/logo-192.webp" alt={alt} className={className} />
-    </picture>
-  );
+  const isActive = (href: string) => href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <>
-      <aside className="sidebar" aria-label="Site navigation sidebar">
-        <div className="sidebar-edge" aria-hidden="true" />
-        <div className="sidebar-panel" ref={panelRef}>
-          <div className="sidebar-header">
-            {renderLogoPicture('sidebar-logo', 'NEHS Photography Club logo')}
-            <p className="sidebar-brand">NEHS Photo Club</p>
-          </div>
-          <nav className="sidebar-nav" aria-label="Sidebar navigation">
-            {renderLinks('sidebar-link')}
-          </nav>
-          <p className="sidebar-copy">&copy; {new Date().getFullYear()} NEHS Photography Club</p>
-        </div>
-      </aside>
+      <header className={`
+        fixed
+        top-8
+        left-8
+        z-100
+        text-[0.9rem]
+        font-semibold
+        tracking-[-0.01em]
+      `} role="banner">
+        <nav className={`
+          hidden
+        `} aria-label="Primary navigation">
+          {PAGES.map(([href, label, localizedLabel], index) => (
+            <Link
+              key={href}
+              href={href}
+              className={`
+                hidden
+              `}
+              aria-current={isActive(href) ? 'page' : undefined}
+              onClick={() => setMenuOpen(false)}
+            >
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <span>{label}</span>
+              <span>{localizedLabel}</span>
+            </Link>
+          ))}
+        </nav>
+        <span className={`
+          hidden
+        `}>
+          EST. 2016 / HSINCHU
+        </span>
+      </header>
 
       <button
         ref={hamburgerRef}
-        className={`hamburger${menuOpen ? ' active' : ''}`}
+        className={menuOpen ? `
+          fixed
+          top-8
+          right-8
+          z-200
+          flex
+          h-6
+          w-8
+          cursor-pointer
+          flex-col
+          gap-[0.4rem]
+          border-0
+          bg-transparent
+          p-0
+          mix-blend-normal
+        ` : `
+          fixed
+          top-8
+          right-8
+          z-200
+          flex
+          h-6
+          w-8
+          cursor-pointer
+          flex-col
+          gap-[0.4rem]
+          border-0
+          bg-transparent
+          p-0
+          mix-blend-difference
+        `}
         type="button"
-        aria-label="Open navigation menu"
+        aria-label={menuOpen ? '關閉選單' : '開啟選單'}
         aria-expanded={menuOpen}
         onClick={toggleMenu}
       >
-        <span className="hamburger-line" />
-        <span className="hamburger-line" />
-        <span className="hamburger-line" />
+        <span className={menuOpen ? `
+          h-0.5
+          w-full
+          translate-y-[0.6rem]
+          rotate-45
+          bg-[var(--color-text)]
+          transition-all
+          duration-300
+          ease-in-out
+          motion-reduce:transition-none
+        ` : `
+          h-0.5
+          w-full
+          bg-white
+          transition-all
+          duration-300
+          ease-in-out
+          motion-reduce:transition-none
+        `} />
+        <span className={menuOpen ? `
+          h-0.5
+          w-full
+          bg-[var(--color-text)]
+          opacity-0
+          transition-all
+          duration-300
+          ease-in-out
+          motion-reduce:transition-none
+        ` : `
+          h-0.5
+          w-full
+          bg-white
+          transition-all
+          duration-300
+          ease-in-out
+          motion-reduce:transition-none
+        `} />
+        <span className={menuOpen ? `
+          h-0.5
+          w-full
+          -translate-y-[0.6rem]
+          -rotate-45
+          bg-[var(--color-text)]
+          transition-all
+          duration-300
+          ease-in-out
+          motion-reduce:transition-none
+        ` : `
+          h-0.5
+          w-full
+          bg-white
+          transition-all
+          duration-300
+          ease-in-out
+          motion-reduce:transition-none
+        `} />
       </button>
 
-      <div className={`mobile-menu${menuOpen ? ' open' : ''}`} aria-hidden={!menuOpen}>
-        <button
-          ref={closeButtonRef}
-          className="mobile-close"
-          type="button"
-          aria-label="Close navigation menu"
-          onClick={() => setMenuOpen(false)}
-        >
-          &times;
-        </button>
-        <Link href="/" className="mobile-menu-logo-link" onClick={() => setMenuOpen(false)}>
-          {renderLogoPicture('mobile-menu-logo', 'NEHS Photography Club')}
-        </Link>
-        <nav className="mobile-nav" aria-label="Mobile navigation">
-          {renderLinks('mobile-nav-link')}
+      <div
+        className={menuOpen ? `
+          visible
+          fixed
+          inset-0
+          z-150
+          flex
+          items-center
+          justify-center
+          bg-[var(--color-bg)]
+          opacity-100
+          transition-[opacity,visibility]
+          duration-400
+          ease-in-out
+          motion-reduce:transition-none
+        ` : `
+          invisible
+          fixed
+          inset-0
+          z-150
+          flex
+          items-center
+          justify-center
+          bg-[var(--color-bg)]
+          opacity-0
+          transition-[opacity,visibility]
+          duration-400
+          ease-in-out
+          motion-reduce:transition-none
+        `}
+        aria-hidden={!menuOpen}
+      >
+        <nav className={`
+          flex
+          flex-col
+          gap-8
+        `} aria-label="Mobile navigation">
+          {PAGES.map(([href, label], index) => {
+            const active = isActive(href);
+
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={menuOpen ? OPEN_MENU_LINK_CLASSES[index] : CLOSED_MENU_LINK_CLASSES[index]}
+                aria-current={active ? 'page' : undefined}
+                onClick={() => setMenuOpen(false)}
+              >
+                <span className={active ? `
+                  text-[var(--color-red)]
+                ` : `
+                  text-[var(--color-text)]
+                `}>
+                  {label}
+                </span>
+              </Link>
+            );
+          })}
         </nav>
       </div>
     </>

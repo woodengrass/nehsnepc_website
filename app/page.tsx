@@ -7,10 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return (
-    <>
-      <Hero />
-      <div className="scroll-spacer" aria-hidden="true" />
-    </>
-  );
+  return <Hero />;
 }

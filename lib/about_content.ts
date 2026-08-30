@@ -47,6 +47,6 @@ export const ABOUT_EXIT_CONTENT = {
   photo: 'final',
   actions: [
     { label: 'FOLLOW US', href: 'https://instagram.com/nehs_nepc', external: true },
-    { label: 'VIEW OUR WORK', href: '/portfolio' }
+    { label: 'TRY OUR TOOLS', href: '/tools' }
   ]
 };

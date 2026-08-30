@@ -1,34 +1,14 @@
 import type { Metadata, Viewport } from 'next';
-import { Cormorant_Garamond, Raleway } from 'next/font/google';
 import type { ReactNode } from 'react';
 
 import SiteNav from '@/components/SiteNav';
 import { SITE_NAME, SITE_URL, JsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 
 import './globals.css';
-import './styles/main.css';
-import './styles/sidebar.css';
-import './styles/hero.css';
 import './styles/about.css';
-import './styles/contact.css';
-
-const cormorant = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['300', '400'],
-  style: ['normal', 'italic'],
-  display: 'swap',
-  variable: '--font-heading-next'
-});
-
-const raleway = Raleway({
-  subsets: ['latin'],
-  weight: ['200', '300', '400'],
-  display: 'swap',
-  variable: '--font-body-next'
-});
 
 export const viewport: Viewport = {
-  themeColor: '#000000',
+  themeColor: '#090909',
   viewportFit: 'cover'
 };
 
@@ -51,20 +31,35 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="zh-TW" className={`${cormorant.variable} ${raleway.variable}`}>
+    <html lang="zh-TW">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Noto Serif TC 與思源宋體共用字形來源，unicode-range 會按頁面文字分片下載。 */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body>
         {children}
-        <div className="grain-overlay" aria-hidden="true" />
+        <div
+          className={`
+            pointer-events-none
+            fixed
+            inset-0
+            z-999
+            bg-[url("data:image/svg+xml,%3Csvg_viewBox='0_0_512_512'_xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter_id='g'%3E%3CfeTurbulence_type='fractalNoise'_baseFrequency='.72'_numOctaves='4'_stitchTiles='stitch'/%3E%3C/filter%3E%3Crect_width='100%25'_height='100%25'_filter='url(%23g)'/%3E%3C/svg%3E")]
+            bg-size-[420px_420px]
+            bg-repeat
+            opacity-[0.045]
+            mix-blend-multiply
+          `}
+          aria-hidden="true"
+        />
         <SiteNav />
         <JsonLd data={organizationJsonLd()} />
         <JsonLd data={websiteJsonLd()} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Noto Serif TC 保留 CDN unicode-range 分片：瀏覽器只下載頁面實際用到的字元切片 */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500&display=swap"
-          rel="stylesheet"
-        />
       </body>
     </html>
   );

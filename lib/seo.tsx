@@ -48,7 +48,7 @@ export function articleJsonLd(article: ArticleMeta & { description: string }): J
       name: SITE_NAME,
       logo: { '@type': 'ImageObject', url: absoluteUrl('/images/generated/logo-384.webp') }
     },
-    mainEntityOfPage: absoluteUrl(`/articles/${article.slug}`),
+    mainEntityOfPage: absoluteUrl(`/tutorial/${article.slug}`),
     articleSection: category,
     keywords: article.tags.join(', '),
     image: article.cover ? absoluteUrl(article.cover) : undefined

@@ -79,8 +79,15 @@ export default function AboutPage() {
       </section>
 
       <section className="obscura-afterword" aria-labelledby="afterwordTitle">
+        <div className="obscura-afterword-rail" aria-hidden="true">
+          <span>NEPC / OPEN FRAME</span>
+          <span>HSINCHU / EST. 2016</span>
+        </div>
         <div className="obscura-afterword-frame" aria-hidden="true">
-          <img className="obscura-afterword-photo" src={ABOUT_PHOTOS.final} alt="" />
+          <div className="obscura-afterword-photo-wrap">
+            <img className="obscura-afterword-photo" src={ABOUT_PHOTOS.final} alt="" />
+          </div>
+          <p><span>ARCHIVE IMAGE / 03</span><span>JOIN THE FRAME</span></p>
         </div>
         <div className="obscura-afterword-copy">
           <p className="obscura-afterword-index">{ABOUT_EXIT_CONTENT.index}</p>
@@ -90,6 +97,10 @@ export default function AboutPage() {
             {ABOUT_EXIT_CONTENT.title[1]}
           </h2>
           <p>{ABOUT_EXIT_CONTENT.body}</p>
+          <div className="obscura-afterword-guide">
+            <span>Next step / 下一步</span>
+            <span>追蹤社群或先從攝影工具開始</span>
+          </div>
           <div className="obscura-afterword-actions">
             {ABOUT_EXIT_CONTENT.actions.map((action) =>
               action.external ? (
@@ -104,6 +115,8 @@ export default function AboutPage() {
             )}
           </div>
         </div>
+        <div className="obscura-afterword-block obscura-afterword-block-red" aria-hidden="true" />
+        <div className="obscura-afterword-block obscura-afterword-block-blue" aria-hidden="true" />
       </section>
 
       <AboutExperience />

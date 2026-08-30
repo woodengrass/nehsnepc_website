@@ -67,10 +67,29 @@ export default function Model3D({
   };
 
   return (
-    <figure className="article-model">
+    <figure className={`
+      article-model
+    `}>
       <div
         ref={frameRef}
-        className={`article-model-frame${interacted ? ' interacted' : ''}`}
+        className={`
+          relative
+          aspect-[4/3]
+          w-full
+          overflow-hidden
+          border
+          border-[var(--color-line)]
+          bg-[#0d0d0d]
+          [touch-action:pan-y]
+          ${interacted
+            ? `
+              [&_.model-hint]:opacity-0
+            `
+            : ''}
+          [&>model-viewer]:h-full
+          [&>model-viewer]:w-full
+          [&>model-viewer]:[--poster-color:transparent]
+        `}
         style={{ aspectRatio: aspect }}
         onPointerDown={() => setInteracted(true)}
       >
@@ -88,11 +107,79 @@ export default function Model3D({
             exposure={String(exposure)}
           />
         ) : null}
-        {poster && !modelLoaded ? <img className="article-model-poster" src={poster} alt="" loading="lazy" /> : null}
-        {!modelLoaded && !modelFailed ? <span className="article-model-hint">{interactionPrompt}</span> : null}
-        {modelFailed ? <span className="article-model-hint">3D 預覽無法載入</span> : null}
+        {poster && !modelLoaded ? (
+          <img
+            className={`
+              absolute
+              inset-0
+              h-full
+              w-full
+              grayscale-[0.7]
+              brightness-[0.72]
+              transition-opacity
+              duration-[var(--transition-slow)]
+            `}
+            src={poster}
+            alt=""
+            loading="lazy"
+          />
+        ) : null}
+        {!modelLoaded && !modelFailed ? (
+          <span
+            className={`
+              model-hint
+              pointer-events-none
+              absolute
+              bottom-4
+              right-4
+              bg-[var(--color-paper)]
+              px-[0.6rem]
+              py-[0.45rem]
+              text-[0.6rem]
+              uppercase
+              tracking-[0.12em]
+              text-[var(--color-ink)]
+              transition-opacity
+              duration-[var(--transition-fast)]
+            `}
+          >
+            {interactionPrompt}
+          </span>
+        ) : null}
+        {modelFailed ? (
+          <span
+            className={`
+              model-hint
+              pointer-events-none
+              absolute
+              bottom-4
+              right-4
+              bg-[var(--color-paper)]
+              px-[0.6rem]
+              py-[0.45rem]
+              text-[0.6rem]
+              uppercase
+              tracking-[0.12em]
+              text-[var(--color-ink)]
+            `}
+          >
+            3D 預覽無法載入
+          </span>
+        ) : null}
       </div>
-      {caption ? <figcaption>{caption}</figcaption> : null}
+      {caption ? (
+        <figcaption
+          className={`
+            mt-[0.8rem]
+            text-right
+            text-[0.68rem]
+            tracking-[0.1em]
+            text-[var(--color-muted)]
+          `}
+        >
+          {caption}
+        </figcaption>
+      ) : null}
     </figure>
   );
 }

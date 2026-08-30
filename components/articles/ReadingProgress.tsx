@@ -34,8 +34,28 @@ export default function ReadingProgress() {
   }, []);
 
   return (
-    <div className="reading-progress" aria-hidden="true">
-      <div className="reading-progress-bar" ref={barRef} />
+    <div
+      className={`
+        fixed
+        inset-x-0
+        top-0
+        z-[900]
+        h-[3px]
+        pointer-events-none
+        bg-[rgba(240,238,232,0.08)]
+      `}
+      aria-hidden="true"
+    >
+      <div
+        className={`
+          h-full
+          w-full
+          origin-left
+          bg-[var(--color-red)]
+          [transform:scaleX(0)]
+        `}
+        ref={barRef}
+      />
     </div>
   );
 }
