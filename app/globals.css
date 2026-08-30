@@ -15,6 +15,11 @@
   --animate-contact-drift: contact-photo-drift 15s ease-in-out infinite alternate;
 }
 
+@custom-variant film-short (@media (max-height:740px));
+@custom-variant film-phone (@media (max-width:767px) and (min-height:741px));
+@custom-variant film-medium (@media (min-height:741px) and (max-height:820px));
+@custom-variant film-tall (@media (min-height:821px) and (max-height:900px));
+
 @layer base {
   :root {
     --color-bg: #f8f7f4;

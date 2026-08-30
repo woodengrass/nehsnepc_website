@@ -76,6 +76,69 @@ const FILM_FRAMES = [
     grayscale-[0.88]
     contrast-[1.12]
     brightness-[0.82]
+  `,
+  `
+    h-full
+    w-full
+    object-cover
+    object-[10%_60%]
+    grayscale-[0.88]
+    contrast-[1.12]
+    brightness-[0.82]
+  `,
+  `
+    h-full
+    w-full
+    object-cover
+    object-[34%_57%]
+    grayscale-[0.88]
+    contrast-[1.12]
+    brightness-[0.82]
+  `,
+  `
+    h-full
+    w-full
+    object-cover
+    object-[57%_62%]
+    grayscale-[0.88]
+    contrast-[1.12]
+    brightness-[0.82]
+  `,
+  `
+    h-full
+    w-full
+    object-cover
+    object-[78%_55%]
+    grayscale-[0.88]
+    contrast-[1.12]
+    brightness-[0.82]
+  `,
+  `
+    h-full
+    w-full
+    object-cover
+    object-[96%_60%]
+    grayscale-[0.88]
+    contrast-[1.12]
+    brightness-[0.82]
+  `,
+  `
+    h-full
+    w-full
+    object-cover
+    object-[10%_60%]
+    grayscale-[0.88]
+    contrast-[1.12]
+    brightness-[0.82]
+  `,
+  `
+    h-full
+    w-full
+    object-cover
+    object-[34%_57%]
+    grayscale-[0.88]
+    contrast-[1.12]
+    brightness-[0.82]
   `
 ] as const;
 
@@ -115,23 +178,6 @@ export default function Hero() {
           max-[767px]:h-10
           max-[767px]:w-10
         `} aria-hidden="true" />
-        <span className={`
-          pointer-events-none
-          absolute
-          right-[4.5%]
-          bottom-[12%]
-          z-0
-          aspect-square
-          w-[clamp(7rem,12vw,12rem)]
-          rounded-full
-          border
-          border-[var(--color-line)]
-          shadow-[inset_0_0_0_1.25rem_var(--color-bg),inset_0_0_0_calc(1.25rem_+_1px)_var(--color-line-soft)]
-          max-[767px]:-right-10
-          max-[767px]:bottom-18
-          max-[767px]:w-32
-        `} aria-hidden="true" />
-
         <div className={`
           absolute
           top-[2.2rem]
@@ -193,10 +239,18 @@ export default function Hero() {
           bottom-[clamp(4.75rem,10vh,8rem)]
           left-[var(--page-pad)]
           z-[3]
+          border-l-4
+          border-[var(--color-red)]
+          py-5
+          pl-6
+          pr-8
           w-[min(61vw,960px)]
           max-[980px]:w-[68vw]
           max-[767px]:bottom-20
           max-[767px]:w-[calc(100%_-_(var(--page-pad)_*_2))]
+          max-[767px]:py-4
+          max-[767px]:pl-4
+          max-[767px]:pr-3
         `}>
           <h1
             className={`
@@ -297,15 +351,21 @@ export default function Hero() {
           `}>
             {FILM_FRAMES.map((position, index) => (
               <picture
-                className={index === 4 ? `
+                className={index === 2 ? `
                   relative
                   block
+                  translate-x-[3px]
+                  rotate-[0.7deg]
                   aspect-[3/2]
                   overflow-hidden
                   border
                   border-white/40
                   bg-[#272727]
-                  max-[767px]:hidden
+                  shadow-[0.35rem_0.35rem_0_rgba(0,0,0,0.28)]
+                  ${index >= 2 ? 'film-short:hidden' : ''}
+                  ${index >= 3 ? 'film-phone:hidden' : ''}
+                  ${index >= 6 ? 'film-medium:hidden' : ''}
+                  ${index >= 8 ? 'film-tall:hidden' : ''}
                 ` : `
                   relative
                   block
@@ -314,8 +374,12 @@ export default function Hero() {
                   border
                   border-white/40
                   bg-[#272727]
+                  ${index >= 2 ? 'film-short:hidden' : ''}
+                  ${index >= 3 ? 'film-phone:hidden' : ''}
+                  ${index >= 6 ? 'film-medium:hidden' : ''}
+                  ${index >= 8 ? 'film-tall:hidden' : ''}
                 `}
-                key={position}
+                key={`${position}-${index}`}
               >
                 <source
                   type="image/avif"
@@ -327,6 +391,9 @@ export default function Hero() {
                   absolute
                   right-[0.35rem]
                   bottom-[0.25rem]
+                  bg-[#101010]/80
+                  px-1
+                  py-[0.15rem]
                   font-[family-name:var(--font-body-next)]
                   text-[0.48rem]
                   tracking-[0.12em]
@@ -354,19 +421,29 @@ export default function Hero() {
 
         <a className={`
           absolute
-          right-[var(--page-pad)]
+          left-[var(--page-pad)]
           bottom-8
-          z-[4]
+          z-[10]
           flex
           w-[clamp(8rem,12vw,12rem)]
           justify-between
+          gap-6
           border-t
-          border-[var(--color-ink)]
-          pt-[0.6rem]
+          border-[#101d2b]
+          bg-[#101d2b]
+          px-3
+          py-2
           font-[family-name:var(--font-body-next)]
           text-[0.62rem]
           tracking-[0.12em]
+          text-[var(--color-paper)]
           uppercase
+          shadow-[0.3rem_0.3rem_0_rgba(10,10,10,0.08)]
+          transition-colors
+          hover:border-[var(--color-red)]
+          hover:bg-[var(--color-red)]
+          hover:text-[var(--color-ink)]
+          motion-reduce:transition-none
           max-[767px]:bottom-[1.2rem]
           max-[767px]:w-28
           max-[767px]:text-[0.52rem]
