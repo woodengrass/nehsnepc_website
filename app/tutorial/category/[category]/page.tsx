@@ -29,26 +29,10 @@ export default async function ArticleCategoryPage({ params }: { params: Promise<
     <main className={`
       relative
       min-h-screen
-      [padding:clamp(8.5rem,16vh,12rem)_var(--page-pad)_8rem]
-      max-[767px]:[padding-top:7.5rem]
+      [padding:calc(var(--header-height)_+_0.5rem)_var(--page-pad)_8rem]
+      max-[767px]:[padding-top:calc(var(--header-height)_+_0.5rem)]
       max-[767px]:[padding-bottom:5rem]
     `}>
-      <span
-        aria-hidden="true"
-        className={`
-          pointer-events-none
-          absolute
-          right-[var(--page-pad)]
-          top-[var(--header-height)]
-          text-[rgba(10,10,10,0.035)]
-          text-[clamp(11rem,24vw,25rem)]
-          font-bold
-          leading-[0.9]
-          max-[767px]:hidden
-        `}
-      >
-        02
-      </span>
       <header className={`
         relative
         grid
@@ -102,16 +86,6 @@ export default async function ArticleCategoryPage({ params }: { params: Promise<
           max-[980px]:col-[8/13]
           max-[767px]:p-[1.2rem_0]
         `}>
-          <span className={`
-            mb-auto
-            text-[0.64rem]
-            uppercase
-            tracking-[0.14em]
-            text-[var(--color-muted)]
-            max-[767px]:mb-[3.5rem]
-          `}>
-            Category index / 分類索引
-          </span>
           <p className={`
             max-w-[28rem]
             text-[clamp(0.95rem,1.3vw,1.12rem)]
@@ -128,7 +102,7 @@ export default async function ArticleCategoryPage({ params }: { params: Promise<
             tracking-[0.14em]
             max-[767px]:mt-6
           `}>
-            {String(articles.length).padStart(2, '0')} / ARTICLES
+            {String(articles.length).padStart(2, '0')} ARTICLES
           </strong>
         </div>
       </header>
@@ -208,7 +182,6 @@ export default async function ArticleCategoryPage({ params }: { params: Promise<
               max-[767px]:py-[0.9rem]
               ${item.id === category
                 ? `
-                  bg-[var(--color-paper)]
                   text-[var(--color-ink)]
                   after:absolute
                   after:inset-x-0

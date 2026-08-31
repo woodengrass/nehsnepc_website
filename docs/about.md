@@ -18,7 +18,7 @@ The controller returns `null` and imperatively enhances known DOM IDs/classes fr
 
 The page contains a fixed camera section, responsive hero image, image wash/vignette, hidden archive canvas, focus HUD and microprism canvas, desktop intro, separate visual mobile entry, flash layer, two semantic DOM station articles, and a light-paper afterword. The canvases are decorative/inaccessible; the DOM station content is intended to carry semantics and fallback content.
 
-Current content is centralized in `lib/about_content.ts`. Numerous semantic image keys currently reuse only the generated hero and contact images. `ABOUT_TUNNEL_PHOTOS` selects the focus and two station main images.
+Current content is centralized in `lib/about_content.ts`. Most semantic image keys currently reuse the generated hero and contact images; the final afterword uses the generated logo. `ABOUT_TUNNEL_PHOTOS` selects the focus and two station main images.
 
 ## Initial Focus Interaction
 
@@ -34,7 +34,7 @@ The target is `FOCUS_POINT = 62`. Before unlock:
 
 Focus value is clamped from 0 to 100. A synthetic distance is calculated from normalized focus; values near 97% display infinity. CSS properties `--focus`, `--focus-error`, and `--split-offset` drive image blur and split-prism visuals. Reaching within 0.8 of the target unlocks once.
 
-Unlock removes the body lock, adds `.is-unlocked`, changes prompt text, starts archive loading, and animates a white flash with GSAP. Cleanup must remove all listeners, body state, animation contexts, queued frames, and scene resources even if initialization is interrupted.
+Unlock removes the body lock, adds `.is-unlocked`, changes prompt text, starts archive loading, and animates a white flash with GSAP. During this 0.55-second flash transition, desktop wheel events remain prevented so high-frequency wheel input cannot scroll the DOM fallback station into the flash. Cleanup must remove all listeners, body state, animation contexts, queued frames, and scene resources even if initialization is interrupted.
 
 ## Microprism Canvas
 
@@ -121,7 +121,7 @@ Any redesign must preserve a complete semantic narrative independent of canvas o
 - Update `lib/about_content.ts` for copy and image mappings; keep keys valid.
 - Keep station data synchronized with scene layout assumptions.
 - Test text texture wrapping and DOM fallback on desktop and mobile.
-- Test wheel, trackpad, touch, keyboard, snapping, and guaranteed body unlock.
+- Test fast wheel and trackpad input during the unlock flash, touch, keyboard, snapping, and guaranteed body unlock.
 - Test reduced motion before testing WebGL.
 - Test scene import failure, texture failure, WebGL context loss, resize, tab hiding, and route exit.
 - Recheck ScrollTrigger pin length and snap points after story changes.

@@ -15,10 +15,10 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'NEHS Photography Club',
-    template: '%s — NEHS Photography Club'
+    default: '竹科實中攝影社 NEPC',
+    template: '%s — 竹科實中攝影社 NEPC'
   },
-  description: 'NEHS 攝影社 — LOOK CLOSER. 讓攝影不再有門檻，從看懂照片開始。',
+  description: '竹科實中攝影社 NEPC 官方網站 — 分享攝影知識，不論程度都能一起探索攝影的樂趣',
   openGraph: {
     type: 'website',
     siteName: SITE_NAME,

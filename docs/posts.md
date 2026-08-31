@@ -13,6 +13,8 @@ Articles are repository-owned `.md` or `.mdx` files directly under `content/arti
 | `app/tutorial/[slug]/page.tsx` | Metadata, JSON-LD, MDX rendering, and article navigation |
 | `components/articles/ReadingProgress.tsx` | Client scroll progress indicator |
 | `components/mdx/index.ts` | MDX component registry |
+
+The tutorial index and category headers begin `0.5rem` below `--header-height` on both desktop and mobile. Category headers match the index layout, without a decorative numeric marker or category-index label; the active category uses the same text and red-bottom-rule treatment as ALL.
 | `app/sitemap.ts` | Static/category/article URL entries |
 | `app/rss.xml/route.ts` | Force-static RSS 2.0 feed |
 
@@ -43,8 +45,8 @@ Invalid frontmatter logs `[content] Skipping <file>: invalid frontmatter` and si
 
 | ID | Label | Purpose |
 | --- | --- | --- |
-| `tutorial` | 攝影教學 | Exposure, composition, light, darkroom, and technique |
-| `news` | 社團動態 | Activities, recruitment, and exhibitions |
+| `tutorial` | 攝影教學 | 各類教學文章，覆蓋不同程度。 |
+| `news` | 社團動態 | 活動記錄、招新資訊與作品回顧。 |
 | `showcase` | 3D 展示 | Interactive model or spatial demonstrations |
 
 Changing this array affects schema validation, static category params, labels, filters, sitemap entries, and descriptions. Update all related documentation and manually inspect each generated category route.

@@ -139,14 +139,14 @@ export default function ContactPage() {
           className={`
             relative
             z-2
-            grid
+            flex
             h-svh
-            grid-rows-[auto_auto_1fr]
+            flex-col
             overflow-hidden
             border-r
             border-[var(--color-line)]
             px-[var(--page-pad)]
-            pt-[clamp(7rem,14vh,10rem)]
+            pt-[clamp(3.5rem,7vh,5rem)]
             pb-8
             max-[767px]:block
             max-[767px]:h-auto
@@ -154,7 +154,7 @@ export default function ContactPage() {
             max-[767px]:w-full
             max-[767px]:overflow-visible
             max-[767px]:border-r-0
-            max-[767px]:pt-30
+            max-[767px]:pt-[calc(var(--header-height)+0.5rem)]
             max-[767px]:pb-12
           `}
         >
@@ -174,7 +174,7 @@ export default function ContactPage() {
                 uppercase
               `}
             >
-              04 / CONTACT DESK
+              NEHS NEPC / CONTACT
             </p>
             <h1
               className={`
@@ -232,10 +232,8 @@ export default function ContactPage() {
 
           <div
             className={`
-              flex
-              min-h-0
-              flex-col
-              justify-end
+              mt-auto
+              flex-none
               max-[767px]:mt-10
             `}
           >
@@ -565,28 +563,6 @@ export default function ContactPage() {
           `}
           aria-hidden="true"
         >
-          <div
-            className={`
-              absolute
-              top-0
-              left-0
-              z-2
-              flex
-              w-full
-              justify-between
-              border-b
-              border-white/30
-              px-6
-              py-4
-              text-[0.56rem]
-              tracking-[0.14em]
-              text-white/65
-              uppercase
-            `}
-          >
-            <span>NEPC / Contact archive</span>
-            <span>04</span>
-          </div>
           <picture
             className={`
               absolute
@@ -626,46 +602,6 @@ export default function ContactPage() {
               `}
             />
           </picture>
-          <span
-            className={`
-              absolute
-              top-[calc(16%+1rem)]
-              left-[calc(14%+1rem)]
-              z-2
-              bg-[var(--color-red)]
-              px-3
-              py-[0.45rem]
-              text-[0.62rem]
-              tracking-[0.14em]
-              text-white
-              uppercase
-              max-[767px]:top-[calc(12%+0.75rem)]
-              max-[767px]:left-[calc(12%+0.75rem)]
-            `}
-          >
-            IMAGE / 02
-          </span>
-          <span
-            className={`
-              absolute
-              right-6
-              bottom-[10%]
-              z-2
-              border-t
-              border-white/30
-              pt-3
-              text-right
-              text-[0.62rem]
-              leading-[1.6]
-              tracking-[0.14em]
-              text-white/70
-              uppercase
-              max-[767px]:right-5
-              max-[767px]:bottom-[7%]
-            `}
-          >
-            Observation study<br />NEPC Archive
-          </span>
           <div
             className={`
               pointer-events-none

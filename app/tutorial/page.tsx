@@ -17,26 +17,10 @@ export default function TutorialPage() {
     <main className={`
       relative
       min-h-screen
-      [padding:clamp(8.5rem,16vh,12rem)_var(--page-pad)_8rem]
-      max-[767px]:[padding-top:7.5rem]
+      [padding:calc(var(--header-height)_+_0.5rem)_var(--page-pad)_8rem]
+      max-[767px]:[padding-top:calc(var(--header-height)_+_0.5rem)]
       max-[767px]:[padding-bottom:5rem]
     `}>
-      <span
-        aria-hidden="true"
-        className={`
-          pointer-events-none
-          absolute
-          right-[var(--page-pad)]
-          top-[var(--header-height)]
-          text-[rgba(10,10,10,0.035)]
-          text-[clamp(11rem,24vw,25rem)]
-          font-bold
-          leading-[0.9]
-          max-[767px]:hidden
-        `}
-      >
-        02
-      </span>
       <header className={`
         relative
         grid
@@ -90,23 +74,13 @@ export default function TutorialPage() {
           max-[980px]:col-[8/13]
           max-[767px]:p-[1.2rem_0]
         `}>
-          <span className={`
-            mb-auto
-            text-[0.64rem]
-            uppercase
-            tracking-[0.14em]
-            text-[var(--color-muted)]
-            max-[767px]:mb-[3.5rem]
-          `}>
-            Reading index / 閱讀索引
-          </span>
           <p className={`
             max-w-[28rem]
             text-[clamp(0.95rem,1.3vw,1.12rem)]
             leading-[1.85]
             text-[rgba(10,10,10,0.78)]
           `}>
-            讓攝影不再有門檻。教學、動態與 3D 展示，從看懂照片開始。
+            透過圖文、影片、3D 模型演示製作的教學，適合任何程度的人。
           </p>
           <strong className={`
             mt-8
@@ -117,7 +91,7 @@ export default function TutorialPage() {
             text-[var(--color-text)]
             max-[767px]:mt-6
           `}>
-            {String(articles.length).padStart(2, '0')} / ARTICLES
+            {String(articles.length).padStart(2, '0')} ARTICLES
           </strong>
         </div>
       </header>

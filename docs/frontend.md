@@ -12,7 +12,7 @@ This document covers the shared application shell, home page, visual language, s
 | `app/page.tsx` | Home route metadata and `Hero` composition |
 | `components/home/Hero.tsx` | Server-rendered home identity and route index; no client state or GSAP |
 | `components/SiteNav.tsx` | Shared client navigation, active-route matching, menu state, Escape handling, and body scroll lock |
-| `app/globals.css` | Tailwind import, design tokens, reset, base typography, focus styles, scrollbars, body state classes, and reduced motion |
+| `app/globals.css` | Tailwind import, design tokens, reset, base typography, focus styles, hidden global scrollbar, body state classes, and reduced motion |
 | `app/styles/about.css` | About-only selectors imported globally by the root layout |
 | `lib/seo.tsx` | Canonical site URL and JSON-LD builders |
 | `app/opengraph-image.tsx`, `lib/og.tsx` | Global 1200 by 630 Open Graph image |

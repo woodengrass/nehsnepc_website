@@ -28,6 +28,13 @@ const imageSets = [
     widths: [96, 192, 384],
     avifQuality: 58,
     webpQuality: 82
+  },
+  {
+    name: 'exposure-calculator',
+    source: path.join(projectRoot, 'public', 'images', 'exposure-calculator.png'),
+    widths: [640],
+    avifQuality: 52,
+    webpQuality: 76
   }
 ];
 
