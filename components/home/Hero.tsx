@@ -6,28 +6,28 @@ const HOME_LINKS = [
     index: '01',
     title: 'About',
     localized: '關於我們',
-    description: '從暗箱開始，觀看光線如何留下影像，也認識我們如何一起拍照。'
+    description: '了解我們社團，體驗精美的展示頁面與我們的用心'
   },
   {
     href: '/tutorial',
     index: '02',
     title: 'Tutorial',
     localized: '攝影教學',
-    description: '收錄拍攝方法、影像觀察與社團活動紀錄。'
+    description: '公開的攝影教學，包含不同面向、深度的詳細教學文章'
   },
   {
     href: '/tools',
     index: '03',
     title: 'Tools',
     localized: '實用工具',
-    description: '為攝影流程製作的輕量工具與參考資料。'
+    description: '為輔助日常攝影設計的輕量化工具'
   },
   {
     href: '/contact',
     index: '04',
     title: 'Contact',
     localized: '與我們聯絡',
-    description: '合作、加入社團，或只是想和我們談談影像。'
+    description: '委託拍攝、合作或是其他聯絡我們的需求'
   }
 ] as const;
 
@@ -296,8 +296,8 @@ export default function Hero() {
         <div className={`
           pointer-events-none
           absolute
-          -top-[7.5%]
-          right-[calc(clamp(-4rem,-2vw,-1rem)_+_15px)]
+          -top-[5%]
+          right-[calc(clamp(-4rem,-2vw,-1rem)_+_2.5rem)]
           z-[2]
           w-[clamp(16rem,25vw,27rem)]
           rotate-[3.5deg]
@@ -387,20 +387,6 @@ export default function Hero() {
                   sizes="(max-width: 767px) 45vw, 18vw"
                 />
                 <img className={position} src="/images/generated/hero-1280.webp" alt="" />
-                <span className={`
-                  absolute
-                  right-[0.35rem]
-                  bottom-[0.25rem]
-                  bg-[#101010]/80
-                  px-1
-                  py-[0.15rem]
-                  font-[family-name:var(--font-body-next)]
-                  text-[0.48rem]
-                  tracking-[0.12em]
-                  text-white/72
-                `}>
-                  {String(index + 1).padStart(2, '0')}
-                </span>
               </picture>
             ))}
           </div>
@@ -595,7 +581,7 @@ export default function Hero() {
           max-[767px]:mt-24
           max-[767px]:leading-[1.5]
         `}>
-          <span>NEHSNEPC</span>
+          <span>© 2026 NEHS NEPC. All rights reserved.</span>
           <span className={`
             max-[767px]:hidden
           `}>

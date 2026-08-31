@@ -10,7 +10,7 @@ The tools area contains a server-rendered catalogue and one interactive exposure
 | `lib/tools.ts` | Typed catalogue data and availability contract |
 | `app/tools/exposure-calculator/page.tsx` | Calculator route metadata and client component |
 | `components/tools/ExposureCalculator.tsx` | React-rendered shell and dynamic engine lifecycle |
-| `@/exposure/exposure_calculator` | Engine module expected by the client shell; currently missing from the working tree |
+| `@/exposure/exposure_calculator` | Exposure calculator engine module dynamically loaded by the client shell |
 
 Both routes appear in `app/sitemap.ts`. Legacy `/portfolio` URLs redirect to `/tools` through `vercel.json`.
 
@@ -21,15 +21,13 @@ Both routes appear in `app/sitemap.ts`. Legacy `/portfolio` URLs redirect to `/t
 - with `href`, `app/tools/page.tsx` wraps the card in a Next `Link` and displays `開啟 / Open`;
 - without `href`, it renders a non-interactive `div` and displays `建置中 / In progress`.
 
-The current catalogue contains the available exposure calculator and two placeholders: depth-of-field and film-log. To publish a new tool, add its route first, then add `href`, sitemap coverage, meaningful `imageAlt`, and a valid public image path.
+The current catalogue contains only the available exposure calculator. To publish a new tool, add its route first, then add `href`, sitemap coverage, meaningful `imageAlt`, and a valid public image path.
 
-The layout is three columns above 980px, two columns to 768px, and one column at 767px and below. Images are native WebP `<img>` elements with lazy loading and async decoding. Hover shifts filtering and crop, but all required information and the available route remain visible without hover.
+The layout is three columns above 980px, two columns to 768px, and one column at 767px and below. The catalogue header begins `0.5rem` below `--header-height` on both desktop and mobile. Images are native WebP `<img>` elements with lazy loading and async decoding. Hover shifts filtering and crop, but all required information and the available route remain visible without hover.
 
-## Current Build Blocker
+## Current Engine Availability
 
-`components/tools/ExposureCalculator.tsx` dynamically imports `@/exposure/exposure_calculator`, but the repository currently has no `exposure/` directory or matching module. `npm run build` therefore fails with `Module not found: Can't resolve '@/exposure/exposure_calculator'`.
-
-The React shell and the detailed DOM contract described below exist, but the calculator is not currently buildable or operational. The formula and event descriptions record the engine behavior observed during this documentation pass before the engine disappeared from the concurrently edited working tree; they must be revalidated against the restored/replacement module before release. Do not treat this section as evidence that a current engine file exists.
+`exposure/exposure_calculator.js` is present and supplies the dynamically imported calculator engine. The React shell and engine share a fixed DOM ID contract; update both together when changing calculator controls.
 
 ## Exposure Calculator Architecture
 
@@ -39,9 +37,7 @@ The shell is React-rendered, but `#cameraControls`, `#ndList`, and `#flashList` 
 
 The import currently has no rejection handler or user-visible fallback. Because the module is missing, this is also a compile-time build failure rather than only a runtime failure.
 
-## Last Observed Engine Contract
-
-The following state, formula, and event sections describe the engine observed during repository inspection. Revalidate every detail after the missing module is restored.
+## Engine Contract
 
 ## State and Persistence
 

@@ -16,9 +16,9 @@ These values are constants in `ContactPage.tsx`, not environment variables.
 
 ## Layout
 
-Desktop uses a viewport-height editorial split: roughly 58% content and 42% photography, narrowing to 64/36 between 768px and 980px. The left side keeps channel rows near the bottom; the right side is a decorative full-height photograph.
+Desktop uses a viewport-height editorial split: roughly 58% content and 42% photography, narrowing to 64/36 between 768px and 980px. The left side is a vertical flex column with reduced top padding; channel rows use `mt-auto` to remain near the bottom without needing an inner scroll area. The header label is `NEHS NEPC / CONTACT`. The right side is an unlabeled decorative full-height photograph.
 
-At 767px and below, content becomes document-height, the image moves below it at 58svh, row touch targets increase, secondary English labels are hidden, and the modal becomes almost full-screen. The photograph uses AVIF and WebP variants at 480, 800, 1200, and 1600 pixels. Its parent is `aria-hidden` and the image has `alt=""`. The current `sizes="40vw"` underestimates its approximately 88vw mobile rendering and should be reviewed when image behavior changes.
+At 767px and below, content becomes document-height, begins `0.5rem` below `--header-height`, the image moves below it at 58svh, row touch targets increase, secondary English labels are hidden, and the modal becomes almost full-screen. The photograph uses AVIF and WebP variants at 480, 800, 1200, and 1600 pixels. Its parent is `aria-hidden` and the image has `alt=""`. The current `sizes="40vw"` underestimates its approximately 88vw mobile rendering and should be reviewed when image behavior changes.
 
 ## State Model
 

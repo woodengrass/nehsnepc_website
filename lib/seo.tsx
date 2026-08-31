@@ -2,7 +2,7 @@ import type { ArticleMeta } from './content';
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nehsnepc.com';
 
-export const SITE_NAME = 'NEHS Photography Club';
+export const SITE_NAME = '竹科實中攝影社 NEPC';
 
 export function absoluteUrl(pathname: string): string {
   return new URL(pathname, SITE_URL).toString();
@@ -15,7 +15,7 @@ export function organizationJsonLd(): JsonLdObject {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: SITE_NAME,
-    alternateName: 'NEHS 攝影社',
+    alternateName: 'NEHS Photography Club',
     url: SITE_URL,
     logo: absoluteUrl('/images/generated/logo-384.webp'),
     sameAs: ['https://instagram.com/nehs_nepc']

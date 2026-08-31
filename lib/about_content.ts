@@ -10,7 +10,7 @@ export const ABOUT_PHOTOS = {
   station02Satellite02: '/images/generated/contact-800.webp',
   station02Satellite03: '/images/generated/hero-1280.webp',
   station02Satellite04: '/images/generated/contact-800.webp',
-  final: '/images/generated/contact-800.webp'
+  final: '/images/generated/logo-384.webp'
 } as const;
 
 export const ABOUT_TUNNEL_PHOTOS = ['focus', 'station01Main', 'station02Main'];

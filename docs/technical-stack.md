@@ -91,6 +91,7 @@ Detailed schema and publication behavior are in `posts.md`.
 | Hero, `public/images/banner/hero-1.jpg` | 640, 1280, 1920, 2560 | 50 / 72 |
 | Contact, `public/images/contact-bg.jpg` | 480, 800, 1200, 1600 | 50 / 74 |
 | Logo, `public/images/logo.png` | 96, 192, 384 | configured in script |
+| Exposure calculator, `public/images/exposure-calculator.png` | 640 | 52 / 76 |
 
 Resizing uses `withoutEnlargement`; AVIF effort is 5 and WebP effort is 6. The script creates the output directory but does not delete stale files. New article images are not auto-discovered; extend the script or process them separately. Runtime code mostly owns native `<picture>`/`<img>` responsiveness instead of Next Image.
 

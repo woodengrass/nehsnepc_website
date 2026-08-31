@@ -385,17 +385,10 @@ body.is-focus-locked {
 }
 
 .obscura-afterword-photo {
-  width: 108%;
+  width: 100%;
   max-width: none;
-  height: 108%;
-  filter: grayscale(0.75) contrast(1.12);
-  transform: translate(-3%, -3%);
-  transition: filter var(--transition-slow), transform var(--transition-slow);
-}
-
-.obscura-afterword-frame:hover .obscura-afterword-photo {
-  filter: grayscale(0.12) contrast(1.04);
-  transform: translate(0, -3%);
+  height: 100%;
+  object-fit: contain;
 }
 
 .obscura-afterword-frame > p {

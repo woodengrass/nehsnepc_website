@@ -15,9 +15,9 @@ export default function ToolsPage() {
       relative
       min-h-screen
       px-[var(--page-pad)]
-      pt-[clamp(8.5rem,16vh,12rem)]
+      [padding-top:calc(var(--header-height)_+_0.5rem)]
       pb-32
-      max-[767px]:pt-30
+      max-[767px]:[padding-top:calc(var(--header-height)_+_0.5rem)]
       max-[767px]:pb-20
     `}>
       <span

@@ -5,8 +5,8 @@ import matter from 'gray-matter';
 import { z } from 'zod';
 
 export const CATEGORIES = [
-  { id: 'tutorial', label: '攝影教學', description: '從看懂照片開始：曝光、構圖、光線與暗房技巧。' },
-  { id: 'news', label: '社團動態', description: '活動記錄、招新資訊與作品展回顧。' },
+  { id: 'tutorial', label: '攝影教學', description: '各類教學文章，覆蓋不同程度。' },
+  { id: 'news', label: '社團動態', description: '活動記錄、招新資訊與作品回顧。' },
   { id: 'showcase', label: '3D 展示', description: '以 3D 模型拆解器材與空間，可旋轉互動。' }
 ] as const;
 

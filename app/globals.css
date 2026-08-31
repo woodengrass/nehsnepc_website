@@ -52,8 +52,11 @@
     min-height: 100%;
     overflow-x: hidden;
     scroll-behavior: smooth;
-    scrollbar-color: var(--color-red) var(--color-bg);
-    scrollbar-width: thin;
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar {
+    display: none;
   }
 
   body {
