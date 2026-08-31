@@ -66,6 +66,7 @@ export default function AboutExperience() {
     let archiveScene: ArchiveScene | null = null;
     let archiveLoadPromise: Promise<ArchiveScene | null> | null = null;
     let isExperienceUnlocked = false;
+    let isFocusTransitionActive = false;
     let isStoryViewActive = false;
     let afterwordLayout: { left: number; top: number; width: number; height: number } | null = null;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -247,12 +248,18 @@ export default function AboutExperience() {
     function unlockExperience() {
       if (isExperienceUnlocked) return;
       isExperienceUnlocked = true;
+      isFocusTransitionActive = true;
       document.body.classList.remove('is-focus-locked');
       page.classList.add('is-unlocked');
       focusGuide.textContent = ABOUT_FOCUS_CONTENT.lockedPrompt;
       // 對焦完成後立即準備 3D 場景，避免使用者開始滑動時入口照片尚未載入。
       loadArchiveScene();
-      gsap.fromTo('.obscura-flash', { autoAlpha: 0.95 }, { autoAlpha: 0, duration: 0.55, ease: 'power2.out' });
+      gsap.fromTo('.obscura-flash', { autoAlpha: 0.95 }, {
+        autoAlpha: 0,
+        duration: 0.55,
+        ease: 'power2.out',
+        onComplete: () => { isFocusTransitionActive = false; }
+      });
     }
 
     function setFocus(value: number) {
@@ -320,6 +327,10 @@ export default function AboutExperience() {
     }
 
     function handleWheel(event: WheelEvent) {
+      if (isFocusTransitionActive) {
+        event.preventDefault();
+        return;
+      }
       if (isExperienceUnlocked) return;
       event.preventDefault();
       adjustFocus(event.deltaY * 0.04);
