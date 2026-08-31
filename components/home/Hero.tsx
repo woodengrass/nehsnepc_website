@@ -296,7 +296,7 @@ export default function Hero() {
         <div className={`
           pointer-events-none
           absolute
-          -top-[9%]
+          -top-[7.5%]
           right-[calc(clamp(-4rem,-2vw,-1rem)_+_15px)]
           z-[2]
           w-[clamp(16rem,25vw,27rem)]
