@@ -1,0 +1,793 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+
+const EMAIL = 'contact@nehsnepc.com';
+const TALLY_EMBED_URL = 'https://tally.so/embed/NpRGgl?alignLeft=1&hideTitle=1';
+
+type AccordionId = 'contact' | 'social';
+
+export default function ContactPage() {
+  const [openItem, setOpenItem] = useState<AccordionId | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [hasModalOpened, setHasModalOpened] = useState(false);
+  const [emailLabel, setEmailLabel] = useState(EMAIL);
+  const contactBodyRef = useRef<HTMLDivElement>(null);
+  const socialBodyRef = useRef<HTMLDivElement>(null);
+  const shootTriggerRef = useRef<HTMLButtonElement>(null);
+  const modalCloseRef = useRef<HTMLButtonElement>(null);
+  const modalBoxRef = useRef<HTMLDivElement>(null);
+
+  const toggleItem = (id: AccordionId) => {
+    setOpenItem((current) => (current === id ? null : id));
+  };
+
+  const openModal = () => {
+    setModalOpen(true);
+    setHasModalOpened(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    shootTriggerRef.current?.focus();
+  };
+
+  useEffect(() => {
+    const bodies: Record<AccordionId, HTMLDivElement | null> = {
+      contact: contactBodyRef.current,
+      social: socialBodyRef.current
+    };
+    (Object.keys(bodies) as AccordionId[]).forEach((id) => {
+      const body = bodies[id];
+      if (!body) return;
+      if (openItem === id) body.style.maxHeight = `${body.scrollHeight}px`;
+      else body.style.maxHeight = '';
+    });
+  }, [openItem]);
+
+  useEffect(() => {
+    document.body.classList.toggle('has-modal', modalOpen);
+    if (modalOpen) modalCloseRef.current?.focus();
+
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && modalOpen) {
+        closeModal();
+        return;
+      }
+      if (event.key !== 'Tab' || !modalOpen || !modalBoxRef.current) return;
+      const focusable = Array.from(modalBoxRef.current.querySelectorAll<HTMLElement>('button, iframe, [href], [tabindex]:not([tabindex="-1"])'));
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeydown);
+    return () => {
+      document.removeEventListener('keydown', handleKeydown);
+      document.body.classList.remove('has-modal');
+    };
+  }, [modalOpen]);
+
+  const copyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(EMAIL);
+      setEmailLabel('copied');
+      window.setTimeout(() => setEmailLabel(EMAIL), 1800);
+    } catch {
+      window.location.href = `mailto:${EMAIL}`;
+    }
+  };
+
+  const renderAccordionBody = (id: AccordionId, children: React.ReactNode, bodyRef: React.RefObject<HTMLDivElement | null>) => (
+    <div
+      className={`
+        max-h-0
+        overflow-hidden
+        bg-[rgba(10,10,10,0.04)]
+        transition-[max-height]
+        duration-450
+        ease-in-out
+        motion-reduce:transition-none
+      `}
+      ref={bodyRef}
+      id={`acc-${id}-body`}
+      aria-hidden={openItem !== id}
+    >
+      <div
+        className={`
+          pt-[1.2rem]
+          pr-4
+          pb-[1.4rem]
+          pl-14
+          opacity-0
+          transition-opacity
+          delay-80
+          duration-[260ms]
+          ease-[cubic-bezier(0.22,1,0.36,1)]
+          group-data-[open=true]:opacity-100
+          motion-reduce:transition-none
+          max-[767px]:pl-10
+        `}
+      >
+        {children}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <main
+        data-contact-page
+        className={`
+          grid
+          h-svh
+          grid-cols-[58%_42%]
+          bg-[var(--color-bg)]
+          min-[768px]:max-[980px]:grid-cols-[64%_36%]
+          max-[767px]:block
+          max-[767px]:h-auto
+          max-[767px]:min-h-svh
+        `}
+      >
+        <div
+          className={`
+            relative
+            z-2
+            grid
+            h-svh
+            grid-rows-[auto_auto_1fr]
+            overflow-hidden
+            border-r
+            border-[var(--color-line)]
+            px-[var(--page-pad)]
+            pt-[clamp(7rem,14vh,10rem)]
+            pb-8
+            max-[767px]:block
+            max-[767px]:h-auto
+            max-[767px]:min-h-svh
+            max-[767px]:w-full
+            max-[767px]:overflow-visible
+            max-[767px]:border-r-0
+            max-[767px]:pt-30
+            max-[767px]:pb-12
+          `}
+        >
+          <header
+            className={`
+              relative
+              border-t
+              border-[var(--color-line)]
+              pt-[0.8rem]
+            `}
+          >
+            <p
+              className={`
+                text-[0.62rem]
+                tracking-[0.14em]
+                text-[var(--color-muted)]
+                uppercase
+              `}
+            >
+              04 / CONTACT DESK
+            </p>
+            <h1
+              className={`
+                mt-[clamp(1.5rem,4vh,3.4rem)]
+                text-[clamp(4.1rem,8.8vw,9.4rem)]
+                leading-[0.82]
+                font-semibold
+                tracking-[-0.085em]
+                min-[768px]:max-[980px]:text-[clamp(4rem,9vw,7rem)]
+                max-[767px]:mt-[3.2rem]
+                max-[767px]:text-[clamp(4rem,21vw,6rem)]
+              `}
+            >
+              CONTACT
+            </h1>
+            <p
+              className={`
+                mt-6
+                w-[min(38rem,75%)]
+                text-[clamp(0.85rem,1.1vw,1rem)]
+                leading-[1.8]
+                text-[rgba(10,10,10,0.82)]
+                min-[768px]:max-[980px]:w-[90%]
+                max-[767px]:w-full
+              `}
+            >
+              「誠摯邀請各社各校與我們合辦活動／委託拍攝」
+            </p>
+          </header>
+
+          <div
+            className={`
+              mt-[clamp(1.5rem,4vh,3rem)]
+              flex
+              justify-between
+              border-y
+              border-[var(--color-line)]
+              py-[0.8rem]
+              text-[0.62rem]
+              tracking-[0.14em]
+              text-[var(--color-muted)]
+              uppercase
+              max-[767px]:mt-14
+            `}
+          >
+            <span>Choose a channel / 選擇聯絡方式</span>
+            <span
+              className={`
+                max-[980px]:hidden
+              `}
+            >
+              點擊列項展開，接拍將開啟申請表
+            </span>
+          </div>
+
+          <div
+            className={`
+              flex
+              min-h-0
+              flex-col
+              justify-end
+              max-[767px]:mt-10
+            `}
+          >
+            <div
+              className={`
+                group
+                border-b
+                border-[var(--color-line)]
+              `}
+              data-open={openItem === 'contact'}
+            >
+              <button
+                className={`
+                  grid
+                  min-h-[clamp(4.2rem,9vh,6rem)]
+                  w-full
+                  grid-cols-[2.5rem_1fr_auto]
+                  items-center
+                  text-left
+                  transition-[padding,color,background]
+                  duration-[260ms]
+                  ease-[cubic-bezier(0.22,1,0.36,1)]
+                  hover:bg-[var(--color-paper)]
+                  hover:px-4
+                  hover:text-[var(--color-ink)]
+                  group-data-[open=true]:bg-[var(--color-paper)]
+                  group-data-[open=true]:px-4
+                  group-data-[open=true]:text-[var(--color-ink)]
+                  motion-reduce:transition-none
+                  max-[767px]:min-h-20
+                `}
+                aria-expanded={openItem === 'contact'}
+                aria-controls="acc-contact-body"
+                onClick={() => toggleItem('contact')}
+              >
+                <span
+                  className={`
+                    text-[0.62rem]
+                    tracking-[0.14em]
+                    uppercase
+                    opacity-45
+                  `}
+                >
+                  01
+                </span>
+                <span
+                  className={`
+                    flex
+                    max-w-[80%]
+                    items-baseline
+                    justify-between
+                    text-[clamp(1.4rem,2.4vw,2.2rem)]
+                    font-semibold
+                    tracking-[-0.03em]
+                    max-[767px]:max-w-none
+                    max-[767px]:text-[1.55rem]
+                  `}
+                >
+                  聯絡
+                  <small
+                    className={`
+                      text-[0.62rem]
+                      font-normal
+                      tracking-[0.14em]
+                      uppercase
+                      opacity-45
+                      max-[767px]:hidden
+                    `}
+                  >
+                    Email
+                  </small>
+                </span>
+                <span
+                  className={`
+                    text-[1.4rem]
+                    leading-none
+                    font-normal
+                    transition-transform
+                    duration-[260ms]
+                    ease-[cubic-bezier(0.22,1,0.36,1)]
+                    group-data-[open=true]:rotate-45
+                    motion-reduce:transition-none
+                  `}
+                  aria-hidden="true"
+                >
+                  +
+                </span>
+              </button>
+              {renderAccordionBody(
+                'contact',
+                <button
+                  id="copyEmail"
+                  className={`
+                    border-b
+                    border-[var(--color-line)]
+                    pb-[0.35rem]
+                    text-[clamp(0.8rem,1.2vw,1rem)]
+                    tracking-[0.08em]
+                    text-[rgba(10,10,10,0.82)]
+                    transition-[color,border-color]
+                    duration-[260ms]
+                    ease-[cubic-bezier(0.22,1,0.36,1)]
+                    hover:border-[var(--color-text)]
+                    hover:text-[var(--color-text)]
+                    motion-reduce:transition-none
+                  `}
+                  onClick={copyEmail}
+                >
+                  {emailLabel}
+                </button>,
+                contactBodyRef
+              )}
+            </div>
+
+            <div
+              className={`
+                border-b
+                border-[var(--color-line)]
+              `}
+              id="shootItem"
+            >
+              <button
+                ref={shootTriggerRef}
+                className={`
+                  grid
+                  min-h-[clamp(4.2rem,9vh,6rem)]
+                  w-full
+                  grid-cols-[2.5rem_1fr_auto]
+                  items-center
+                  text-left
+                  transition-[padding,color,background]
+                  duration-[260ms]
+                  ease-[cubic-bezier(0.22,1,0.36,1)]
+                  hover:bg-[var(--color-paper)]
+                  hover:px-4
+                  hover:text-[var(--color-ink)]
+                  motion-reduce:transition-none
+                  max-[767px]:min-h-20
+                `}
+                id="shootTrigger"
+                aria-haspopup="dialog"
+                aria-expanded={modalOpen}
+                onClick={openModal}
+              >
+                <span
+                  className={`
+                    text-[0.62rem]
+                    tracking-[0.14em]
+                    uppercase
+                    opacity-45
+                  `}
+                >
+                  02
+                </span>
+                <span
+                  className={`
+                    flex
+                    max-w-[80%]
+                    items-baseline
+                    justify-between
+                    text-[clamp(1.4rem,2.4vw,2.2rem)]
+                    font-semibold
+                    tracking-[-0.03em]
+                    max-[767px]:max-w-none
+                    max-[767px]:text-[1.55rem]
+                  `}
+                >
+                  接拍
+                  <small
+                    className={`
+                      text-[0.62rem]
+                      font-normal
+                      tracking-[0.14em]
+                      uppercase
+                      opacity-45
+                      max-[767px]:hidden
+                    `}
+                  >
+                    Request
+                  </small>
+                </span>
+                <span
+                  className={`
+                    text-[1.4rem]
+                    leading-none
+                    font-normal
+                  `}
+                  aria-hidden="true"
+                >
+                  +
+                </span>
+              </button>
+              <div
+                className={`
+                  max-h-0
+                  overflow-hidden
+                  bg-[rgba(10,10,10,0.04)]
+                `}
+                aria-hidden="true"
+              />
+            </div>
+
+            <div
+              className={`
+                group
+                border-b
+                border-[var(--color-line)]
+              `}
+              data-open={openItem === 'social'}
+            >
+              <button
+                className={`
+                  grid
+                  min-h-[clamp(4.2rem,9vh,6rem)]
+                  w-full
+                  grid-cols-[2.5rem_1fr_auto]
+                  items-center
+                  text-left
+                  transition-[padding,color,background]
+                  duration-[260ms]
+                  ease-[cubic-bezier(0.22,1,0.36,1)]
+                  hover:bg-[var(--color-paper)]
+                  hover:px-4
+                  hover:text-[var(--color-ink)]
+                  group-data-[open=true]:bg-[var(--color-paper)]
+                  group-data-[open=true]:px-4
+                  group-data-[open=true]:text-[var(--color-ink)]
+                  motion-reduce:transition-none
+                  max-[767px]:min-h-20
+                `}
+                aria-expanded={openItem === 'social'}
+                aria-controls="acc-social-body"
+                onClick={() => toggleItem('social')}
+              >
+                <span
+                  className={`
+                    text-[0.62rem]
+                    tracking-[0.14em]
+                    uppercase
+                    opacity-45
+                  `}
+                >
+                  03
+                </span>
+                <span
+                  className={`
+                    flex
+                    max-w-[80%]
+                    items-baseline
+                    justify-between
+                    text-[clamp(1.4rem,2.4vw,2.2rem)]
+                    font-semibold
+                    tracking-[-0.03em]
+                    max-[767px]:max-w-none
+                    max-[767px]:text-[1.55rem]
+                  `}
+                >
+                  社群
+                  <small
+                    className={`
+                      text-[0.62rem]
+                      font-normal
+                      tracking-[0.14em]
+                      uppercase
+                      opacity-45
+                      max-[767px]:hidden
+                    `}
+                  >
+                    Social
+                  </small>
+                </span>
+                <span
+                  className={`
+                    text-[1.4rem]
+                    leading-none
+                    font-normal
+                    transition-transform
+                    duration-[260ms]
+                    ease-[cubic-bezier(0.22,1,0.36,1)]
+                    group-data-[open=true]:rotate-45
+                    motion-reduce:transition-none
+                  `}
+                  aria-hidden="true"
+                >
+                  +
+                </span>
+              </button>
+              {renderAccordionBody(
+                'social',
+                <a
+                  href="https://instagram.com/nehs_nepc"
+                  target="_blank"
+                  rel="noopener"
+                  className={`
+                    border-b
+                    border-[var(--color-line)]
+                    pb-[0.35rem]
+                    text-[clamp(0.8rem,1.2vw,1rem)]
+                    tracking-[0.08em]
+                    text-[rgba(10,10,10,0.82)]
+                    transition-[color,border-color]
+                    duration-[260ms]
+                    ease-[cubic-bezier(0.22,1,0.36,1)]
+                    hover:border-[var(--color-text)]
+                    hover:text-[var(--color-text)]
+                    motion-reduce:transition-none
+                  `}
+                >
+                  @nehs_nepc
+                </a>,
+                socialBodyRef
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`
+            relative
+            h-svh
+            overflow-hidden
+            bg-[#101d2b]
+            max-[767px]:h-[58svh]
+            max-[767px]:w-full
+            max-[767px]:border-t
+            max-[767px]:border-[var(--color-line)]
+          `}
+          aria-hidden="true"
+        >
+          <div
+            className={`
+              absolute
+              top-0
+              left-0
+              z-2
+              flex
+              w-full
+              justify-between
+              border-b
+              border-white/30
+              px-6
+              py-4
+              text-[0.56rem]
+              tracking-[0.14em]
+              text-white/65
+              uppercase
+            `}
+          >
+            <span>NEPC / Contact archive</span>
+            <span>04</span>
+          </div>
+          <picture
+            className={`
+              absolute
+              top-[16%]
+              right-0
+              block
+              h-[62%]
+              w-[86%]
+              overflow-hidden
+              border-y
+              border-l
+              border-white/30
+              max-[767px]:top-[12%]
+              max-[767px]:h-[68%]
+              max-[767px]:w-[88%]
+            `}
+          >
+            <source
+              type="image/avif"
+              srcSet="/images/generated/contact-480.avif 480w, /images/generated/contact-800.avif 800w, /images/generated/contact-1200.avif 1200w, /images/generated/contact-1600.avif 1600w"
+              sizes="40vw"
+            />
+            <source
+              type="image/webp"
+              srcSet="/images/generated/contact-480.webp 480w, /images/generated/contact-800.webp 800w, /images/generated/contact-1200.webp 1200w, /images/generated/contact-1600.webp 1600w"
+              sizes="40vw"
+            />
+            <img
+              src="/images/generated/contact-800.webp"
+              alt=""
+              className={`
+                h-full
+                w-full
+                object-cover
+                object-[58%_center]
+                [filter:grayscale(0.42)_contrast(1.08)_brightness(0.78)]
+              `}
+            />
+          </picture>
+          <span
+            className={`
+              absolute
+              top-[calc(16%+1rem)]
+              left-[calc(14%+1rem)]
+              z-2
+              bg-[var(--color-red)]
+              px-3
+              py-[0.45rem]
+              text-[0.62rem]
+              tracking-[0.14em]
+              text-white
+              uppercase
+              max-[767px]:top-[calc(12%+0.75rem)]
+              max-[767px]:left-[calc(12%+0.75rem)]
+            `}
+          >
+            IMAGE / 02
+          </span>
+          <span
+            className={`
+              absolute
+              right-6
+              bottom-[10%]
+              z-2
+              border-t
+              border-white/30
+              pt-3
+              text-right
+              text-[0.62rem]
+              leading-[1.6]
+              tracking-[0.14em]
+              text-white/70
+              uppercase
+              max-[767px]:right-5
+              max-[767px]:bottom-[7%]
+            `}
+          >
+            Observation study<br />NEPC Archive
+          </span>
+          <div
+            className={`
+              pointer-events-none
+              absolute
+              top-[30%]
+              left-0
+              z-2
+              h-px
+              w-[14%]
+              bg-white/40
+            `}
+          />
+        </div>
+      </main>
+
+      <div
+        className={`
+          fixed
+          inset-0
+          z-950
+          grid
+          place-items-center
+          transition-[opacity,visibility]
+          duration-[260ms]
+          ease-[cubic-bezier(0.22,1,0.36,1)]
+          motion-reduce:transition-none
+          ${modalOpen ? `
+            visible
+            pointer-events-auto
+            opacity-100
+          ` : `
+            invisible
+            pointer-events-none
+            opacity-0
+          `}
+        `}
+        role="dialog"
+        aria-modal="true"
+        aria-label="接拍申請表單"
+        aria-hidden={!modalOpen}
+      >
+        <div
+          className={`
+            absolute
+            inset-0
+            bg-[rgba(9,9,9,0.86)]
+            backdrop-blur-[9px]
+          `}
+          onClick={closeModal}
+        />
+        <div
+          className={`
+            relative
+            z-1
+            flex
+            h-[min(680px,86svh)]
+            w-[min(760px,90vw)]
+            flex-col
+            border
+            border-[rgba(17,17,17,0.28)]
+            bg-[var(--color-paper)]
+            pt-[3.4rem]
+            text-[var(--color-ink)]
+            shadow-[1.3rem_1.3rem_0_var(--color-red)]
+            max-[767px]:h-[calc(100svh-4rem)]
+            max-[767px]:w-[calc(100vw-2rem)]
+            max-[767px]:shadow-[0.7rem_0.7rem_0_var(--color-red)]
+          `}
+          ref={modalBoxRef}
+        >
+          <p
+            className={`
+              absolute
+              top-[1.2rem]
+              left-6
+              text-[0.62rem]
+              tracking-[0.14em]
+              text-[rgba(17,17,17,0.58)]
+              uppercase
+              max-[767px]:left-[0.8rem]
+            `}
+          >
+            02 / SHOOT REQUEST / 接拍申請
+          </p>
+          <button
+            className={`
+              absolute
+              top-0
+              right-0
+              h-12
+              min-w-28
+              border-b
+              border-l
+              border-[rgba(17,17,17,0.25)]
+              text-[0.6rem]
+              tracking-[0.12em]
+              uppercase
+              hover:bg-[var(--color-blue)]
+              hover:text-[var(--color-paper)]
+            `}
+            ref={modalCloseRef}
+            onClick={closeModal}
+            aria-label="關閉表單"
+          >
+            Close / 關閉
+          </button>
+          {hasModalOpened && (
+            <iframe
+              src={TALLY_EMBED_URL}
+              width="100%"
+              height="100%"
+              frameBorder={0}
+              title="接拍申請表單"
+              className={`
+                min-h-0
+                flex-1
+                bg-white
+              `}
+            />
+          )}
+        </div>
+      </div>
+    </>
+  );
+}

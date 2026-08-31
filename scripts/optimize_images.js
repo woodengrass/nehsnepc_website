@@ -5,26 +5,26 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const outputDirectory = path.join(projectRoot, 'assets', 'images', 'generated');
+const outputDirectory = path.join(projectRoot, 'public', 'images', 'generated');
 
 const imageSets = [
   {
     name: 'hero',
-    source: path.join(projectRoot, 'assets', 'images', 'banner', 'hero-1.jpg'),
+    source: path.join(projectRoot, 'public', 'images', 'banner', 'hero-1.jpg'),
     widths: [640, 1280, 1920, 2560],
     avifQuality: 50,
     webpQuality: 72
   },
   {
     name: 'contact',
-    source: path.join(projectRoot, 'assets', 'images', 'contact-bg.jpg'),
+    source: path.join(projectRoot, 'public', 'images', 'contact-bg.jpg'),
     widths: [480, 800, 1200, 1600],
     avifQuality: 50,
     webpQuality: 74
   },
   {
     name: 'logo',
-    source: path.join(projectRoot, 'assets', 'images', 'logo.png'),
+    source: path.join(projectRoot, 'public', 'images', 'logo.png'),
     widths: [96, 192, 384],
     avifQuality: 58,
     webpQuality: 82
