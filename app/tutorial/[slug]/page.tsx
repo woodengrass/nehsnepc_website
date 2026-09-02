@@ -185,21 +185,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           after:w-px
           after:bg-[rgba(240,238,232,0.35)]
         `}>
-          <span className={`
-            absolute
-            left-4
-            top-4
-            z-[3]
-            bg-[var(--color-paper)]
-            px-[0.65rem]
-            py-[0.45rem]
-            text-[0.64rem]
-            uppercase
-            tracking-[0.14em]
-            text-[var(--color-ink)]
-          `}>
-            Lead image / 001
-          </span>
           <img
             className={`
               aspect-[16/8]

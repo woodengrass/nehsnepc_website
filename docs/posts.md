@@ -65,7 +65,7 @@ Reading time counts CJK characters at 400/minute and Latin tokens at 220/minute,
 
 `/tutorial/category/[category]` statically generates the three known category IDs and 404s unknown IDs. Its category-specific metadata currently lacks an explicit canonical. `params` is a Promise and must be awaited under Next 16 conventions.
 
-`/tutorial/[slug]` statically enumerates non-draft slugs, retrieves the article, 404s missing/production drafts, emits article and breadcrumb JSON-LD, renders metadata/lead image/body, and links globally newer/older articles. It does not set `dynamicParams = false`.
+`/tutorial/[slug]` statically enumerates non-draft slugs, retrieves the article, 404s missing/production drafts, emits article and breadcrumb JSON-LD, renders metadata/lead image/body, and links globally newer/older articles. It does not set `dynamicParams = false`. The optional cover is rendered without a decorative `Lead image / 001` label.
 
 The detail page displays category, draft marker, title, description, published date, reading time, author, optional cover, MDX body, and adjacency. Tags, `updated`, related articles, table of contents, and author biography are not displayed in the body UI even though some feed/metadata surfaces consume them.
 
@@ -129,9 +129,9 @@ Article metadata includes title, description, author, tag keywords, canonical UR
 
 ## Authoring Workflow
 
-1. Create `content/articles/<url-safe-slug>.mdx`.
+1. Copy `content/articles/example.mdx` to `content/articles/<url-safe-slug>.mdx` and replace its sample content.
 2. Add valid frontmatter using an ISO date and supported category.
-3. Use standard Markdown/GFM and only registered MDX components.
+3. Use standard Markdown/GFM and only registered MDX components. The template demonstrates headings, blockquotes, `Callout`, `Figure`, tables, and `Model3D` usage.
 4. Put referenced assets under `public/`; generated article families require explicit additions to the image optimization script.
 5. Keep `draft: true` while developing, then remove/set false to publish.
 6. Run `npm run build`.
