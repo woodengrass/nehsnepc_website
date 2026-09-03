@@ -16,7 +16,7 @@ The controller returns `null` and imperatively enhances known DOM IDs/classes fr
 
 ## Rendered Layers
 
-The page contains a fixed camera section, responsive hero image, image wash/vignette, hidden archive canvas, focus HUD and microprism canvas, desktop intro, separate visual mobile entry, flash layer, two semantic DOM station articles, and a light-paper afterword. The canvases are decorative/inaccessible; the DOM station content is intended to carry semantics and fallback content.
+The page contains a fixed camera section, responsive hero image, image wash/vignette, hidden archive canvas, focus HUD and microprism canvas, desktop intro, separate visual mobile entry, flash layer, two semantic DOM station articles, and a light-paper afterword. The afterword photo frame is labelled `NEHS` and `JOIN THE CLUB`. The canvases are decorative/inaccessible; the DOM station content is intended to carry semantics and fallback content.
 
 Current content is centralized in `lib/about_content.ts`. The ten current local source images in the ignored `temp/` directory are emitted as `about-satellite-01-640` through `about-satellite-10-640` generated WebP files. The first station uses the portrait photograph `about-satellite-01-640` as its smaller main image, while the second station uses the horizontal `wan-san-yip...` photograph (`about-satellite-10-640`) as its larger main image. Satellite frame dimensions are assigned to match each source orientation instead of forcing every photograph into one ratio, each source is used once across the two stations, and all photo-card borders use a thin frame. The focus still uses the generated hero family and the final afterword uses the generated logo. `ABOUT_TUNNEL_PHOTOS` selects the focus and two station main images.
 
