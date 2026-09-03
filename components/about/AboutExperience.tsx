@@ -68,39 +68,48 @@ export default function AboutExperience() {
     let isExperienceUnlocked = false;
     let isFocusTransitionActive = false;
     let isStoryViewActive = false;
+    let isExitSettled = false;
     let afterwordLayout: { left: number; top: number; width: number; height: number } | null = null;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const media = gsap.matchMedia();
 
     function resetAfterwordProjection() {
-      afterword.classList.remove('is-projecting', 'is-projection-interactive');
+      isExitSettled = false;
+      afterword.classList.remove('is-projecting', 'is-projection-interactive', 'is-exit-settled');
       afterword.style.removeProperty('opacity');
       afterword.style.removeProperty('transform');
     }
 
     function projectAfterword(frame: ExitPageFrame) {
       const { left, top, width, height, opacity, progress } = frame;
+      if (isExitSettled && progress < 0.995) resetAfterwordProjection();
+      if (isExitSettled) return;
       if (opacity <= 0 || progress <= 0) {
         resetAfterwordProjection();
         return;
       }
 
       if (!afterwordLayout) {
+        const bounds = afterword.getBoundingClientRect();
         afterwordLayout = {
-          left: afterword.offsetLeft,
-          top: afterword.offsetTop,
-          width: afterword.offsetWidth,
-          height: afterword.offsetHeight
+          left: bounds.left,
+          top: bounds.top,
+          width: bounds.width,
+          height: bounds.height
         };
       }
-      const naturalLeft = afterwordLayout.left - window.scrollX;
-      const naturalTop = afterwordLayout.top - window.scrollY;
       const scaleX = width / afterwordLayout.width;
       const scaleY = height / afterwordLayout.height;
       afterword.classList.add('is-projecting');
       afterword.classList.toggle('is-projection-interactive', progress >= 0.99);
       afterword.style.opacity = String(opacity);
-      afterword.style.transform = `translate3d(${left - naturalLeft}px, ${top - naturalTop}px, 0) scale(${scaleX}, ${scaleY})`;
+      afterword.style.transform = `translate3d(${left - afterwordLayout.left}px, ${top - afterwordLayout.top}px, 0) scale(${scaleX}, ${scaleY})`;
+      if (progress >= 0.999 && opacity >= 0.999) {
+        isExitSettled = true;
+        afterword.classList.add('is-exit-settled');
+        afterword.style.opacity = '1';
+        afterword.style.transform = 'none';
+      }
     }
 
     function loadArchiveScene() {
@@ -151,6 +160,7 @@ export default function AboutExperience() {
       const rawRevealProgress = Math.max(0, Math.min(1, (progress - 0.99) / 0.01));
       const revealProgress = rawRevealProgress * rawRevealProgress * (3 - 2 * rawRevealProgress);
       gsap.set(archiveCanvas, { autoAlpha: 1 - revealProgress });
+      if (progress >= 0.999) gsap.set(archiveCanvas, { autoAlpha: 0 });
     }
 
     function focusDistanceValue(value: number) {
@@ -431,11 +441,14 @@ export default function AboutExperience() {
       const exitState = { progress: 0 };
       const exitTimeline = gsap.timeline({
         scrollTrigger: {
-          trigger: '.obscura-afterword',
-          start: 'top bottom',
-          // 總出口距離為 220% 視窗高度，讓碎片增加、匯聚與相機推進都有完整節奏。
-          end: 'top -120%',
-          scrub: 0.55
+          trigger: '.obscura-exit',
+          start: 'top top',
+          // 出口舞台使用原生 sticky；ScrollTrigger 只提供進度，不再以 pin 與 DOM transform 互相抵消。
+          end: '+=220%',
+          scrub: true,
+          invalidateOnRefresh: true,
+          onLeave: () => setArchiveExitProgress(1),
+          onEnterBack: () => setArchiveExitProgress(0)
         }
       });
 

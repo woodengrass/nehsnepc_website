@@ -59,7 +59,7 @@ For normal motion, the story ScrollTrigger:
 - activates/deactivates the scene on forward/reverse entry;
 - sends progress to the archive scene.
 
-A second scrubbed trigger maps the afterword's entrance into the Three.js exit transition. While archive 3D is active, the natural-flow afterword remains hidden until `projectAfterword()` adds `.is-projecting`; this prevents the real page from appearing at the bottom before the projected exit page reaches it. After the 3D class changes DOM height, `ScrollTrigger.refresh()` runs on the next frame.
+A second scrubbed trigger maps the `.obscura-exit` entrance into the Three.js exit transition. The exit stage uses native `position: sticky`; ScrollTrigger supplies progress only and does not pin or transform the page container. While archive 3D is active, the afterword remains hidden until `projectAfterword()` adds `.is-projecting`, preventing the real page from appearing at the bottom before the projected exit page reaches it. After the 3D class changes DOM height, `ScrollTrigger.refresh()` runs on the next frame.
 
 For reduced motion, the component immediately sets focus to the target, does not create pinned timelines, does not import the Three.js scene, and displays ordinary full-height DOM panels. This is the primary low-motion and non-WebGL path.
 
@@ -83,11 +83,11 @@ The render loop pauses when the document is hidden or the scene leaves the obser
 
 ## Exit Projection
 
-Near the exit, the camera turns around a corner and fragments gather toward a page-shaped plane. Its projected screen corners are sent to `AboutExperience`, which translates, independently scales, and fades the real `.obscura-afterword` DOM element. The afterword is hidden while 3D is active until projection begins, then becomes visible through `.is-projecting`; pointer interaction is enabled only at near-complete projection. The WebGL plane itself remains invisible; it is geometric reference data.
+Near the exit, the camera turns around a corner and fragments gather toward a page-shaped plane. Its projected screen corners are sent to `AboutExperience`, which translates, independently scales, and fades the real `.obscura-afterword` DOM element relative to its current viewport rect. The afterword is hidden while 3D is active until projection begins, then becomes visible through `.is-projecting`. At projection completion, `.is-exit-settled` clears the temporary transform and opacity so the page remains stable while the sticky stage holds it; pointer interaction is enabled only at near-complete projection. The WebGL plane itself remains invisible; it is geometric reference data.
 
 ## Fallback and Cleanup
 
-Without `.is-archive-3d`, station articles are normal, relative, full-viewport DOM sections. On scene failure or `webglcontextlost`, the controller destroys the scene and restores fallback classes. No context restoration is attempted.
+Without `.is-archive-3d`, station articles and the exit page are normal, relative DOM sections. On scene failure or `webglcontextlost`, the controller destroys the scene and restores fallback classes; CSS also removes the 3D exit stage height and sticky positioning. The exit runway is provided by `.obscura-exit` only for the 3D path, while reduced motion switches the stage back to normal flow. No context restoration is attempted.
 
 The scene's `destroy()` cancels animation, disconnects intersection/resize observers, removes visibility and pointer listeners, traverses and disposes geometry/material/texture resources, and disposes the renderer. The React controller additionally removes input, resize, unload, and context-loss listeners, cancels microprism work, reverts GSAP media, and removes the focus body lock.
 

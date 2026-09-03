@@ -78,45 +78,49 @@ export default function AboutPage() {
         </article>
       </section>
 
-      <section className="obscura-afterword" aria-labelledby="afterwordTitle">
-        <div className="obscura-afterword-rail" aria-hidden="true">
-          <span>NEHS</span>
-          <span>HSINCHU / EST. 2016</span>
+      <section className="obscura-exit" aria-label="About NEHS Photography Club conclusion">
+        <div className="obscura-exit-stage">
+          <section className="obscura-afterword" aria-labelledby="afterwordTitle">
+            <div className="obscura-afterword-rail" aria-hidden="true">
+              <span>NEHS</span>
+              <span>HSINCHU / EST. 2016</span>
+            </div>
+            <div className="obscura-afterword-frame" aria-hidden="true">
+              <div className="obscura-afterword-photo-wrap">
+                <img className="obscura-afterword-photo" src={ABOUT_PHOTOS.final} alt="" />
+              </div>
+              <p><span>ARCHIVE IMAGE / 03</span><span>JOIN THE CLUB</span></p>
+            </div>
+            <div className="obscura-afterword-copy">
+              <p className="obscura-afterword-index">{ABOUT_EXIT_CONTENT.index}</p>
+              <h2 id="afterwordTitle">
+                {ABOUT_EXIT_CONTENT.title[0]}
+                <br />
+                {ABOUT_EXIT_CONTENT.title[1]}
+              </h2>
+              <p>{ABOUT_EXIT_CONTENT.body}</p>
+              <div className="obscura-afterword-guide">
+                <span>Next step / 下一步</span>
+                <span>追蹤社群或先從攝影工具開始</span>
+              </div>
+              <div className="obscura-afterword-actions">
+                {ABOUT_EXIT_CONTENT.actions.map((action) =>
+                  action.external ? (
+                    <a key={action.label} href={action.href} target="_blank" rel="noopener">
+                      {action.label} <span aria-hidden="true">&rarr;</span>
+                    </a>
+                  ) : (
+                    <Link key={action.label} href={action.href}>
+                      {action.label} <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  )
+                )}
+              </div>
+            </div>
+            <div className="obscura-afterword-block obscura-afterword-block-red" aria-hidden="true" />
+            <div className="obscura-afterword-block obscura-afterword-block-blue" aria-hidden="true" />
+          </section>
         </div>
-        <div className="obscura-afterword-frame" aria-hidden="true">
-          <div className="obscura-afterword-photo-wrap">
-            <img className="obscura-afterword-photo" src={ABOUT_PHOTOS.final} alt="" />
-          </div>
-          <p><span>ARCHIVE IMAGE / 03</span><span>JOIN THE CLUB</span></p>
-        </div>
-        <div className="obscura-afterword-copy">
-          <p className="obscura-afterword-index">{ABOUT_EXIT_CONTENT.index}</p>
-          <h2 id="afterwordTitle">
-            {ABOUT_EXIT_CONTENT.title[0]}
-            <br />
-            {ABOUT_EXIT_CONTENT.title[1]}
-          </h2>
-          <p>{ABOUT_EXIT_CONTENT.body}</p>
-          <div className="obscura-afterword-guide">
-            <span>Next step / 下一步</span>
-            <span>追蹤社群或先從攝影工具開始</span>
-          </div>
-          <div className="obscura-afterword-actions">
-            {ABOUT_EXIT_CONTENT.actions.map((action) =>
-              action.external ? (
-                <a key={action.label} href={action.href} target="_blank" rel="noopener">
-                  {action.label} <span aria-hidden="true">&rarr;</span>
-                </a>
-              ) : (
-                <Link key={action.label} href={action.href}>
-                  {action.label} <span aria-hidden="true">&rarr;</span>
-                </Link>
-              )
-            )}
-          </div>
-        </div>
-        <div className="obscura-afterword-block obscura-afterword-block-red" aria-hidden="true" />
-        <div className="obscura-afterword-block obscura-afterword-block-blue" aria-hidden="true" />
       </section>
 
       <AboutExperience />

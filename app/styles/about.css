@@ -19,11 +19,18 @@ body.is-focus-locked {
   background: #080808;
 }
 
-.obscura::after {
-  content: '';
-  display: block;
-  height: 120svh;
-  background: #d8d3c8;
+.obscura-exit {
+  position: relative;
+  height: 320svh;
+  background: #080808;
+}
+
+.obscura-exit-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  background: #080808;
 }
 
 .obscura-camera {
@@ -302,9 +309,11 @@ body.is-focus-locked {
 .obscura-contact-link span { padding-left: 1.2rem; font-size: 1rem; }
 
 .obscura-afterword {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 0;
-  min-height: 100svh;
+  min-height: 0;
+  height: 100%;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   align-items: center;
@@ -327,6 +336,13 @@ body.is-focus-locked {
   transform-origin: left top;
   pointer-events: none;
   will-change: transform, opacity;
+}
+
+.obscura-afterword.is-exit-settled {
+  z-index: 2;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
 }
 
 .obscura-afterword.is-projection-interactive {
@@ -587,10 +603,6 @@ body.is-focus-locked {
   padding-top: 100svh;
 }
 
-.obscura.reduced-motion::after {
-  display: none;
-}
-
 .obscura.reduced-motion .obscura-camera {
   position: absolute;
   will-change: auto;
@@ -605,4 +617,50 @@ body.is-focus-locked {
   min-height: 100svh;
   opacity: 1;
   transform: none;
+}
+
+.obscura.reduced-motion .obscura-exit {
+  height: auto;
+  background: var(--color-paper);
+}
+
+.obscura:not(.is-archive-3d) .obscura-exit {
+  height: auto;
+  background: var(--color-paper);
+}
+
+.obscura.reduced-motion .obscura-exit-stage {
+  position: relative;
+  height: auto;
+  overflow: visible;
+  background: var(--color-paper);
+}
+
+.obscura:not(.is-archive-3d) .obscura-exit-stage {
+  position: relative;
+  height: auto;
+  overflow: visible;
+  background: var(--color-paper);
+}
+
+.obscura.reduced-motion .obscura-afterword {
+  position: relative;
+  inset: auto;
+  min-height: 100svh;
+  height: auto;
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.obscura:not(.is-archive-3d) .obscura-afterword {
+  position: relative;
+  inset: auto;
+  min-height: 100svh;
+  height: auto;
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
 }
