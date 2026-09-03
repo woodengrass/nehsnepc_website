@@ -59,7 +59,7 @@ For normal motion, the story ScrollTrigger:
 - activates/deactivates the scene on forward/reverse entry;
 - sends progress to the archive scene.
 
-A second scrubbed trigger maps the afterword's entrance into the Three.js exit transition. After the 3D class changes DOM height, `ScrollTrigger.refresh()` runs on the next frame.
+A second scrubbed trigger maps the afterword's entrance into the Three.js exit transition. While archive 3D is active, the natural-flow afterword remains hidden until `projectAfterword()` adds `.is-projecting`; this prevents the real page from appearing at the bottom before the projected exit page reaches it. After the 3D class changes DOM height, `ScrollTrigger.refresh()` runs on the next frame.
 
 For reduced motion, the component immediately sets focus to the target, does not create pinned timelines, does not import the Three.js scene, and displays ordinary full-height DOM panels. This is the primary low-motion and non-WebGL path.
 
@@ -83,7 +83,7 @@ The render loop pauses when the document is hidden or the scene leaves the obser
 
 ## Exit Projection
 
-Near the exit, the camera turns around a corner and fragments gather toward a page-shaped plane. Its projected screen corners are sent to `AboutExperience`, which translates, independently scales, and fades the real `.obscura-afterword` DOM element. Pointer interaction is enabled only at near-complete projection. The WebGL plane itself remains invisible; it is geometric reference data.
+Near the exit, the camera turns around a corner and fragments gather toward a page-shaped plane. Its projected screen corners are sent to `AboutExperience`, which translates, independently scales, and fades the real `.obscura-afterword` DOM element. The afterword is hidden while 3D is active until projection begins, then becomes visible through `.is-projecting`; pointer interaction is enabled only at near-complete projection. The WebGL plane itself remains invisible; it is geometric reference data.
 
 ## Fallback and Cleanup
 

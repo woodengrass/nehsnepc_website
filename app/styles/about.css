@@ -315,8 +315,15 @@ body.is-focus-locked {
   background: var(--color-paper);
 }
 
+.obscura.is-archive-3d .obscura-afterword:not(.is-projecting) {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .obscura-afterword.is-projecting {
   z-index: 2;
+  visibility: visible;
   transform-origin: left top;
   pointer-events: none;
   will-change: transform, opacity;

@@ -362,7 +362,7 @@ export default function Hero() {
                   border-white/40
                   bg-[#272727]
                   shadow-[0.35rem_0.35rem_0_rgba(0,0,0,0.28)]
-                  ${index >= 2 ? 'film-short:hidden' : ''}
+                  ${index >= 2 ? 'max-[767px]:hidden film-short:hidden' : ''}
                   ${index >= 3 ? 'film-phone:hidden' : ''}
                   ${index >= 6 ? 'film-medium:hidden' : ''}
                   ${index >= 8 ? 'film-tall:hidden' : ''}
@@ -374,7 +374,7 @@ export default function Hero() {
                   border
                   border-white/40
                   bg-[#272727]
-                  ${index >= 2 ? 'film-short:hidden' : ''}
+                  ${index >= 2 ? 'max-[767px]:hidden film-short:hidden' : ''}
                   ${index >= 3 ? 'film-phone:hidden' : ''}
                   ${index >= 6 ? 'film-medium:hidden' : ''}
                   ${index >= 8 ? 'film-tall:hidden' : ''}
