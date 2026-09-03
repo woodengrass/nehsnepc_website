@@ -35,7 +35,24 @@ const imageSets = [
     widths: [640],
     avifQuality: 52,
     webpQuality: 76
-  }
+  },
+  ...[
+    '362A0319.jpg',
+    '362A4647.jpg',
+    'andre-benz-PpsgIw3iWZ4-unsplash.jpg',
+    'blake-verdoorn-cssvEZacHvQ-unsplash.jpg',
+    'DSC_1666.jpg',
+    'IMG_3103.jpg',
+    'kazuend-2KXEb_8G5vo-unsplash.jpg',
+    'laura-smetsers-St08jKkPVHw-unsplash.jpg',
+    'wan-san-yip-tLK02oHjT8c-unsplash.jpg'
+  ].map((fileName, index) => ({
+    name: `about-satellite-${String(index + 1).padStart(2, '0')}`,
+    source: path.join(projectRoot, 'temp', fileName),
+    widths: [640],
+    avifQuality: 50,
+    webpQuality: 72
+  }))
 ];
 
 await mkdir(outputDirectory, { recursive: true });

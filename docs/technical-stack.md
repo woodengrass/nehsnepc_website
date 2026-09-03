@@ -93,7 +93,7 @@ Detailed schema and publication behavior are in `posts.md`.
 | Logo, `public/images/logo.png` | 96, 192, 384 | configured in script |
 | Exposure calculator, `public/images/exposure-calculator.png` | 640 | 52 / 76 |
 
-Resizing uses `withoutEnlargement`; AVIF effort is 5 and WebP effort is 6. The script creates the output directory but does not delete stale files. New article images are not auto-discovered; extend the script or process them separately. Runtime code mostly owns native `<picture>`/`<img>` responsiveness instead of Next Image.
+Resizing uses `withoutEnlargement`; AVIF effort is 5 and WebP effort is 6. The script also processes the nine current ignored local `temp/*.jpg` files into `about-satellite-01-640` through `about-satellite-09-640` for the About satellite and main cards. The script creates the output directory but does not delete stale files. New article images are not auto-discovered; extend the script or process them separately. Runtime code mostly owns native `<picture>`/`<img>` responsiveness instead of Next Image.
 
 ## Model Pipeline
 

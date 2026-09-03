@@ -1,15 +1,15 @@
 export const ABOUT_PHOTOS = {
   focus: '/images/generated/hero-1280.webp',
-  station01Main: '/images/generated/hero-1280.webp',
-  station01Satellite01: '/images/generated/contact-800.webp',
-  station01Satellite02: '/images/generated/hero-1280.webp',
-  station01Satellite03: '/images/generated/contact-800.webp',
-  station01Satellite04: '/images/generated/hero-1280.webp',
-  station02Main: '/images/generated/contact-800.webp',
-  station02Satellite01: '/images/generated/hero-1280.webp',
-  station02Satellite02: '/images/generated/contact-800.webp',
-  station02Satellite03: '/images/generated/hero-1280.webp',
-  station02Satellite04: '/images/generated/contact-800.webp',
+  station01Main: '/images/generated/about-satellite-02-640.webp',
+  station01Satellite01: '/images/generated/about-satellite-01-640.webp',
+  station01Satellite02: '/images/generated/about-satellite-02-640.webp',
+  station01Satellite03: '/images/generated/about-satellite-03-640.webp',
+  station01Satellite04: '/images/generated/about-satellite-04-640.webp',
+  station02Main: '/images/generated/about-satellite-09-640.webp',
+  station02Satellite01: '/images/generated/about-satellite-05-640.webp',
+  station02Satellite02: '/images/generated/about-satellite-06-640.webp',
+  station02Satellite03: '/images/generated/about-satellite-07-640.webp',
+  station02Satellite04: '/images/generated/about-satellite-08-640.webp',
   final: '/images/generated/logo-384.webp'
 } as const;
 

@@ -18,7 +18,7 @@ The controller returns `null` and imperatively enhances known DOM IDs/classes fr
 
 The page contains a fixed camera section, responsive hero image, image wash/vignette, hidden archive canvas, focus HUD and microprism canvas, desktop intro, separate visual mobile entry, flash layer, two semantic DOM station articles, and a light-paper afterword. The canvases are decorative/inaccessible; the DOM station content is intended to carry semantics and fallback content.
 
-Current content is centralized in `lib/about_content.ts`. Most semantic image keys currently reuse the generated hero and contact images; the final afterword uses the generated logo. `ABOUT_TUNNEL_PHOTOS` selects the focus and two station main images.
+Current content is centralized in `lib/about_content.ts`. The satellite slots use the current local source images in the ignored `temp/` directory, emitted as `about-satellite-01-640` through `about-satellite-09-640` generated WebP files. The first station uses the horizontal airplane photograph (`about-satellite-02-640`) and the second uses the horizontal city photograph (`about-satellite-09-640`) as main images, matching the approximately 1.30:1 station-card ratio with less aggressive cropping. The focus still uses the generated hero family and the final afterword uses the generated logo. `ABOUT_TUNNEL_PHOTOS` selects the focus and two station main images.
 
 ## Initial Focus Interaction
 
