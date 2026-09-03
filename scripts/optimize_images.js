@@ -38,11 +38,12 @@ const imageSets = [
   },
   ...[
     '362A0319.jpg',
+    '362A0654.jpg',
     '362A4647.jpg',
-    'andre-benz-PpsgIw3iWZ4-unsplash.jpg',
-    'blake-verdoorn-cssvEZacHvQ-unsplash.jpg',
     'DSC_1666.jpg',
     'IMG_3103.jpg',
+    'andre-benz-PpsgIw3iWZ4-unsplash.jpg',
+    'blake-verdoorn-cssvEZacHvQ-unsplash.jpg',
     'kazuend-2KXEb_8G5vo-unsplash.jpg',
     'laura-smetsers-St08jKkPVHw-unsplash.jpg',
     'wan-san-yip-tLK02oHjT8c-unsplash.jpg'

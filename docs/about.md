@@ -18,7 +18,7 @@ The controller returns `null` and imperatively enhances known DOM IDs/classes fr
 
 The page contains a fixed camera section, responsive hero image, image wash/vignette, hidden archive canvas, focus HUD and microprism canvas, desktop intro, separate visual mobile entry, flash layer, two semantic DOM station articles, and a light-paper afterword. The canvases are decorative/inaccessible; the DOM station content is intended to carry semantics and fallback content.
 
-Current content is centralized in `lib/about_content.ts`. The satellite slots use the current local source images in the ignored `temp/` directory, emitted as `about-satellite-01-640` through `about-satellite-09-640` generated WebP files. The first station uses the horizontal airplane photograph (`about-satellite-02-640`) and the second uses the horizontal city photograph (`about-satellite-09-640`) as main images, matching the approximately 1.30:1 station-card ratio with less aggressive cropping. The focus still uses the generated hero family and the final afterword uses the generated logo. `ABOUT_TUNNEL_PHOTOS` selects the focus and two station main images.
+Current content is centralized in `lib/about_content.ts`. The ten current local source images in the ignored `temp/` directory are emitted as `about-satellite-01-640` through `about-satellite-10-640` generated WebP files. The first station uses the portrait photograph `about-satellite-01-640` as its smaller main image, while the second station uses the horizontal `wan-san-yip...` photograph (`about-satellite-10-640`) as its larger main image. Satellite frame dimensions are assigned to match each source orientation instead of forcing every photograph into one ratio, each source is used once across the two stations, and all photo-card borders use a thin frame. The focus still uses the generated hero family and the final afterword uses the generated logo. `ABOUT_TUNNEL_PHOTOS` selects the focus and two station main images.
 
 ## Initial Focus Interaction
 
@@ -75,7 +75,7 @@ Renderer configuration:
 - field of view 46 desktop and 55 mobile;
 - dark exponential fog and sRGB output.
 
-The scene contains an entry portal, two station groups, canvas-text labels, photo cards, a tunnel gallery, dust, wireframe fragments, and an invisible page plane used to project the real DOM afterword. Story progress follows camera stops through smooth interpolation and a damped spring. Desktop pointer movement contributes damped parallax.
+The scene contains an entry portal, two station groups, canvas-text labels, photo cards, a tunnel gallery, dust, wireframe fragments, and an invisible page plane used to project the real DOM afterword. Station and tunnel photo frames are sized to each source image's aspect ratio and render the complete image without crop; the frame dimensions are intentionally smaller than the original layout. Story progress follows camera stops through smooth interpolation and a damped spring. Desktop pointer movement contributes damped parallax.
 
 Mobile is classified once at initialization with `(max-width: 767px)`. It remains a WebGL experience when motion is allowed, but uses no satellite photos, lower particle/fragment/photo counts, lower pixel ratio, no antialiasing, and no pointer parallax. Crossing the breakpoint after scene creation does not rebuild the complexity profile.
 
