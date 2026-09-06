@@ -36,6 +36,7 @@ export default function AboutExperience() {
     const focusGuideQuery = document.getElementById('focusGuide');
     const afterwordQuery = document.querySelector<HTMLElement>('.obscura-afterword');
     const exitQuery = document.querySelector<HTMLElement>('.obscura-exit');
+    const exitStageQuery = document.querySelector<HTMLElement>('.obscura-exit-stage');
 
     if (
       !pageQuery ||
@@ -46,7 +47,8 @@ export default function AboutExperience() {
       !archiveCanvasQuery ||
       !focusGuideQuery ||
       !afterwordQuery ||
-      !exitQuery
+      !exitQuery ||
+      !exitStageQuery
     ) {
       return;
     }
@@ -60,6 +62,7 @@ export default function AboutExperience() {
     const focusGuide: HTMLElement = focusGuideQuery;
     const afterword: HTMLElement = afterwordQuery;
     const exit: HTMLElement = exitQuery;
+    const exitStage: HTMLElement = exitStageQuery;
 
     let prismFrame: number | null = null;
     let prismError = 1;
@@ -453,8 +456,8 @@ export default function AboutExperience() {
         scrollTrigger: {
           trigger: '.obscura-exit',
           start: 'top top',
-          // 出口區塊保留一個 viewport 的靜止舞台；其餘實際可捲動距離就是動畫範圍。
-          end: () => `+=${Math.max(1, exit.offsetHeight - window.innerHeight)}`,
+          // 出口區塊保留一個 large viewport 舞台；其餘實際可捲動距離就是動畫範圍。
+          end: () => `+=${Math.max(1, exit.offsetHeight - exitStage.offsetHeight)}`,
           scrub: true,
           invalidateOnRefresh: true,
           onLeave: () => setArchiveExitProgress(1)

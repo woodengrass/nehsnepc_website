@@ -30,7 +30,7 @@ body.is-focus-locked {
   --story-defocus: 0;
   --font-about-cjk: 'Noto Serif TC', 'Cormorant Garamond', serif;
   position: relative;
-  padding-top: 100svh;
+  padding-top: 100lvh;
   background: #080808;
 }
 
@@ -41,15 +41,15 @@ body.is-focus-locked {
 .obscura-exit {
   position: relative;
   width: 100%;
-  height: 320svh;
+  height: 320lvh;
   background: #080808;
 }
 
 .obscura-exit-stage {
   position: relative;
   width: 100%;
-  height: 100svh;
-  min-height: 100svh;
+  height: 100lvh;
+  min-height: 100lvh;
   overflow: hidden;
   background: #080808;
 }
@@ -58,7 +58,7 @@ body.is-focus-locked {
   position: fixed;
   inset: 0;
   z-index: 1;
-  height: 100svh;
+  height: 100lvh;
   overflow: hidden;
   isolation: isolate;
 }
@@ -260,7 +260,7 @@ body.is-focus-locked {
 .obscura-story {
   position: relative;
   z-index: 2;
-  height: 100svh;
+  height: 100lvh;
   perspective: 1100px;
   pointer-events: none;
 }
@@ -350,7 +350,7 @@ body.is-focus-locked {
   position: fixed;
   inset: 0;
   width: 100%;
-  height: 100svh;
+  height: 100lvh;
 }
 
 .obscura.is-archive-3d .obscura-afterword:not(.is-projecting) {
