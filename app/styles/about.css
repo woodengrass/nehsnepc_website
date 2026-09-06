@@ -8,7 +8,7 @@ body:has(.obscura) {
 
 html:has(.obscura:not(.is-unlocked)),
 html.is-focus-locked {
-  height: 100svh;
+  height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
 }
@@ -18,7 +18,7 @@ body.is-focus-locked {
   position: fixed;
   inset: 0;
   width: 100%;
-  height: 100svh;
+  height: 100dvh;
   overflow: hidden;
   touch-action: none;
 }
@@ -61,6 +61,10 @@ body.is-focus-locked {
   height: 100lvh;
   overflow: hidden;
   isolation: isolate;
+}
+
+.obscura:not(.is-archive-3d) .obscura-camera {
+  height: 100dvh;
 }
 
 .obscura-image-wrap,
@@ -372,6 +376,10 @@ body.is-focus-locked {
   opacity: 1;
   transform: none;
   pointer-events: auto;
+}
+
+.obscura.is-archive-3d .obscura-afterword.is-exit-settled {
+  height: 100dvh;
 }
 
 .obscura-afterword.is-exit-settled::before {
