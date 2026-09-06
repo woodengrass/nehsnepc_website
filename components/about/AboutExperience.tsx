@@ -35,6 +35,7 @@ export default function AboutExperience() {
     const archiveCanvasQuery = document.getElementById('archiveCanvas') as HTMLCanvasElement | null;
     const focusGuideQuery = document.getElementById('focusGuide');
     const afterwordQuery = document.querySelector<HTMLElement>('.obscura-afterword');
+    const exitQuery = document.querySelector<HTMLElement>('.obscura-exit');
 
     if (
       !pageQuery ||
@@ -44,7 +45,8 @@ export default function AboutExperience() {
       !imageWrapQuery ||
       !archiveCanvasQuery ||
       !focusGuideQuery ||
-      !afterwordQuery
+      !afterwordQuery ||
+      !exitQuery
     ) {
       return;
     }
@@ -57,6 +59,7 @@ export default function AboutExperience() {
     const archiveCanvas: HTMLCanvasElement = archiveCanvasQuery;
     const focusGuide: HTMLElement = focusGuideQuery;
     const afterword: HTMLElement = afterwordQuery;
+    const exit: HTMLElement = exitQuery;
 
     let prismFrame: number | null = null;
     let prismError = 1;
@@ -86,6 +89,7 @@ export default function AboutExperience() {
       if (isExitSettled) return;
       if (opacity <= 0 || progress <= 0) {
         resetAfterwordProjection();
+        if (isStoryViewActive) gsap.set(archiveCanvas, { autoAlpha: 1 });
         return;
       }
 
@@ -104,6 +108,9 @@ export default function AboutExperience() {
       afterword.classList.toggle('is-projection-interactive', progress >= 0.99);
       afterword.style.opacity = String(opacity);
       afterword.style.transform = `translate3d(${left - afterwordLayout.left}px, ${top - afterwordLayout.top}px, 0) scale(${scaleX}, ${scaleY})`;
+      const rawCanvasReveal = Math.max(0, Math.min(1, (progress - 0.99) / 0.01));
+      const canvasReveal = rawCanvasReveal * rawCanvasReveal * (3 - 2 * rawCanvasReveal);
+      gsap.set(archiveCanvas, { autoAlpha: 1 - canvasReveal });
       if (progress >= 0.999 && opacity >= 0.999) {
         isExitSettled = true;
         afterword.classList.add('is-exit-settled');
@@ -153,14 +160,6 @@ export default function AboutExperience() {
     function setArchiveExitProgress(progress: number) {
       archiveExitProgress = progress;
       archiveScene?.setExitProgress(progress);
-
-      // 僅在故事視圖接管畫面時控制顯露比例。進度回到 0 或返回頁首後不再寫入，
-      // 避免退出 ScrollTrigger 的尾端更新覆蓋 setStoryViewActive(false)。
-      if (progress <= 0 || !isStoryViewActive) return;
-      const rawRevealProgress = Math.max(0, Math.min(1, (progress - 0.99) / 0.01));
-      const revealProgress = rawRevealProgress * rawRevealProgress * (3 - 2 * rawRevealProgress);
-      gsap.set(archiveCanvas, { autoAlpha: 1 - revealProgress });
-      if (progress >= 0.999) gsap.set(archiveCanvas, { autoAlpha: 0 });
     }
 
     function focusDistanceValue(value: number) {
@@ -259,6 +258,7 @@ export default function AboutExperience() {
       if (isExperienceUnlocked) return;
       isExperienceUnlocked = true;
       isFocusTransitionActive = true;
+      document.documentElement.classList.remove('is-focus-locked');
       document.body.classList.remove('is-focus-locked');
       page.classList.add('is-unlocked');
       focusGuide.textContent = ABOUT_FOCUS_CONTENT.lockedPrompt;
@@ -346,23 +346,31 @@ export default function AboutExperience() {
       adjustFocus(event.deltaY * 0.04);
     }
 
-    let lastTouchY: number | null = null;
+    let focusPointerId: number | null = null;
+    let lastPointerY: number | null = null;
 
-    function handleTouchStart(event: TouchEvent) {
-      if (!isExperienceUnlocked) lastTouchY = event.touches[0]?.clientY ?? null;
+    function handlePointerDown(event: PointerEvent) {
+      if (isExperienceUnlocked || event.pointerType !== 'touch') return;
+      focusPointerId = event.pointerId;
+      lastPointerY = event.clientY;
+      page.setPointerCapture(event.pointerId);
     }
 
-    function handleTouchMove(event: TouchEvent) {
-      if (isExperienceUnlocked || lastTouchY === null) return;
+    function handlePointerMove(event: PointerEvent) {
+      if (event.pointerId !== focusPointerId || lastPointerY === null) return;
       event.preventDefault();
-      const currentTouchY = event.touches[0]?.clientY ?? lastTouchY;
-      const movement = lastTouchY - currentTouchY;
+      // 對焦可在一個 gesture 中完成，但同一手勢的剩餘移動不能交回瀏覽器捲動。
+      if (isExperienceUnlocked) return;
+      const movement = lastPointerY - event.clientY;
       adjustFocus(movement * 0.18);
-      lastTouchY = currentTouchY;
+      lastPointerY = event.clientY;
     }
 
-    function handleTouchEnd() {
-      lastTouchY = null;
+    function handlePointerEnd(event: PointerEvent) {
+      if (event.pointerId !== focusPointerId) return;
+      if (page.hasPointerCapture(event.pointerId)) page.releasePointerCapture(event.pointerId);
+      focusPointerId = null;
+      lastPointerY = null;
     }
 
     function handleKeydown(event: KeyboardEvent) {
@@ -390,6 +398,7 @@ export default function AboutExperience() {
       renderMicroprism();
     }
 
+    document.documentElement.classList.add('is-focus-locked');
     document.body.classList.add('is-focus-locked');
     window.scrollTo(0, 0);
     updateVisitorCoordinate();
@@ -400,9 +409,10 @@ export default function AboutExperience() {
     window.addEventListener('beforeunload', handleBeforeUnload, { once: true });
     archiveCanvas.addEventListener('webglcontextlost', handleContextLost);
     window.addEventListener('wheel', handleWheel, { passive: false });
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    page.addEventListener('pointerdown', handlePointerDown, { passive: true });
+    page.addEventListener('pointermove', handlePointerMove, { passive: false });
+    page.addEventListener('pointerup', handlePointerEnd, { passive: true });
+    page.addEventListener('pointercancel', handlePointerEnd, { passive: true });
     window.addEventListener('keydown', handleKeydown);
 
     setFocus(8);
@@ -443,12 +453,11 @@ export default function AboutExperience() {
         scrollTrigger: {
           trigger: '.obscura-exit',
           start: 'top top',
-          // 出口舞台使用原生 sticky；ScrollTrigger 只提供進度，不再以 pin 與 DOM transform 互相抵消。
-          end: '+=220%',
+          // 出口區塊保留一個 viewport 的靜止舞台；其餘實際可捲動距離就是動畫範圍。
+          end: () => `+=${Math.max(1, exit.offsetHeight - window.innerHeight)}`,
           scrub: true,
           invalidateOnRefresh: true,
-          onLeave: () => setArchiveExitProgress(1),
-          onEnterBack: () => setArchiveExitProgress(0)
+          onLeave: () => setArchiveExitProgress(1)
         }
       });
 
@@ -481,12 +490,14 @@ export default function AboutExperience() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       archiveCanvas.removeEventListener('webglcontextlost', handleContextLost);
       window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
+      page.removeEventListener('pointerdown', handlePointerDown);
+      page.removeEventListener('pointermove', handlePointerMove);
+      page.removeEventListener('pointerup', handlePointerEnd);
+      page.removeEventListener('pointercancel', handlePointerEnd);
       window.removeEventListener('keydown', handleKeydown);
       archiveScene?.destroy();
       archiveScene = null;
+      document.documentElement.classList.remove('is-focus-locked');
       document.body.classList.remove('is-focus-locked');
     };
   }, []);

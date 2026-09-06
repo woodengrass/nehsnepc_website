@@ -33,7 +33,7 @@ There are no configured lint, formatter, unit, integration, end-to-end, or stand
 
 The site uses App Router with Server Components by default. Client components are isolated around browser behavior: shared navigation, About controller, Contact, exposure calculator, reading progress, and model preview. Dynamic route `params` are Promises in this Next version and must be awaited. Before changing framework APIs, read the relevant installed guide under `node_modules/next/dist/docs/`.
 
-`next.config.ts` exports an empty configuration. There is no `output: 'export'`, custom image loader, remote pattern, rewrite, header, React Compiler, webpack, or Turbopack customization. Routes are statically prerendered where possible, but deployment is a normal Next application rather than a pure `out/` export.
+`next.config.ts` allows the current Wi-Fi host `192.168.68.61` through `allowedDevOrigins` so physical devices can load Next development client chunks. Update this value if the computer's DHCP address changes. There is no `output: 'export'`, custom image loader, remote pattern, rewrite, header, React Compiler, webpack, or Turbopack customization. Routes are statically prerendered where possible, but deployment is a normal Next application rather than a pure `out/` export.
 
 ## TypeScript and Module Configuration
 

@@ -22,19 +22,19 @@ Current content is centralized in `lib/about_content.ts`. The ten current local 
 
 ## Initial Focus Interaction
 
-On mount, `AboutExperience` validates required DOM nodes, adds `body.is-focus-locked`, scrolls to the top, starts the location request and microprism renderer, installs listeners, and sets focus to 8. CSS locks the body to `100svh`, disables overflow, and sets `touch-action: none`.
+The server-rendered `.obscura` initially lacks `.is-unlocked`, so CSS immediately locks the root viewport and fixes the body before hydration. This prevents the first mobile swipe from reaching fallback sections before client input listeners exist. On mount, `AboutExperience` validates required DOM nodes, adds `is-focus-locked` to the document root and body, scrolls to the top, starts the location request and microprism renderer, installs listeners, and sets focus to 8. CSS locks the root viewport, fixes the body at `100svh`, disables overflow, and sets `touch-action: none`; locking both layers prevents iOS Safari from exposing later sections through a body-only overflow lock.
 
 The target is `FOCUS_POINT = 62`. Before unlock:
 
 - wheel delta changes focus at `deltaY * 0.04` and prevents scrolling;
-- touch movement changes focus at `delta * 0.18` and prevents scrolling;
+- touch input uses Pointer Events on the full `.obscura` surface with pointer capture. Pointer movement changes focus at `delta * 0.18` and prevents scrolling; if the target is reached mid-gesture, that gesture remains prevented until pointer end so its remaining movement cannot immediately scroll into the story;
 - ArrowDown, PageDown, Space, and ArrowUp adjust focus by keyboard;
 - focus sensitivity slows near the synthetic two-meter point;
 - crossing or nearing the target snaps exactly to it.
 
 Focus value is clamped from 0 to 100. A synthetic distance is calculated from normalized focus; values near 97% display infinity. CSS properties `--focus`, `--focus-error`, and `--split-offset` drive image blur and split-prism visuals. Reaching within 0.8 of the target unlocks once.
 
-Unlock removes the body lock, adds `.is-unlocked`, changes prompt text, starts archive loading, and animates a white flash with GSAP. During this 0.55-second flash transition, desktop wheel events remain prevented so high-frequency wheel input cannot scroll the DOM fallback station into the flash. Cleanup must remove all listeners, body state, animation contexts, queued frames, and scene resources even if initialization is interrupted.
+Unlock removes both root and body locks, adds `.is-unlocked`, changes prompt text, starts archive loading, and animates a white flash with GSAP. During this 0.55-second flash transition, desktop wheel events remain prevented so high-frequency wheel input cannot scroll the DOM fallback station into the flash. Cleanup must remove all listeners, root/body state, animation contexts, queued frames, and scene resources even if initialization is interrupted.
 
 ## Microprism Canvas
 
@@ -59,7 +59,7 @@ For normal motion, the story ScrollTrigger:
 - activates/deactivates the scene on forward/reverse entry;
 - sends progress to the archive scene.
 
-A second scrubbed trigger maps the `.obscura-exit` entrance into the Three.js exit transition. The exit stage uses native `position: sticky`; ScrollTrigger supplies progress only and does not pin or transform the page container. While archive 3D is active, the afterword remains hidden until `projectAfterword()` adds `.is-projecting`, preventing the real page from appearing at the bottom before the projected exit page reaches it. After the 3D class changes DOM height, `ScrollTrigger.refresh()` runs on the next frame.
+A second scrubbed trigger maps the `.obscura-exit` entrance into the Three.js exit transition. Its range is the exit section's measured height minus the current viewport height, so progress reaches one at the real end of the available exit scroll. The exit section provides a black runway only; while archive 3D is active, the afterword uses fixed viewport positioning and remains hidden until `projectAfterword()` adds `.is-projecting`. This prevents the real page from appearing at the bottom before the projected exit page reaches it. After the 3D class changes DOM height, `ScrollTrigger.refresh()` runs on the next frame.
 
 For reduced motion, the component immediately sets focus to the target, does not create pinned timelines, does not import the Three.js scene, and displays ordinary full-height DOM panels. This is the primary low-motion and non-WebGL path.
 
@@ -83,11 +83,11 @@ The render loop pauses when the document is hidden or the scene leaves the obser
 
 ## Exit Projection
 
-Near the exit, the camera turns around a corner and fragments gather toward a page-shaped plane. Its projected screen corners are sent to `AboutExperience`, which translates, independently scales, and fades the real `.obscura-afterword` DOM element relative to its current viewport rect. The afterword is hidden while 3D is active until projection begins, then becomes visible through `.is-projecting`. At projection completion, `.is-exit-settled` clears the temporary transform and opacity so the page remains stable while the sticky stage holds it; pointer interaction is enabled only at near-complete projection. The WebGL plane itself remains invisible; it is geometric reference data.
+Near the exit, the camera turns around a corner and fragments gather toward a page-shaped plane. Exit scroll progress is a target value; the scene follows it with a damped velocity curve and snaps only once a terminal target is sufficiently close, preserving the gathering's inertial feel without delaying the settled DOM handoff. Its projected screen corners are sent to `AboutExperience`, which translates, independently scales, and fades the real fixed `.obscura-afterword` DOM element relative to its viewport rect. The afterword is hidden while 3D is active until projection begins, then becomes visible through `.is-projecting`. Canvas fade-out also follows the scene's actual exit progress rather than the scroll target. At projection completion, `.is-exit-settled` clears the temporary transform and opacity so the page remains stable; its fixed paper pseudo-element covers dynamic browser-chrome space while its content stays at the stable viewport height. Pointer interaction is enabled only at near-complete projection. The WebGL plane itself remains invisible; it is geometric reference data.
 
 ## Fallback and Cleanup
 
-Without `.is-archive-3d`, station articles and the exit page are normal, relative DOM sections. On scene failure or `webglcontextlost`, the controller destroys the scene and restores fallback classes; CSS also removes the 3D exit stage height and sticky positioning. The exit runway is provided by `.obscura-exit` only for the 3D path, while reduced motion switches the stage back to normal flow. No context restoration is attempted.
+Without `.is-archive-3d`, station articles and the exit page are normal, relative DOM sections. On scene failure or `webglcontextlost`, the controller destroys the scene and restores fallback classes; CSS removes the 3D runway height and fixed positioning. The exit runway is provided by `.obscura-exit` only for the 3D path, while reduced motion switches the stage back to normal flow. No context restoration is attempted.
 
 The scene's `destroy()` cancels animation, disconnects intersection/resize observers, removes visibility and pointer listeners, traverses and disposes geometry/material/texture resources, and disposes the renderer. The React controller additionally removes input, resize, unload, and context-loss listeners, cancels microprism work, reverts GSAP media, and removes the focus body lock.
 

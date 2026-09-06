@@ -2,7 +2,22 @@ html:has(.obscura) {
   background: #080808;
 }
 
+body:has(.obscura) {
+  background: #080808;
+}
+
+html:has(.obscura:not(.is-unlocked)),
+html.is-focus-locked {
+  height: 100svh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body:has(.obscura:not(.is-unlocked)),
 body.is-focus-locked {
+  position: fixed;
+  inset: 0;
+  width: 100%;
   height: 100svh;
   overflow: hidden;
   touch-action: none;
@@ -19,16 +34,22 @@ body.is-focus-locked {
   background: #080808;
 }
 
+.obscura:not(.is-unlocked) {
+  touch-action: none;
+}
+
 .obscura-exit {
   position: relative;
+  width: 100%;
   height: 320svh;
   background: #080808;
 }
 
 .obscura-exit-stage {
-  position: sticky;
-  top: 0;
+  position: relative;
+  width: 100%;
   height: 100svh;
+  min-height: 100svh;
   overflow: hidden;
   background: #080808;
 }
@@ -311,6 +332,7 @@ body.is-focus-locked {
 .obscura-afterword {
   position: absolute;
   inset: 0;
+  width: 100%;
   z-index: 0;
   min-height: 0;
   height: 100%;
@@ -322,6 +344,13 @@ body.is-focus-locked {
   overflow: hidden;
   color: var(--color-ink);
   background: var(--color-paper);
+}
+
+.obscura.is-archive-3d .obscura-afterword {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100svh;
 }
 
 .obscura.is-archive-3d .obscura-afterword:not(.is-projecting) {
@@ -343,6 +372,14 @@ body.is-focus-locked {
   opacity: 1;
   transform: none;
   pointer-events: auto;
+}
+
+.obscura-afterword.is-exit-settled::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--color-paper);
 }
 
 .obscura-afterword.is-projection-interactive {
