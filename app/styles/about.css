@@ -632,7 +632,9 @@ body.is-focus-locked {
     padding: 5.5rem var(--page-pad) 3.5rem;
   }
   .obscura-afterword-rail { left: var(--page-pad); right: var(--page-pad); }
-  .obscura-afterword-frame { width: 78%; align-self: flex-start; padding: 0.8rem 0.8rem 0.8rem 0; }
+  .obscura-afterword-frame { width: 78%; align-self: center; padding: 0.8rem; }
+  .obscura-afterword-photo-wrap { margin-inline: auto; }
+  .obscura-afterword-frame > p { display: none; }
   .obscura-afterword-copy { width: 100%; padding: 0; }
   .obscura-afterword-copy h2 { font-size: clamp(3rem, 14vw, 4.6rem); line-height: 1.05; }
   .obscura-afterword-index { margin-bottom: 1.5rem; font-size: 0.62rem; }
@@ -641,6 +643,11 @@ body.is-focus-locked {
   .obscura-afterword-guide span:last-child { display: none; }
   .obscura-afterword-actions { margin-top: 0.8rem; }
   .obscura-afterword-actions a { padding: 0.85rem 0.7rem; }
+  .obscura-afterword-block-red {
+    right: auto;
+    left: calc(var(--page-pad) + 3rem);
+    width: 1.3rem;
+  }
   .obscura-afterword-block-blue { bottom: 32%; width: 1rem; }
 }
 
