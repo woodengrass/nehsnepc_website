@@ -13,6 +13,7 @@ const STATION_SNAP_POINTS = [0.325, 0.855];
 type ArchiveScene = {
   setProgress: (progress: number, immediate?: boolean) => void;
   setExitProgress: (progress: number) => void;
+  setRenderingPaused: (isPaused: boolean) => void;
   destroy: () => void;
 };
 
@@ -64,9 +65,12 @@ export default function AboutExperience() {
     const exit: HTMLElement = exitQuery;
     const exitStage: HTMLElement = exitStageQuery;
 
+    let focusFrame: number | null = null;
     let prismFrame: number | null = null;
+    let prismSceneCanvas: HTMLCanvasElement | null = null;
     let prismError = 1;
     let currentFocusValue = 8;
+    let pendingFocusValue = currentFocusValue;
     let archiveProgress = 0;
     let archiveExitProgress = 0;
     let archiveScene: ArchiveScene | null = null;
@@ -119,6 +123,7 @@ export default function AboutExperience() {
         afterword.classList.add('is-exit-settled');
         afterword.style.opacity = '1';
         afterword.style.transform = 'none';
+        archiveScene?.setRenderingPaused(true);
       }
     }
 
@@ -162,6 +167,7 @@ export default function AboutExperience() {
 
     function setArchiveExitProgress(progress: number) {
       archiveExitProgress = progress;
+      if (progress < 0.995) archiveScene?.setRenderingPaused(false);
       archiveScene?.setExitProgress(progress);
     }
 
@@ -193,28 +199,32 @@ export default function AboutExperience() {
       if (!size || !viewfinderImage.complete) return;
 
       const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-      microprismCanvas.width = size * pixelRatio;
-      microprismCanvas.height = size * pixelRatio;
+      const renderedSize = size * pixelRatio;
+      if (microprismCanvas.width !== renderedSize || microprismCanvas.height !== renderedSize) {
+        microprismCanvas.width = renderedSize;
+        microprismCanvas.height = renderedSize;
+      }
       const context = microprismCanvas.getContext('2d');
       if (!context) return;
-      context.scale(pixelRatio, pixelRatio);
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       context.clearRect(0, 0, size, size);
 
-      const scene = document.createElement('canvas');
-      scene.width = size * pixelRatio;
-      scene.height = size * pixelRatio;
-      const sceneContext = scene.getContext('2d');
-      if (!sceneContext) return;
-      sceneContext.scale(pixelRatio, pixelRatio);
-
-      const imageScale = Math.max(window.innerWidth / viewfinderImage.naturalWidth, window.innerHeight / viewfinderImage.naturalHeight);
-      const imageWidth = viewfinderImage.naturalWidth * imageScale;
-      const imageHeight = viewfinderImage.naturalHeight * imageScale;
-      const imageLeft = (window.innerWidth - imageWidth) * 0.5;
-      const imageTop = (window.innerHeight - imageHeight) * 0.62;
-      const cropLeft = window.innerWidth / 2 - size / 2;
-      const cropTop = window.innerHeight / 2 - size / 2;
-      sceneContext.drawImage(viewfinderImage, imageLeft - cropLeft, imageTop - cropTop, imageWidth, imageHeight);
+      if (!prismSceneCanvas || prismSceneCanvas.width !== renderedSize || prismSceneCanvas.height !== renderedSize) {
+        prismSceneCanvas = document.createElement('canvas');
+        prismSceneCanvas.width = renderedSize;
+        prismSceneCanvas.height = renderedSize;
+        const sceneContext = prismSceneCanvas.getContext('2d');
+        if (!sceneContext) return;
+        sceneContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        const imageScale = Math.max(window.innerWidth / viewfinderImage.naturalWidth, window.innerHeight / viewfinderImage.naturalHeight);
+        const imageWidth = viewfinderImage.naturalWidth * imageScale;
+        const imageHeight = viewfinderImage.naturalHeight * imageScale;
+        const imageLeft = (window.innerWidth - imageWidth) * 0.5;
+        const imageTop = (window.innerHeight - imageHeight) * 0.62;
+        const cropLeft = window.innerWidth / 2 - size / 2;
+        const cropTop = window.innerHeight / 2 - size / 2;
+        sceneContext.drawImage(viewfinderImage, imageLeft - cropLeft, imageTop - cropTop, imageWidth, imageHeight);
+      }
 
       const center = size / 2;
       const outerRadius = size * 0.49;
@@ -235,7 +245,7 @@ export default function AboutExperience() {
         context.closePath();
         context.clip();
         context.drawImage(
-          scene,
+          prismSceneCanvas,
           Math.cos(facetAngle) * displacement * direction,
           Math.sin(facetAngle) * displacement * direction,
           size,
@@ -275,7 +285,7 @@ export default function AboutExperience() {
       });
     }
 
-    function setFocus(value: number) {
+    function applyFocus(value: number) {
       const valueInRange = Math.max(0, Math.min(100, Number(value)));
       currentFocusValue = valueInRange;
       const sideRange = valueInRange < FOCUS_POINT ? FOCUS_POINT : 100 - FOCUS_POINT;
@@ -292,6 +302,24 @@ export default function AboutExperience() {
       page.classList.toggle('is-focused', isFocused);
       if (isFocused) unlockExperience();
       scheduleMicroprism(focusError);
+    }
+
+    function setFocus(value: number) {
+      const valueInRange = Math.max(0, Math.min(100, Number(value)));
+      currentFocusValue = valueInRange;
+      pendingFocusValue = valueInRange;
+      if (Math.abs(valueInRange - FOCUS_POINT) <= 0.8) {
+        if (focusFrame !== null) window.cancelAnimationFrame(focusFrame);
+        focusFrame = null;
+        applyFocus(valueInRange);
+        return;
+      }
+      if (focusFrame === null) {
+        focusFrame = window.requestAnimationFrame(() => {
+          focusFrame = null;
+          applyFocus(pendingFocusValue);
+        });
+      }
     }
 
     function adjustFocus(amount: number) {
@@ -385,6 +413,7 @@ export default function AboutExperience() {
 
     function handleResize() {
       afterwordLayout = null;
+      prismSceneCanvas = null;
       scheduleMicroprism(prismError);
     }
 
@@ -404,7 +433,16 @@ export default function AboutExperience() {
     document.documentElement.classList.add('is-focus-locked');
     document.body.classList.add('is-focus-locked');
     window.scrollTo(0, 0);
-    updateVisitorCoordinate();
+    const runVisitorCoordinate = () => {
+      const requestIdle = window.requestIdleCallback;
+      if (requestIdle) {
+        requestIdle(updateVisitorCoordinate, { timeout: 1500 });
+      } else {
+        globalThis.setTimeout(updateVisitorCoordinate, 0);
+      }
+    };
+    if (document.readyState === 'complete') runVisitorCoordinate();
+    else window.addEventListener('load', runVisitorCoordinate, { once: true });
 
     if (viewfinderImage.complete) renderMicroprism();
     else viewfinderImage.addEventListener('load', handleViewfinderLoad, { once: true });
@@ -487,7 +525,9 @@ export default function AboutExperience() {
 
     return () => {
       media.revert();
+      if (focusFrame !== null) window.cancelAnimationFrame(focusFrame);
       if (prismFrame !== null) window.cancelAnimationFrame(prismFrame);
+      window.removeEventListener('load', runVisitorCoordinate);
       viewfinderImage.removeEventListener('load', handleViewfinderLoad);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('beforeunload', handleBeforeUnload);

@@ -21,7 +21,7 @@ export default function AboutPage() {
           <picture className="obscura-picture">
             <source type="image/avif" srcSet={HERO_SRCSET_AVIF} sizes="100vw" />
             <source type="image/webp" srcSet={HERO_SRCSET_WEBP} sizes="100vw" />
-            <img className="obscura-image" src="/images/generated/hero-1280.webp" alt="" />
+            <img className="obscura-image" src="/images/generated/hero-1280.webp" alt="" fetchPriority="high" />
           </picture>
           <div className="obscura-image-wash" />
           <div className="obscura-vignette" />
@@ -87,7 +87,7 @@ export default function AboutPage() {
             </div>
             <div className="obscura-afterword-frame" aria-hidden="true">
               <div className="obscura-afterword-photo-wrap">
-                <img className="obscura-afterword-photo" src={ABOUT_PHOTOS.final} alt="" />
+                <img className="obscura-afterword-photo" src={ABOUT_PHOTOS.final} alt="" loading="lazy" />
               </div>
               <p><span>ARCHIVE IMAGE / 03</span><span>JOIN THE CLUB</span></p>
             </div>
