@@ -36,10 +36,18 @@ export default function AboutPage() {
             <canvas className="microprism-canvas" id="microprismCanvas" />
             <div className="split-focus">
               <div className="split-focus-half split-focus-top">
-                <img src={ABOUT_PHOTOS.focus} alt="" />
+                <picture>
+                  <source type="image/avif" srcSet={HERO_SRCSET_AVIF} sizes="100vw" />
+                  <source type="image/webp" srcSet={HERO_SRCSET_WEBP} sizes="100vw" />
+                  <img src={ABOUT_PHOTOS.focus} alt="" />
+                </picture>
               </div>
               <div className="split-focus-half split-focus-bottom">
-                <img src={ABOUT_PHOTOS.focus} alt="" />
+                <picture>
+                  <source type="image/avif" srcSet={HERO_SRCSET_AVIF} sizes="100vw" />
+                  <source type="image/webp" srcSet={HERO_SRCSET_WEBP} sizes="100vw" />
+                  <img src={ABOUT_PHOTOS.focus} alt="" />
+                </picture>
               </div>
               <span className="split-focus-line" />
             </div>

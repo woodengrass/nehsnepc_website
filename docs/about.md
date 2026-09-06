@@ -16,7 +16,7 @@ The controller returns `null` and imperatively enhances known DOM IDs/classes fr
 
 ## Rendered Layers
 
-The page contains a fixed camera section, responsive hero image, image wash/vignette, hidden archive canvas, focus HUD and microprism canvas, desktop intro, separate visual mobile entry, flash layer, two semantic DOM station articles, and a light-paper afterword. The afterword photo frame is labelled `NEHS` and `JOIN THE CLUB`. The canvases are decorative/inaccessible; the DOM station content is intended to carry semantics and fallback content. The hero receives high fetch priority because it is the visual entry layer; the afterword image uses browser lazy loading because it is below the initial viewport.
+The page contains a fixed camera section, responsive hero image, image wash/vignette, hidden archive canvas, focus HUD and microprism canvas, desktop intro, separate visual mobile entry, flash layer, two semantic DOM station articles, and a light-paper afterword. The afterword photo frame is labelled `NEHS` and `JOIN THE CLUB`. The canvases are decorative/inaccessible; the DOM station content is intended to carry semantics and fallback content. The hero receives high fetch priority because it is the visual entry layer; its split-focus copies use the same AVIF/WebP responsive sources to reuse the selected image resource. The afterword image uses browser lazy loading because it is below the initial viewport.
 
 Current content is centralized in `lib/about_content.ts`. The ten current local source images in the ignored `temp/` directory are emitted as `about-satellite-01-640` through `about-satellite-10-640` generated WebP and AVIF files. The first station uses the portrait photograph `about-satellite-01-640` as its smaller main image, while the second station uses the horizontal `wan-san-yip...` photograph (`about-satellite-10-640`) as its larger main image. Satellite frame dimensions are assigned to match each source orientation instead of forcing every photograph into one ratio, each source is used once across the two stations, and all photo-card borders use a thin frame. The focus still uses the generated hero family and the final afterword uses the generated logo. `ABOUT_TUNNEL_PHOTOS` selects the focus and two station main images. Before scene loading, the browser probes the first selected generated AVIF image; supported browsers use AVIF textures, individual AVIF failures retry WebP, and a failed probe uses WebP for every scene texture.
 
@@ -34,11 +34,11 @@ The target is `FOCUS_POINT = 62`. Before unlock:
 
 Focus value is clamped from 0 to 100. A synthetic distance is calculated from normalized focus; values near 97% display infinity. CSS properties `--focus`, `--focus-error`, and `--split-offset` drive image blur and split-prism visuals. Non-terminal pointer and wheel updates are coalesced to one animation frame; reaching within 0.8 of the target applies immediately so unlock remains responsive.
 
-Unlock removes both root and body locks, adds `.is-unlocked`, changes prompt text, starts archive loading, and animates a white flash with GSAP. During this 0.55-second flash transition, desktop wheel events remain prevented so high-frequency wheel input cannot scroll the DOM fallback station into the flash. Cleanup must remove all listeners, root/body state, animation contexts, queued frames, and scene resources even if initialization is interrupted.
+Unlock removes both root and body locks, adds `.is-unlocked`, changes prompt text, starts archive loading, and animates a white flash with GSAP. During this 0.55-second flash transition, desktop wheel events remain prevented so high-frequency wheel input cannot scroll the DOM fallback station into the flash. When the flash completes, wheel, keyboard, and unused pointer listeners are removed; an active touch pointer remains captured until it ends. Cleanup must remove all listeners, root/body state, animation contexts, queued frames, and scene resources even if initialization is interrupted.
 
 ## Microprism Canvas
 
-The central focusing screen uses a two-dimensional canvas independent of Three.js. It cover-crops the hero image to a cached canvas, divides an annular region into 48 alternating facets, offsets them according to focus error, and draws separator lines. The crop cache is rebuilt after image load or resize; focus changes redraw only the facets. Pixel ratio is capped at 2. Rendering is queued at most once per animation frame.
+The central focusing screen uses a two-dimensional canvas independent of Three.js. It cover-crops the hero image to a cached canvas, divides an annular region into 48 alternating facets, offsets them according to focus error, and draws separator lines. The crop cache is rebuilt after image load or resize; focus changes redraw only the facets. Pixel ratio is capped at 2. Rendering is queued at most once per animation frame. Unlock cancels pending prism work and releases both canvas buffers because the HUD is then hidden.
 
 ## Location Service
 
@@ -79,7 +79,7 @@ The scene contains an entry portal, two station groups, canvas-text labels, phot
 
 Mobile is classified once at initialization with `(max-width: 767px)`. It remains a WebGL experience when motion is allowed, but loads only its focus, station-main, and final textures; it does not request satellite textures because it renders no satellite photos. It also uses lower particle/fragment/photo counts, lower pixel ratio, no antialiasing, and no pointer parallax. Crossing the breakpoint after scene creation does not rebuild the complexity profile.
 
-The render loop pauses when the document is hidden, the scene leaves the observed viewport, or the DOM afterword has completely taken over at the exit. Reverse exit scroll resumes rendering before the projected afterword needs to animate again. ResizeObserver updates renderer size, camera aspect, portal crop, and exit geometry; portal crops are deferred while the portal is invisible and refreshed when it returns. Frame delta is capped after inactivity.
+The render loop pauses when the document is hidden, the scene leaves the observed viewport, the scene has completed its hidden post-unlock warm-up, or the DOM afterword has completely taken over at the exit. Entering the story resumes rendering; reverse exit scroll also resumes it before the projected afterword needs to animate again. Pause requests are idempotent, so repeated scroll updates do not reset the animation delta. ResizeObserver updates renderer size, camera aspect, portal crop, and exit geometry; portal crops are deferred while the portal is invisible and refreshed when it returns. Frame delta is capped after inactivity.
 
 ## Exit Projection
 
@@ -89,7 +89,7 @@ Near the exit, the camera turns around a corner and fragments gather toward a pa
 
 Without `.is-archive-3d`, station articles and the exit page are normal, relative DOM sections. On scene failure or `webglcontextlost`, the controller destroys the scene and restores fallback classes; CSS removes the 3D runway height and fixed positioning. The exit runway is provided by `.obscura-exit` only for the 3D path, while reduced motion switches the stage back to normal flow. No context restoration is attempted.
 
-The scene's `destroy()` cancels animation, disconnects intersection/resize observers, removes visibility and pointer listeners, traverses and disposes geometry/material/texture resources, and disposes the renderer. The React controller additionally removes input, resize, unload, and context-loss listeners, cancels microprism work, reverts GSAP media, and removes the focus body lock.
+The scene's `destroy()` cancels animation, disconnects intersection/resize observers, removes visibility and pointer listeners, traverses and disposes geometry/material/texture resources, and disposes the renderer. The React controller destroys it on normal `pagehide` and cleanup, but preserves it when `pagehide.persisted` indicates a bfcache entry. It also removes input, resize, pagehide, and context-loss listeners, cancels microprism work, reverts GSAP media, and removes the focus body lock.
 
 ## Accessibility Constraints
 

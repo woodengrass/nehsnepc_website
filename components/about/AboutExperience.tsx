@@ -67,6 +67,7 @@ export default function AboutExperience() {
 
     let focusFrame: number | null = null;
     let prismFrame: number | null = null;
+    let archivePauseFrame: number | null = null;
     let prismSceneCanvas: HTMLCanvasElement | null = null;
     let prismError = 1;
     let currentFocusValue = 8;
@@ -151,11 +152,15 @@ export default function AboutExperience() {
     }
 
     function showDomFallback() {
-      archiveScene?.destroy();
-      archiveScene = null;
+      destroyArchiveScene();
       page.classList.remove('is-archive-3d', 'is-in-story');
       media.revert();
       setStoryViewActive(false);
+    }
+
+    function destroyArchiveScene() {
+      archiveScene?.destroy();
+      archiveScene = null;
     }
 
     function setArchiveProgress(progress: number, immediate = false) {
@@ -194,6 +199,7 @@ export default function AboutExperience() {
 
     function renderMicroprism() {
       prismFrame = null;
+      if (isExperienceUnlocked) return;
       const bounds = microprismCanvas.getBoundingClientRect();
       const size = Math.round(bounds.width);
       if (!size || !viewfinderImage.complete) return;
@@ -263,6 +269,7 @@ export default function AboutExperience() {
     }
 
     function scheduleMicroprism(error: number) {
+      if (isExperienceUnlocked) return;
       prismError = error;
       if (!prismFrame) prismFrame = window.requestAnimationFrame(renderMicroprism);
     }
@@ -275,13 +282,23 @@ export default function AboutExperience() {
       document.body.classList.remove('is-focus-locked');
       page.classList.add('is-unlocked');
       focusGuide.textContent = ABOUT_FOCUS_CONTENT.lockedPrompt;
+      page.removeEventListener('pointerdown', handlePointerDown);
+      if (prismFrame !== null) window.cancelAnimationFrame(prismFrame);
+      prismFrame = null;
+      prismSceneCanvas = null;
+      microprismCanvas.width = 0;
+      microprismCanvas.height = 0;
       // 對焦完成後立即準備 3D 場景，避免使用者開始滑動時入口照片尚未載入。
       loadArchiveScene();
       gsap.fromTo('.obscura-flash', { autoAlpha: 0.95 }, {
         autoAlpha: 0,
         duration: 0.55,
         ease: 'power2.out',
-        onComplete: () => { isFocusTransitionActive = false; }
+        onComplete: () => {
+          isFocusTransitionActive = false;
+          removeFocusScrollListeners();
+          if (focusPointerId === null) removeFocusPointerListeners();
+        }
       });
     }
 
@@ -344,6 +361,19 @@ export default function AboutExperience() {
       // 套用零時刻狀態，導致使用者尚未捲動，載入完成的 canvas 就蓋掉對焦畫面。
       // 改由 ScrollTrigger 的進出事件切換，讓初始、進入故事及返回頂部都有明確狀態。
       isStoryViewActive = isActive;
+      if (isActive) {
+        if (archivePauseFrame !== null) window.cancelAnimationFrame(archivePauseFrame);
+        archivePauseFrame = null;
+        archiveScene?.setRenderingPaused(false);
+      } else if (archiveScene && archivePauseFrame === null) {
+        // Allow the newly created renderer to present before pausing its hidden scene.
+        archivePauseFrame = window.requestAnimationFrame(() => {
+          archivePauseFrame = window.requestAnimationFrame(() => {
+            archivePauseFrame = null;
+            if (!isStoryViewActive) archiveScene?.setRenderingPaused(true);
+          });
+        });
+      }
       const showArchive = isActive && archiveScene !== null;
       gsap.set(archiveCanvas, { autoAlpha: showArchive ? 1 : 0 });
       gsap.set(imageWrap, { autoAlpha: showArchive ? 0 : 1 });
@@ -402,6 +432,7 @@ export default function AboutExperience() {
       if (page.hasPointerCapture(event.pointerId)) page.releasePointerCapture(event.pointerId);
       focusPointerId = null;
       lastPointerY = null;
+      if (isExperienceUnlocked && !isFocusTransitionActive) removeFocusPointerListeners();
     }
 
     function handleKeydown(event: KeyboardEvent) {
@@ -411,14 +442,26 @@ export default function AboutExperience() {
       adjustFocus(direction * 4);
     }
 
+    function removeFocusScrollListeners() {
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('keydown', handleKeydown);
+    }
+
+    function removeFocusPointerListeners() {
+      page.removeEventListener('pointermove', handlePointerMove);
+      page.removeEventListener('pointerup', handlePointerEnd);
+      page.removeEventListener('pointercancel', handlePointerEnd);
+    }
+
     function handleResize() {
       afterwordLayout = null;
+      if (isExperienceUnlocked) return;
       prismSceneCanvas = null;
       scheduleMicroprism(prismError);
     }
 
-    function handleBeforeUnload() {
-      archiveScene?.destroy();
+    function handlePageHide(event: PageTransitionEvent) {
+      if (!event.persisted) destroyArchiveScene();
     }
 
     function handleContextLost(event: Event) {
@@ -447,7 +490,7 @@ export default function AboutExperience() {
     if (viewfinderImage.complete) renderMicroprism();
     else viewfinderImage.addEventListener('load', handleViewfinderLoad, { once: true });
     window.addEventListener('resize', handleResize);
-    window.addEventListener('beforeunload', handleBeforeUnload, { once: true });
+    window.addEventListener('pagehide', handlePageHide);
     archiveCanvas.addEventListener('webglcontextlost', handleContextLost);
     window.addEventListener('wheel', handleWheel, { passive: false });
     page.addEventListener('pointerdown', handlePointerDown, { passive: true });
@@ -527,10 +570,11 @@ export default function AboutExperience() {
       media.revert();
       if (focusFrame !== null) window.cancelAnimationFrame(focusFrame);
       if (prismFrame !== null) window.cancelAnimationFrame(prismFrame);
+      if (archivePauseFrame !== null) window.cancelAnimationFrame(archivePauseFrame);
       window.removeEventListener('load', runVisitorCoordinate);
       viewfinderImage.removeEventListener('load', handleViewfinderLoad);
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
       archiveCanvas.removeEventListener('webglcontextlost', handleContextLost);
       window.removeEventListener('wheel', handleWheel);
       page.removeEventListener('pointerdown', handlePointerDown);
@@ -538,8 +582,7 @@ export default function AboutExperience() {
       page.removeEventListener('pointerup', handlePointerEnd);
       page.removeEventListener('pointercancel', handlePointerEnd);
       window.removeEventListener('keydown', handleKeydown);
-      archiveScene?.destroy();
-      archiveScene = null;
+      destroyArchiveScene();
       document.documentElement.classList.remove('is-focus-locked');
       document.body.classList.remove('is-focus-locked');
     };
