@@ -632,7 +632,7 @@ body.is-focus-locked {
     padding: 5.5rem var(--page-pad) 3.5rem;
   }
   .obscura-afterword-rail { left: var(--page-pad); right: var(--page-pad); }
-  .obscura-afterword-frame { width: 78%; align-self: center; padding: 0.8rem; }
+  .obscura-afterword-frame { width: 78%; align-self: center; padding: 0.8rem; border: 0; }
   .obscura-afterword-photo-wrap { margin-inline: auto; }
   .obscura-afterword-frame > p { display: none; }
   .obscura-afterword-copy { width: 100%; padding: 0; }
