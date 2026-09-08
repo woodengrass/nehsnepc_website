@@ -416,6 +416,37 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             `} />
           )}
         </nav>
+        <p className={`
+          mt-8
+          border-t
+          border-[var(--color-line)]
+          pt-6
+          text-[0.78rem]
+          leading-[1.9]
+          tracking-[0.04em]
+          text-[var(--color-muted)]
+        `}>
+          本文以創用 CC 姓名標示-相同方式分享 4.0 授權釋出，歡迎分享與改作，需標示出處並以相同授權釋出。
+          <a
+            href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh-hant"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`
+              ml-2
+              underline
+              underline-offset-4
+            `}
+          >
+            授權全文
+          </a>
+          <Link href="/licensing" className={`
+            ml-4
+            underline
+            underline-offset-4
+          `}>
+            全站授權方式
+          </Link>
+        </p>
       </footer>
     </main>
   );

@@ -583,9 +583,23 @@ export default function Hero() {
         `}>
           <span>© 2026 NEHS NEPC. All rights reserved.</span>
           <span className={`
-            max-[767px]:hidden
+            flex
+            gap-6
           `}>
-            Hsinchu, Taiwan
+            <Link
+              href="/licensing"
+              className={`
+                underline
+                underline-offset-4
+              `}
+            >
+              授權 Licensing
+            </Link>
+            <span className={`
+              max-[767px]:hidden
+            `}>
+              Hsinchu, Taiwan
+            </span>
           </span>
         </footer>
       </section>

@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/tutorial`, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${SITE_URL}/tools`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${SITE_URL}/tools/exposure-calculator`, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${SITE_URL}/licensing`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/contact`, changeFrequency: 'yearly', priority: 0.5 }
   ];
 

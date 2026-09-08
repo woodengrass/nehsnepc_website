@@ -139,6 +139,12 @@ Article metadata includes title, description, author, tag keywords, canonical UR
 
 The normal build does not run image or model optimization. Run `npm run images:build` or `npm run models:build` first when their source assets change.
 
+## Article License
+
+Articles are released under CC BY-SA 4.0. The detail route renders a license
+notice in the article footer and carries `license` in Article JSON-LD. Keep
+both when changing the article footer or structured data.
+
 ## Accessibility and Security Checklist
 
 - Require useful `coverAlt`, `Figure.alt`, and `Model3D.alt` even where schema does not enforce them.

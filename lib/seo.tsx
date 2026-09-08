@@ -51,6 +51,7 @@ export function articleJsonLd(article: ArticleMeta & { description: string }): J
     mainEntityOfPage: absoluteUrl(`/tutorial/${article.slug}`),
     articleSection: category,
     keywords: article.tags.join(', '),
+    license: 'https://creativecommons.org/licenses/by-sa/4.0/',
     image: article.cover ? absoluteUrl(article.cover) : undefined
   };
 }

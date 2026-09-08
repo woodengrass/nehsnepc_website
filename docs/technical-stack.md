@@ -39,7 +39,7 @@ The site uses App Router with Server Components by default. Client components ar
 
 `tsconfig.json` enables strict mode, `noEmit`, `moduleResolution: bundler`, ES modules, React JSX, DOM libraries, incremental builds, JSON modules, isolated modules, JavaScript allowance, and skipped library checks. `@/*` maps to the repository root. The project includes `.ts`/`.tsx` source and generated Next route types. `next-env.d.ts` is generated and must not be manually edited.
 
-The package sets `type: module`, so JavaScript scripts and libraries use ESM syntax. Browser-only JavaScript such as `lib/archive_scene.js` must not execute during server rendering. The calculator shell also expects a browser engine at `@/exposure/exposure_calculator`, but that module is currently missing.
+The package sets `type: module`, so JavaScript scripts and libraries use ESM syntax. Browser-only JavaScript such as `lib/archive_scene.js` must not execute during server rendering. The calculator shell dynamically imports the browser engine at `@/lib/exposure/exposure_calculator` (typed via the sibling `.d.ts`) only on its tool route, with a reload prompt if the import fails.
 
 ## Styling
 
@@ -56,6 +56,7 @@ See `frontend.md` for design tokens, fonts, breakpoints, and global body state.
 | `/contact` | Client accordions, clipboard, and lazy Tally modal |
 | `/tools` | Server catalogue from `lib/tools.ts` |
 | `/tools/exposure-calculator` | Dynamic client calculator engine |
+| `/licensing` | Static licensing and attribution page |
 | `/tutorial` | Filesystem article index |
 | `/tutorial/category/[category]` | Three static category routes |
 | `/tutorial/[slug]` | Non-draft static params and server MDX rendering |
@@ -93,7 +94,7 @@ Detailed schema and publication behavior are in `posts.md`.
 | Logo, `public/images/logo.png` | 96, 192, 384 | configured in script |
 | Exposure calculator, `public/images/exposure-calculator.png` | 640 | 52 / 76 |
 
-Resizing uses `withoutEnlargement`; AVIF effort is 5 and WebP effort is 6. The script also processes the ten current ignored local `temp/*.jpg` files into `about-satellite-01-640` through `about-satellite-10-640` for the About satellite and main cards. The script creates the output directory but does not delete stale files. New article images are not auto-discovered; extend the script or process them separately. Runtime code mostly owns native `<picture>`/`<img>` responsiveness instead of Next Image.
+Resizing uses `withoutEnlargement`; AVIF effort is 5 and WebP effort is 6. The script also processes the ten current ignored local `temp/*.jpg` files into `about-satellite-01-640` through `about-satellite-10-640` for the About satellite and main cards. Satellite sources `06`–`10` are Unsplash works (see `LICENSING.md`); `temp/` is git-ignored so originals are not distributed, and generated derivatives inherit their source license. The script creates the output directory but does not delete stale files. New article images are not auto-discovered; extend the script or process them separately. Runtime code mostly owns native `<picture>`/`<img>` responsiveness instead of Next Image.
 
 ## Model Pipeline
 
@@ -149,7 +150,6 @@ Then inspect core routes, all article/category routes, sitemap, robots, RSS, Ope
 - external fonts, form, and geolocation dependencies;
 - no security headers/CSP in Next or Vercel config;
 - `.gitignore` does not cover all common IDE/build artifacts;
-- the exposure calculator engine imported by its client shell is missing, which currently prevents a production build;
 - generated asset scripts do not remove stale output.
 
 ## Change and Release Checklist

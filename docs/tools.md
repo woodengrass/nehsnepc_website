@@ -10,7 +10,7 @@ The tools area contains a server-rendered catalogue and one interactive exposure
 | `lib/tools.ts` | Typed catalogue data and availability contract |
 | `app/tools/exposure-calculator/page.tsx` | Calculator route metadata and client component |
 | `components/tools/ExposureCalculator.tsx` | React-rendered shell and dynamic engine lifecycle |
-| `@/exposure/exposure_calculator` | Exposure calculator engine module dynamically loaded by the client shell |
+| `@/lib/exposure/exposure_calculator` | Exposure calculator engine module dynamically loaded by the client shell |
 
 Both routes appear in `app/sitemap.ts`. Legacy `/portfolio` URLs redirect to `/tools` through `vercel.json`.
 
@@ -27,15 +27,15 @@ The layout is three columns above 980px, two columns to 768px, and one column at
 
 ## Current Engine Availability
 
-`exposure/exposure_calculator.js` is present and supplies the dynamically imported calculator engine. The React shell and engine share a fixed DOM ID contract; update both together when changing calculator controls.
+`lib/exposure/exposure_calculator.js` supplies the dynamically imported calculator engine (types in the sibling `.d.ts`). The React shell and engine share a fixed DOM ID contract; update both together when changing calculator controls.
 
 ## Exposure Calculator Architecture
 
-`components/tools/ExposureCalculator.tsx` is a client component that renders stable containers and attempts to dynamically import `@/exposure/exposure_calculator` in `useEffect`. Its expected module exports `initExposureCalculator()`, whose returned cleanup function is invoked on unmount. The last observed engine used a module-level `AbortController`; verify that contract when restoring it.
+`components/tools/ExposureCalculator.tsx` is a client component that renders stable containers and dynamically imports `@/lib/exposure/exposure_calculator` in `useEffect`. Its expected module exports `initExposureCalculator()`, whose returned cleanup function is invoked on unmount. The engine uses a per-instance `AbortController`; the cleanup aborts only its own listeners.
 
 The shell is React-rendered, but `#cameraControls`, `#ndList`, and `#flashList` are rebuilt with `innerHTML`. Parent-level delegated listeners survive those rebuilds. IDs queried by the engine are an internal API: changing one requires synchronized changes in both the TSX shell and JavaScript module.
 
-The import currently has no rejection handler or user-visible fallback. Because the module is missing, this is also a compile-time build failure rather than only a runtime failure.
+Dynamic import failure shows a `role="alert"` reload prompt. Flash names are HTML-escaped before `innerHTML` rendering.
 
 ## Engine Contract
 
@@ -48,10 +48,10 @@ Supported camera presets:
 - ISO 25 through ISO 102400;
 - aperture f/1.0 through f/45;
 - shutter 1 second through 1/32000, plus direct long-exposure input above one second;
-- visible target range -8 to +8 EV in 0.1 increments;
+- visible target range -10 to +10 EV in 0.1 increments (slider and state clamp agree);
 - ND2 through ND1024, representing one through ten stops.
 
-Direct editable values accept ISO text, `f/` aperture forms, shutter fractions, and second suffixes. Positive values outside preset arrays can be accepted; subsequent slider movement snaps from the nearest preset. Invalid direct input is restored or ignored without an announced validation message.
+Direct editable values accept ISO text, `f/` aperture forms, shutter fractions (with or without `s`/`秒` suffixes), and second suffixes. Non-preset sub-second shutters display as `1/N` fractions; long exposures display in seconds. Positive values outside preset arrays can be accepted; subsequent slider movement snaps from the nearest preset. Invalid direct input is restored or ignored without an announced validation message. The target slider writes back rounded to 0.1 while calculation keeps full precision.
 
 ## Exposure Mathematics
 
@@ -98,8 +98,9 @@ Multiple ND filters can be added and their stops sum. Flash entries support cust
 - ND add/range/delete operations recalculate or compensate.
 - Flash add, field input, mode selection, estimate, confirm, and delete mutate local flash state.
 - Full renders rebuild generated markup; lighter refreshes update labels during slider interaction.
+- Lock, baseline-reset, and flash-only handlers update just their section plus the reading, skipping unrelated rebuilds (and preserving focus on the toggled control).
 
-Because generated HTML includes state values, never introduce untrusted text without escaping. Flash names are currently local user input and must remain safely encoded if generation logic changes.
+Because generated HTML includes state values, never introduce untrusted text without escaping. Flash names are local user input and are HTML-escaped at render.
 
 ## Responsive and Accessibility Behavior
 
@@ -109,10 +110,9 @@ Implemented accessibility includes native ranges, checkboxes, number inputs and 
 
 Known limitations:
 
-- generated ND ranges lack explicit accessible names;
-- several flash fields depend on nearby visual labels rather than `for`/`id` pairs;
+- flash fields use implicit wrapping labels rather than explicit `for`/`id` pairs (valid association, but harder to target precisely);
 - invalid input has no visible or announced error;
-- dynamic import failure has no fallback UI;
+- dynamic import failure shows only a reload prompt (no retry logic);
 - `innerHTML` makes React ownership and DOM ownership easy to mix accidentally.
 
 ## Modification Workflow
@@ -127,7 +127,7 @@ When adding a tool:
 
 When changing the calculator:
 
-1. Restore or replace `@/exposure/exposure_calculator` and make `npm run build` pass.
+1. Keep `@/lib/exposure/exposure_calculator` typed via its `.d.ts` and make `npm run build` pass.
 2. Preserve or synchronously rename all shell IDs.
 3. Verify every preset and formula against expected photographic stops.
 4. Test direct ISO, aperture, fraction, seconds, invalid, and out-of-preset input.

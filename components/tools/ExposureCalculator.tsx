@@ -1,15 +1,21 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function ExposureCalculator() {
+  const [loadFailed, setLoadFailed] = useState(false);
+
   useEffect(() => {
     let disposed = false;
     let cleanup: (() => void) | undefined;
 
-    import('@/exposure/exposure_calculator').then(({ initExposureCalculator }) => {
-      if (!disposed) cleanup = initExposureCalculator();
-    });
+    import('@/lib/exposure/exposure_calculator')
+      .then(({ initExposureCalculator }) => {
+        if (!disposed) cleanup = initExposureCalculator();
+      })
+      .catch(() => {
+        if (!disposed) setLoadFailed(true);
+      });
 
     return () => {
       disposed = true;
@@ -93,6 +99,41 @@ export default function ExposureCalculator() {
           設目前為基準
         </button>
       </header>
+
+      {loadFailed && (
+        <p
+          className={`
+            mt-10
+            flex
+            items-center
+            justify-between
+            gap-4
+            border
+            border-[var(--color-line)]
+            px-6
+            py-4
+            text-[0.82rem]
+            leading-[1.7]
+          `}
+          role="alert"
+        >
+          計算器載入失敗，請重新載入頁面。
+          <button
+            className={`
+              shrink-0
+              border-b
+              border-[var(--color-line)]
+              pb-[3px]
+              text-[0.58rem]
+              tracking-[0.08em]
+            `}
+            type="button"
+            onClick={() => window.location.reload()}
+          >
+            重新載入
+          </button>
+        </p>
+      )}
 
       <div
         className={`
@@ -194,8 +235,8 @@ export default function ExposureCalculator() {
               accent-white
             `}
             type="range"
-            min="-8"
-            max="8"
+            min="-10"
+            max="10"
             step="0.1"
             defaultValue="0"
           />

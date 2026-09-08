@@ -234,4 +234,4 @@ Vercel. `vercel.json` only holds legacy redirects (`/pages/about.html` → `/abo
 - Heavy libraries (Three.js, GSAP, model-viewer) must stay isolated from shared components/layout. Do not state exact bundle sizes without measuring the current production build.
 - The About page locks scrolling (`body.is-focus-locked`) until focus is reached; check `prefers-reduced-motion` if it loads stuck.
 - `archive_scene.js` calls `ScrollTrigger.refresh()` after DOM changes; `AboutExperience` cleans up via `gsap.matchMedia().revert()` for React StrictMode double-mount.
-- `components/tools/ExposureCalculator.tsx` expects `@/exposure/exposure_calculator`, but that engine module is currently missing; this is a known production-build blocker until the module is restored or replaced.
+- `components/tools/ExposureCalculator.tsx` dynamically imports `@/lib/exposure/exposure_calculator` (typed via sibling `.d.ts`); keep the DOM ID contract and per-instance `AbortController` cleanup in sync.
