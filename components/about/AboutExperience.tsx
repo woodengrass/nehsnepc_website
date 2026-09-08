@@ -64,6 +64,8 @@ export default function AboutExperience() {
     const afterword: HTMLElement = afterwordQuery;
     const exit: HTMLElement = exitQuery;
     const exitStage: HTMLElement = exitStageQuery;
+    // 對焦層含全屏 blur/backdrop-filter，進入 3D 後直接 display:none 移出渲染樹（像素與 visibility:hidden 相同，但省合成）。
+    const hud: HTMLElement | null = page.querySelector('.obscura-hud');
 
     let focusFrame: number | null = null;
     let prismFrame: number | null = null;
@@ -377,6 +379,14 @@ export default function AboutExperience() {
       const showArchive = isActive && archiveScene !== null;
       gsap.set(archiveCanvas, { autoAlpha: showArchive ? 1 : 0 });
       gsap.set(imageWrap, { autoAlpha: showArchive ? 0 : 1 });
+      if (showArchive) {
+        imageWrap.style.display = 'none';
+        if (hud) hud.style.display = 'none';
+      } else {
+        imageWrap.style.display = '';
+        // HUD 解鎖後由 CSS 保持隱藏；僅未解鎖返回頂部時才恢復，避免重啟 backdrop-filter。
+        if (!isExperienceUnlocked && hud) hud.style.display = '';
+      }
       if (!isActive) resetAfterwordProjection();
     }
 

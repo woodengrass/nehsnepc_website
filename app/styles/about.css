@@ -283,6 +283,9 @@ body.is-focus-locked {
   min-height: 100svh;
   opacity: 1;
   transform: none;
+  /* 僅 DOM 備援（無 pin 量測）啟用，3D pin 模式不加，避免影響 ScrollTrigger 量測。 */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 100svh;
 }
 
 .obscura-panel {
@@ -669,6 +672,8 @@ body.is-focus-locked {
   min-height: 100svh;
   opacity: 1;
   transform: none;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 100svh;
 }
 
 .obscura.reduced-motion .obscura-exit {

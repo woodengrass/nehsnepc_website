@@ -12,6 +12,10 @@ export const metadata: Metadata = {
 
 const HERO_SRCSET_AVIF = '/images/generated/hero-640.avif 640w, /images/generated/hero-1280.avif 1280w, /images/generated/hero-1920.avif 1920w, /images/generated/hero-2560.avif 2560w';
 const HERO_SRCSET_WEBP = '/images/generated/hero-640.webp 640w, /images/generated/hero-1280.webp 1280w, /images/generated/hero-1920.webp 1920w, /images/generated/hero-2560.webp 2560w';
+// 分裂對焦圓直徑僅 116-184px，用 640w 小圖即可，圓內像素與全屏圖無可見差異。
+const SPLIT_SRCSET_AVIF = '/images/generated/hero-640.avif 640w';
+const SPLIT_SRCSET_WEBP = '/images/generated/hero-640.webp 640w';
+const SPLIT_SIZES = '(max-width: 767px) 116px, 184px';
 
 export default function AboutPage() {
   return (
@@ -37,16 +41,16 @@ export default function AboutPage() {
             <div className="split-focus">
               <div className="split-focus-half split-focus-top">
                 <picture>
-                  <source type="image/avif" srcSet={HERO_SRCSET_AVIF} sizes="100vw" />
-                  <source type="image/webp" srcSet={HERO_SRCSET_WEBP} sizes="100vw" />
-                  <img src={ABOUT_PHOTOS.focus} alt="" />
+                  <source type="image/avif" srcSet={SPLIT_SRCSET_AVIF} sizes={SPLIT_SIZES} />
+                  <source type="image/webp" srcSet={SPLIT_SRCSET_WEBP} sizes={SPLIT_SIZES} />
+                  <img src="/images/generated/hero-640.webp" alt="" decoding="async" />
                 </picture>
               </div>
               <div className="split-focus-half split-focus-bottom">
                 <picture>
-                  <source type="image/avif" srcSet={HERO_SRCSET_AVIF} sizes="100vw" />
-                  <source type="image/webp" srcSet={HERO_SRCSET_WEBP} sizes="100vw" />
-                  <img src={ABOUT_PHOTOS.focus} alt="" />
+                  <source type="image/avif" srcSet={SPLIT_SRCSET_AVIF} sizes={SPLIT_SIZES} />
+                  <source type="image/webp" srcSet={SPLIT_SRCSET_WEBP} sizes={SPLIT_SIZES} />
+                  <img src="/images/generated/hero-640.webp" alt="" decoding="async" />
                 </picture>
               </div>
               <span className="split-focus-line" />
@@ -95,7 +99,7 @@ export default function AboutPage() {
             </div>
             <div className="obscura-afterword-frame" aria-hidden="true">
               <div className="obscura-afterword-photo-wrap">
-                <img className="obscura-afterword-photo" src={ABOUT_PHOTOS.final} alt="" loading="lazy" />
+                <img className="obscura-afterword-photo" src={ABOUT_PHOTOS.final} alt="" loading="lazy" decoding="async" />
               </div>
               <p><span>ARCHIVE IMAGE / 03</span><span>JOIN THE CLUB</span></p>
             </div>
