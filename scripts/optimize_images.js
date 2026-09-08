@@ -32,7 +32,7 @@ const imageSets = [
   {
     name: 'exposure-calculator',
     source: path.join(projectRoot, 'public', 'images', 'exposure-calculator.png'),
-    widths: [640],
+    widths: [640, 960, 1280],
     avifQuality: 52,
     webpQuality: 76
   },

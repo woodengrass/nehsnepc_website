@@ -9,6 +9,47 @@ export const metadata: Metadata = {
   alternates: { canonical: '/tools' }
 };
 
+const CARD_WRAPPER = `
+  min-w-0
+  border-r
+  border-b
+  border-[var(--color-line)]
+`;
+
+const ARTICLE_BASE = `
+  relative
+  grid
+  min-h-full
+  grid-rows-[auto_auto_1fr_auto]
+  overflow-hidden
+  p-4
+  text-[var(--color-text)]
+  transition-[background-color,color]
+  duration-[260ms]
+  ease-[cubic-bezier(0.22,1,0.36,1)]
+  motion-reduce:transition-none
+`;
+
+const ARTICLE_AVAILABLE = `
+  group-hover:bg-[var(--color-paper)]
+  group-hover:text-[var(--color-ink)]
+`;
+
+const DESC_BASE = `
+  max-w-[34em]
+  text-[0.92rem]
+  leading-[1.85]
+  text-[var(--color-muted)]
+  transition-colors
+  duration-[260ms]
+  ease-[cubic-bezier(0.22,1,0.36,1)]
+  motion-reduce:transition-none
+`;
+
+const DESC_AVAILABLE = `
+  group-hover:text-[rgba(17,17,17,0.66)]
+`;
+
 export default function ToolsPage() {
   return (
     <main className={`
@@ -17,7 +58,6 @@ export default function ToolsPage() {
       px-[var(--page-pad)]
       [padding-top:calc(var(--header-height)_+_0.5rem)]
       pb-32
-      max-[767px]:[padding-top:calc(var(--header-height)_+_0.5rem)]
       max-[767px]:pb-20
     `}>
       <span
@@ -112,7 +152,7 @@ export default function ToolsPage() {
           uppercase
           max-[767px]:mt-[1.4rem]
         `}
-        aria-label="工具使用說明"
+        role="status"
       >
         <span>Utility index / 工具索引</span>
         <span>{String(TOOLS.length).padStart(2, '0')} modules</span>
@@ -123,79 +163,57 @@ export default function ToolsPage() {
         </span>
       </div>
 
-      {TOOLS.length === 0 ? (
-        <p className={`
-          mt-16
-          text-[var(--color-muted)]
-        `}>
-          第一個工具正在準備中。
-        </p>
-      ) : (
-        <div className={`
-          mt-20
-          grid
-          grid-cols-3
-          border-t
-          border-l
-          border-[var(--color-line)]
-          max-[980px]:grid-cols-2
-          max-[767px]:mt-12
-          max-[767px]:grid-cols-1
-        `}>
-          {TOOLS.map((tool, index) => {
-            const card = (
-              <article className={tool.href ? `
-                relative
-                grid
-                min-h-full
-                grid-rows-[auto_auto_1fr_auto]
-                overflow-hidden
-                p-4
+      <div className={`
+        mt-20
+        grid
+        grid-cols-3
+        border-t
+        border-l
+        border-[var(--color-line)]
+        max-[980px]:grid-cols-2
+        max-[767px]:mt-12
+        max-[767px]:grid-cols-1
+      `}>
+        {TOOLS.map((tool, index) => {
+          const isAvailable = tool.status === 'available';
+          const card = (
+            <article className={`${ARTICLE_BASE} ${isAvailable ? ARTICLE_AVAILABLE : ''}`}>
+              <span className={`
+                absolute
+                top-4
+                right-4
+                z-[2]
+                min-w-[2.2rem]
+                bg-[var(--color-bg)]
+                px-[0.4rem]
+                py-[0.3rem]
+                text-center
+                text-[0.62rem]
+                tracking-[0.1em]
                 text-[var(--color-text)]
-                transition-[background-color,color]
-                duration-[260ms]
-                ease-[cubic-bezier(0.22,1,0.36,1)]
-                motion-reduce:transition-none
-                group-hover:bg-[var(--color-paper)]
-                group-hover:text-[var(--color-ink)]
-              ` : `
+              `} aria-hidden="true">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <div className={`
                 relative
-                grid
-                min-h-full
-                grid-rows-[auto_auto_1fr_auto]
+                -mx-4
+                -mt-4
+                mb-6
+                aspect-[4/3]
                 overflow-hidden
-                p-4
-                text-[var(--color-text)]
-                transition-[background-color,color]
-                duration-[260ms]
-                ease-[cubic-bezier(0.22,1,0.36,1)]
-                motion-reduce:transition-none
+                bg-[var(--color-surface)]
               `}>
-                <span className={`
-                  absolute
-                  top-4
-                  right-4
-                  z-[2]
-                  min-w-[2.2rem]
-                  bg-[var(--color-bg)]
-                  px-[0.4rem]
-                  py-[0.3rem]
-                  text-center
-                  text-[0.62rem]
-                  tracking-[0.1em]
-                  text-[var(--color-text)]
-                `}>
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <div className={`
-                  relative
-                  -mx-4
-                  -mt-4
-                  mb-6
-                  aspect-[4/3]
-                  overflow-hidden
-                  bg-[var(--color-surface)]
-                `}>
+                <picture className="block h-full w-full">
+                  <source
+                    type="image/avif"
+                    srcSet={tool.imageAvifSrcSet}
+                    sizes={tool.imageSizes}
+                  />
+                  <source
+                    type="image/webp"
+                    srcSet={tool.imageWebpSrcSet}
+                    sizes={tool.imageSizes}
+                  />
                   <img
                     className={`
                       h-[108%]
@@ -218,99 +236,69 @@ export default function ToolsPage() {
                     `}
                     src={tool.image}
                     alt={tool.imageAlt}
+                    width={1280}
+                    height={960}
                     loading="lazy"
                     decoding="async"
                   />
-                  <span className={`
-                    absolute
-                    inset-0
-                    bg-[linear-gradient(135deg,transparent_0_66%,rgba(104,19,28,0.6)_66%_77%,rgba(16,43,78,0.7)_77%)]
-                    opacity-55
-                    mix-blend-multiply
-                    transition-opacity
-                    duration-[260ms]
-                    ease-[cubic-bezier(0.22,1,0.36,1)]
-                    motion-reduce:transition-none
-                    group-hover:opacity-18
-                  `} aria-hidden="true" />
-                </div>
-                <h2 className={`
-                  mb-3
-                  text-[clamp(1.35rem,2vw,1.8rem)]
-                  leading-[1.35]
-                  font-semibold
-                `}>
-                  {tool.title}
-                </h2>
-                <p className={tool.href ? `
-                  max-w-[34em]
-                  text-[0.92rem]
-                  leading-[1.85]
-                  text-[var(--color-muted)]
-                  transition-colors
-                  duration-[260ms]
-                  ease-[cubic-bezier(0.22,1,0.36,1)]
-                  motion-reduce:transition-none
-                  group-hover:text-[rgba(17,17,17,0.66)]
-                ` : `
-                  max-w-[34em]
-                  text-[0.92rem]
-                  leading-[1.85]
-                  text-[var(--color-muted)]
-                  transition-colors
-                  duration-[260ms]
-                  ease-[cubic-bezier(0.22,1,0.36,1)]
-                  motion-reduce:transition-none
-                `}>
-                  {tool.description}
-                </p>
+                </picture>
                 <span className={`
-                  mt-8
-                  flex
-                  justify-between
-                  border-t
-                  border-current
-                  pt-[0.85rem]
-                  text-[0.65rem]
-                  tracking-[0.15em]
-                  uppercase
-                  opacity-60
-                `}>
-                  <span>{tool.href ? '開啟' : '建置中'} {tool.href && <b className={`
-                    font-normal
-                  `} aria-hidden="true">→</b>}</span>
-                  <span>{tool.href ? 'Open' : 'In progress'}</span>
-                </span>
-              </article>
-            );
-            return tool.href ? (
-              <Link
-                key={tool.id}
-                href={tool.href}
-                className={`
-                  group
-                  min-w-0
-                  border-r
-                  border-b
-                  border-[var(--color-line)]
-                `}
-              >
-                {card}
-              </Link>
-            ) : (
-              <div key={tool.id} className={`
-                group
-                min-w-0
-                border-r
-                border-b
-                border-[var(--color-line)]
-              `}>
-                {card}
+                  absolute
+                  inset-0
+                  bg-[linear-gradient(135deg,transparent_0_66%,rgba(104,19,28,0.6)_66%_77%,rgba(16,43,78,0.7)_77%)]
+                  opacity-55
+                  mix-blend-multiply
+                  transition-opacity
+                  duration-[260ms]
+                  ease-[cubic-bezier(0.22,1,0.36,1)]
+                  motion-reduce:transition-none
+                  group-hover:opacity-18
+                `} aria-hidden="true" />
               </div>
-            );
-          })}
-        </div>
-      )}
+              <h2 className={`
+                mb-3
+                text-[clamp(1.35rem,2vw,1.8rem)]
+                leading-[1.35]
+                font-semibold
+              `}>
+                {tool.title}
+              </h2>
+              <p className={`${DESC_BASE} ${isAvailable ? DESC_AVAILABLE : ''}`}>
+                {tool.description}
+              </p>
+              <span className={`
+                mt-8
+                flex
+                justify-between
+                border-t
+                border-current
+                pt-[0.85rem]
+                text-[0.65rem]
+                tracking-[0.15em]
+                uppercase
+                opacity-60
+              `}>
+                <span>{isAvailable ? '開啟' : '建置中'} {isAvailable && <span className="font-normal" aria-hidden="true">→</span>}</span>
+                <span>{isAvailable ? 'Open' : 'In progress'}</span>
+              </span>
+            </article>
+          );
+          return tool.status === 'available' ? (
+            <Link
+              key={tool.id}
+              href={tool.href}
+              aria-label={tool.title}
+              className={`group ${CARD_WRAPPER}`}
+            >
+              {card}
+            </Link>
+          ) : (
+            <div key={tool.id} className={CARD_WRAPPER}>
+              {card}
+            </div>
+          );
+        })}
+      </div>
     </main>
   );
 }

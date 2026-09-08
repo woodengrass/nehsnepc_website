@@ -16,14 +16,14 @@ Both routes appear in `app/sitemap.ts`. Legacy `/portfolio` URLs redirect to `/t
 
 ## Catalogue Data Model
 
-`lib/tools.ts` exports `TOOLS`, whose items contain `id`, `title`, `description`, `image`, `imageAlt`, and optional `href`. The presence of `href` is the complete availability switch:
+`lib/tools.ts` exports `TOOLS` (`readonly ToolItem[]`), whose items contain `id`, `title`, `description`, `image` (fallback WebP), `imageAvifSrcSet`, `imageWebpSrcSet`, `imageSizes`, `imageAlt`, and a discriminated `status` union:
 
-- with `href`, `app/tools/page.tsx` wraps the card in a Next `Link` and displays `開啟 / Open`;
-- without `href`, it renders a non-interactive `div` and displays `建置中 / In progress`.
+- `status: 'available'` requires `href`; `app/tools/page.tsx` wraps the card in a Next `Link` with `aria-label={title}` and displays `開啟 / Open`;
+- `status: 'coming-soon'` forbids `href`; it renders a non-interactive `div` and displays `建置中 / In progress`.
 
-The current catalogue contains only the available exposure calculator. To publish a new tool, add its route first, then add `href`, sitemap coverage, meaningful `imageAlt`, and a valid public image path.
+The current catalogue contains only the available exposure calculator. To publish a new tool, add its route first, then add a `status: 'available'` entry with `href`, sitemap coverage, meaningful `imageAlt`, and valid `srcSet`/`sizes` pointing at `public/images/generated/` variants.
 
-The layout is three columns above 980px, two columns to 768px, and one column at 767px and below. The catalogue header begins `0.5rem` below `--header-height` on both desktop and mobile. Images are native WebP `<img>` elements with lazy loading and async decoding. Hover shifts filtering and crop, but all required information and the available route remain visible without hover.
+The layout is three columns above 980px, two columns to 768px, and one column at 767px and below. The catalogue header begins `0.5rem` below `--header-height` on both desktop and mobile. Images are native `<picture>` elements (AVIF/WebP `srcSet` with `sizes="(max-width: 767px) 100vw, (max-width: 980px) 50vw, 33vw"`, 640/960/1280 widths from `npm run images:build`) with lazy loading and async decoding. Hover shifts filtering and crop, but all required information and the available route remain visible without hover. The index bar uses `role="status"`; decorative card numbers and arrows are `aria-hidden`.
 
 ## Current Engine Availability
 
