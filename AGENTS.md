@@ -169,33 +169,17 @@ No lint, typecheck, test, or formatter is configured beyond `next build`'s TS ch
 
 ## Architecture
 
-Next.js 16.3.3 (App Router, TypeScript, build-time prerendering where possible). The current application is on `main`. `next.config.ts` does not set `output: 'export'`, so do not describe it as a pure static export. `experimental.optimizePackageImports` covers three, gsap, @google/model-viewer (next.config.ts:6-10).
+Next.js 16.3.3 (App Router, TypeScript, build-time prerendering where possible). The current application is on `main`. `next.config.ts` does not set `output: 'export'`, so do not describe it as a pure static export.
 
-- `app/layout.tsx` — root layout: lang=zh-TW, Noto Serif TC via Google Fonts, global grain overlay, `<SiteNav>`, and Organization/WebSite JSON-LD. The current layout does not configure `next/font`; `--font-heading-next` and `--font-body-next` references therefore use their CSS fallbacks.
-- `app/page.tsx` → home; `components/home/Hero.tsx` is currently a server-rendered composition without GSAP.
-- `app/about/page.tsx` → camera obscura experience; `components/about/AboutExperience.tsx` controls focus and lazily imports GSAP (`no-preference` users only — reduced-motion users never download it), while `lib/archive_scene.js` is dynamically imported after unlock for motion-allowed users and loads critical textures first, satellites in the background. Mobile uses a reduced-complexity Three.js profile; reduced-motion users receive the DOM fallback.
-- `app/contact/page.tsx` → `components/contact/ContactPage.tsx` (accordion, email copy) + `components/contact/TallyModal.tsx` (Tally dialog, loaded via `next/dynamic` `ssr: false` only after first open; owns focus trap, Escape handling, and `body.has-modal`)
-- `app/tools/page.tsx` → 工具卡片展示（data 在 `lib/tools.ts`）
-- `app/tutorial/` — 教學：index、`category/[category]` (tutorial | news | showcase)、`[slug]` with MDX via `next-mdx-remote/rsc`; covers render through `components/articles/TutorialCover.tsx` (responsive AVIF/WebP srcset from generated families, lazy except the slug hero)
+Per-page and per-module implementation details live in `docs/` — see `docs/README.md` for the ownership map. Do not duplicate them here; document current behavior in the owning document instead:
 
-### Content system
-
-- Articles live in `content/articles/*.mdx`; frontmatter validated by Zod in `lib/content.ts` (title, description, date, optional updated, category, tags, cover, coverAlt, draft, author). `draft: true` articles appear in development only and are excluded from production routes/sitemap/RSS.
-- MDX components registered in `components/mdx/index.ts`: `Figure`, `Callout`, `Model3D`, `a` (MDXLink auto-detects external).
-- `Model3D` (`components/mdx/Model3D.tsx`) lazy-loads the `@google/model-viewer` runtime via IntersectionObserver when the frame nears the viewport; `touch-action="pan-y"` preserves vertical mobile scrolling. Do not document an exact bundle size without measuring the current build.
-- Add GLB sources to `public/models/src/` then run `npm run models:build`; reference the output path (`/models/opt/<name>.glb`) in MDX.
-- Image variants are pre-generated and committed under `public/images/generated/`; run `npm run images:build` after changing sources under `assets/`. Only `generated/` is served — never reference `assets/` from runtime code.
-
-### SEO
-
-- `lib/seo.tsx` — SITE_URL (env `NEXT_PUBLIC_SITE_URL`, fallback `https://nehsnepc.com`), JSON-LD builders + `<JsonLd>` component
-- `app/sitemap.ts`, `app/robots.ts`, `app/rss.xml/route.ts` — generated from content
-- `app/opengraph-image.tsx` + `lib/og.tsx` — branded OG card (Latin text only; CJK intentionally avoided)
-- Each page exports `metadata` with canonical; articles add OG `article` type + Article/BreadcrumbList JSON-LD
-
-### Styling
-
-Tailwind 4 utilities and tokens/base rules in `app/globals.css` provide most styling. `app/styles/about.css` contains the About experience and is imported route-scoped by app/about/layout.tsx, loading only on /about (moved from root layout in 00fb5f0). Runtime body classes (`is-focus-locked`, `menu-open`, `has-modal`) are toggled from client components.
+- routes and shared UI → `docs/frontend.md`
+- tools and exposure calculator → `docs/tools.md`
+- contact → `docs/contact.md`
+- about experience → `docs/about.md`
+- articles and publication → `docs/posts.md`
+- 3D model preview → `docs/model-preview.md`
+- dependencies, configuration, assets, SEO, deployment → `docs/technical-stack.md`
 
 ## Documentation Maintenance
 
