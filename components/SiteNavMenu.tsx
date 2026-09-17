@@ -4,13 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-const PAGES = [
-  ['/', 'Home', '首頁'],
-  ['/about', 'About', '關於'],
-  ['/tutorial', 'Tutorial', '教學'],
-  ['/tools', 'Tools', '工具'],
-  ['/contact', 'Contact', '聯絡']
-] as const;
+import { SITE_NAV_PAGES as PAGES } from './siteNavPages';
 
 // 十組近乎相同的選單連結字串合併為單一基底 + 行內 transition-delay，
 // 視覺時序與原本 delay-100…delay-300 完全一致。

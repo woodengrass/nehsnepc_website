@@ -4,13 +4,7 @@ import SiteNavMenu from './SiteNavMenu';
 
 // 靜態 header 殼：內容皆為 display:none 的佔位結構，不需要 JS。
 // 作用中的開合選單與路由高亮由 <SiteNavMenu /> client island 負責。
-const PAGES = [
-  ['/', 'Home', '首頁'],
-  ['/about', 'About', '關於'],
-  ['/tutorial', 'Tutorial', '教學'],
-  ['/tools', 'Tools', '工具'],
-  ['/contact', 'Contact', '聯絡']
-] as const;
+import { SITE_NAV_PAGES as PAGES } from './siteNavPages';
 
 export default function SiteNav() {
   return (
