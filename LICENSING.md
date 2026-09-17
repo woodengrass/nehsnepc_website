@@ -12,9 +12,9 @@ Copyright (c) 2026 NEHS Photography Club.
 
 ## Photographs — all rights reserved, except Unsplash
 
-All photographs taken by the club (`public/images/banner/hero-1.jpg`,
-`public/images/contact-bg.jpg`, `public/images/exposure-calculator.png`,
-`public/images/logo.png`, About satellite sources `01`–`05`, and inline
+All photographs taken by the club (`assets/sources/hero-1.jpg`,
+`assets/sources/contact-bg.jpg`, `assets/sources/exposure-calculator.png`,
+`assets/sources/logo.png`, About satellite sources `01`–`05`, and inline
 article images) are © NEHS Photography Club, **all rights reserved**. Do not
 reuse without permission.
 
@@ -31,8 +31,8 @@ Photo-page links below are derived from the source filenames:
 | `about-satellite-09-640` | `laura-smetsers-St08jKkPVHw-unsplash.jpg` | Laura Smetsers | https://unsplash.com/photos/St08jKkPVHw |
 | `about-satellite-10-640` | `wan-san-yip-tLK02oHjT8c-unsplash.jpg` | Wan San Yip | https://unsplash.com/photos/tLK02oHjT8c |
 
-Original sources live in the git-ignored `temp/` directory and are not
-distributed. Generated derivatives under `public/images/generated/` inherit the
+Original sources live under versioned `assets/sources/` and
+`assets/satellites/` directories. Generated derivatives under `public/images/generated/` inherit the
 license of their source image.
 
 ## Tutorial articles — CC BY-SA 4.0

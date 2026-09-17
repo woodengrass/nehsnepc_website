@@ -10,28 +10,28 @@ const outputDirectory = path.join(projectRoot, 'public', 'images', 'generated');
 const imageSets = [
   {
     name: 'hero',
-    source: path.join(projectRoot, 'public', 'images', 'banner', 'hero-1.jpg'),
+    source: path.join(projectRoot, 'assets', 'sources', 'hero-1.jpg'),
     widths: [640, 1280, 1920, 2560],
     avifQuality: 50,
     webpQuality: 72
   },
   {
     name: 'contact',
-    source: path.join(projectRoot, 'public', 'images', 'contact-bg.jpg'),
+    source: path.join(projectRoot, 'assets', 'sources', 'contact-bg.jpg'),
     widths: [480, 800, 1200, 1600],
     avifQuality: 50,
     webpQuality: 74
   },
   {
     name: 'logo',
-    source: path.join(projectRoot, 'public', 'images', 'logo.png'),
+    source: path.join(projectRoot, 'assets', 'sources', 'logo.png'),
     widths: [96, 192, 384],
     avifQuality: 58,
     webpQuality: 82
   },
   {
     name: 'exposure-calculator',
-    source: path.join(projectRoot, 'public', 'images', 'exposure-calculator.png'),
+    source: path.join(projectRoot, 'assets', 'sources', 'exposure-calculator.png'),
     widths: [640, 960, 1280],
     avifQuality: 52,
     webpQuality: 76
@@ -49,7 +49,7 @@ const imageSets = [
     'wan-san-yip-tLK02oHjT8c-unsplash.jpg'
   ].map((fileName, index) => ({
     name: `about-satellite-${String(index + 1).padStart(2, '0')}`,
-    source: path.join(projectRoot, 'temp', fileName),
+    source: path.join(projectRoot, 'assets', 'satellites', fileName),
     widths: [640],
     avifQuality: 50,
     webpQuality: 72
