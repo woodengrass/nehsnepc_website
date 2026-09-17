@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ABOUT_FOCUS_CONTENT } from '@/lib/about_content';
 
-gsap.registerPlugin(ScrollTrigger);
+type GsapInstance = typeof import('gsap').gsap;
+type GsapMatchMedia = ReturnType<GsapInstance['matchMedia']>;
+type ScrollTriggerInstance = typeof import('gsap/ScrollTrigger').ScrollTrigger;
 
 const FOCUS_POINT = 62;
 const STATION_SNAP_POINTS = [0.325, 0.855];
@@ -84,7 +84,35 @@ export default function AboutExperience() {
     let isExitSettled = false;
     let afterwordLayout: { left: number; top: number; width: number; height: number } | null = null;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const media = gsap.matchMedia();
+    let gsap: GsapInstance | null = null;
+    let ScrollTrigger: ScrollTriggerInstance | null = null;
+    let media: GsapMatchMedia | null = null;
+    let motionCancelled = false;
+
+    function setAutoAlpha(target: Element | string, value: number) {
+      if (gsap) {
+        gsap.set(target, { autoAlpha: value });
+        return;
+      }
+      const elements =
+        typeof target === 'string'
+          ? Array.from(document.querySelectorAll<HTMLElement>(target))
+          : [target as HTMLElement];
+      for (const element of elements) {
+        element.style.opacity = String(value);
+        element.style.visibility = value <= 0 ? 'hidden' : 'visible';
+      }
+    }
+
+    function refreshTriggers() {
+      if (ScrollTrigger) ScrollTrigger.refresh();
+    }
+
+    function finishFocusTransition() {
+      isFocusTransitionActive = false;
+      removeFocusScrollListeners();
+      if (focusPointerId === null) removeFocusPointerListeners();
+    }
 
     function resetAfterwordProjection() {
       isExitSettled = false;
@@ -99,7 +127,7 @@ export default function AboutExperience() {
       if (isExitSettled) return;
       if (opacity <= 0 || progress <= 0) {
         resetAfterwordProjection();
-        if (isStoryViewActive) gsap.set(archiveCanvas, { autoAlpha: 1 });
+        if (isStoryViewActive) setAutoAlpha(archiveCanvas, 1);
         return;
       }
 
@@ -120,7 +148,7 @@ export default function AboutExperience() {
       afterword.style.transform = `translate3d(${left - afterwordLayout.left}px, ${top - afterwordLayout.top}px, 0) scale(${scaleX}, ${scaleY})`;
       const rawCanvasReveal = Math.max(0, Math.min(1, (progress - 0.99) / 0.01));
       const canvasReveal = rawCanvasReveal * rawCanvasReveal * (3 - 2 * rawCanvasReveal);
-      gsap.set(archiveCanvas, { autoAlpha: 1 - canvasReveal });
+      setAutoAlpha(archiveCanvas, 1 - canvasReveal);
       if (progress >= 0.999 && opacity >= 0.999) {
         isExitSettled = true;
         afterword.classList.add('is-exit-settled');
@@ -142,7 +170,7 @@ export default function AboutExperience() {
           archiveScene?.setExitProgress(archiveExitProgress);
           setStoryViewActive(isStoryViewActive);
           // DOM 備援切換為 3D 後高度會縮短，下一幀重新量測固定捲動區間。
-          window.requestAnimationFrame(() => ScrollTrigger.refresh());
+          window.requestAnimationFrame(() => refreshTriggers());
           return archiveScene;
         })
         .catch((error) => {
@@ -156,7 +184,7 @@ export default function AboutExperience() {
     function showDomFallback() {
       destroyArchiveScene();
       page.classList.remove('is-archive-3d', 'is-in-story');
-      media.revert();
+      media?.revert();
       setStoryViewActive(false);
     }
 
@@ -292,16 +320,17 @@ export default function AboutExperience() {
       microprismCanvas.height = 0;
       // 對焦完成後立即準備 3D 場景，避免使用者開始滑動時入口照片尚未載入。
       loadArchiveScene();
-      gsap.fromTo('.obscura-flash', { autoAlpha: 0.95 }, {
-        autoAlpha: 0,
-        duration: 0.55,
-        ease: 'power2.out',
-        onComplete: () => {
-          isFocusTransitionActive = false;
-          removeFocusScrollListeners();
-          if (focusPointerId === null) removeFocusPointerListeners();
-        }
-      });
+      if (gsap) {
+        gsap.fromTo('.obscura-flash', { autoAlpha: 0.95 }, {
+          autoAlpha: 0,
+          duration: 0.55,
+          ease: 'power2.out',
+          onComplete: finishFocusTransition
+        });
+      } else {
+        setAutoAlpha('.obscura-flash', 0);
+        finishFocusTransition();
+      }
     }
 
     function applyFocus(value: number) {
@@ -377,8 +406,8 @@ export default function AboutExperience() {
         });
       }
       const showArchive = isActive && archiveScene !== null;
-      gsap.set(archiveCanvas, { autoAlpha: showArchive ? 1 : 0 });
-      gsap.set(imageWrap, { autoAlpha: showArchive ? 0 : 1 });
+      setAutoAlpha(archiveCanvas, showArchive ? 1 : 0);
+      setAutoAlpha(imageWrap, showArchive ? 0 : 1);
       if (showArchive) {
         imageWrap.style.display = 'none';
         if (hud) hud.style.display = 'none';
@@ -511,73 +540,110 @@ export default function AboutExperience() {
 
     setFocus(8);
 
-    media.add('(prefers-reduced-motion: no-preference)', () => {
-      // 每次媒體條件建立或重建動畫時，都先保證頁首仍由對焦畫面接管。
-      setStoryViewActive(false);
-      const progression = gsap.timeline({
-        scrollTrigger: {
-          trigger: '.obscura-story',
-          start: 'top top',
-          end: '+=540%',
-          pin: true,
-          // ScrollTrigger 只提供原始目標進度，實際相機速度由 3D 場景的阻尼曲線控制。
-          // 避免這裡再次加入 scrub 秒數，否則兩層延遲會讓觸控板操作顯得黏滯。
-          scrub: true,
-          snap: {
-            snapTo: snapToNearestStation,
-            delay: 0.08,
-            duration: { min: 0.2, max: 0.55 },
-            ease: 'power2.out',
-            inertia: false
-          },
-          onEnter: () => setStoryViewActive(true),
-          onEnterBack: () => setStoryViewActive(true),
-          onLeaveBack: () => setStoryViewActive(false),
-          onUpdate: ({ progress }) => setArchiveProgress(progress)
-        }
-      });
-
-      progression
-        .addLabel('enter-frame', 0)
-        .to('.obscura-intro', { autoAlpha: 0, y: -24, ease: 'none', duration: 0.05 }, 0)
-        .to('.obscura-hud', { opacity: 0, ease: 'none', duration: 0.05 }, 0);
-
-      const exitState = { progress: 0 };
-      const exitTimeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: '.obscura-exit',
-          start: 'top top',
-          // 出口區塊保留一個 large viewport 舞台；其餘實際可捲動距離就是動畫範圍。
-          end: () => `+=${Math.max(1, exit.offsetHeight - exitStage.offsetHeight)}`,
-          scrub: true,
-          invalidateOnRefresh: true,
-          onLeave: () => setArchiveExitProgress(1)
-        }
-      });
-
-      // Three.js 回傳實體紙面的螢幕投影，真正的 DOM 頁面從遠處一路貼合該範圍。
-      // 相機靠近到滿版時 transform 自然回到原始版面，因此不需要切換第二套排版。
-      exitTimeline
-        .to(exitState, {
-          progress: 1,
-          duration: 1,
-          ease: 'none',
-          onUpdate: () => setArchiveExitProgress(exitState.progress)
-        }, 0);
-    });
-
-    media.add('(prefers-reduced-motion: reduce)', () => {
+    function applyReducedMotion() {
       page.classList.add('reduced-motion');
       setFocus(FOCUS_POINT);
       page.style.setProperty('--story-defocus', '0.7');
-      return () => {
-        page.classList.remove('reduced-motion');
-        page.style.removeProperty('--story-defocus');
-      };
-    });
+    }
+
+    function clearReducedMotion() {
+      page.classList.remove('reduced-motion');
+      page.style.removeProperty('--story-defocus');
+    }
+
+    function setupMotionTimelines(g: GsapInstance, mm: GsapMatchMedia) {
+      mm.add('(prefers-reduced-motion: no-preference)', () => {
+        // 每次媒體條件建立或重建動畫時，都先保證頁首仍由對焦畫面接管。
+        setStoryViewActive(false);
+        const progression = g.timeline({
+          scrollTrigger: {
+            trigger: '.obscura-story',
+            start: 'top top',
+            end: '+=540%',
+            pin: true,
+            // ScrollTrigger 只提供原始目標進度，實際相機速度由 3D 場景的阻尼曲線控制。
+            // 避免這裡再次加入 scrub 秒數，否則兩層延遲會讓觸控板操作顯得黏滯。
+            scrub: true,
+            snap: {
+              snapTo: snapToNearestStation,
+              delay: 0.08,
+              duration: { min: 0.2, max: 0.55 },
+              ease: 'power2.out',
+              inertia: false
+            },
+            onEnter: () => setStoryViewActive(true),
+            onEnterBack: () => setStoryViewActive(true),
+            onLeaveBack: () => setStoryViewActive(false),
+            onUpdate: ({ progress }) => setArchiveProgress(progress)
+          }
+        });
+
+        progression
+          .addLabel('enter-frame', 0)
+          .to('.obscura-intro', { autoAlpha: 0, y: -24, ease: 'none', duration: 0.05 }, 0)
+          .to('.obscura-hud', { opacity: 0, ease: 'none', duration: 0.05 }, 0);
+
+        const exitState = { progress: 0 };
+        const exitTimeline = g.timeline({
+          scrollTrigger: {
+            trigger: '.obscura-exit',
+            start: 'top top',
+            // 出口區塊保留一個 large viewport 舞台；其餘實際可捲動距離就是動畫範圍。
+            end: () => `+=${Math.max(1, exit.offsetHeight - exitStage.offsetHeight)}`,
+            scrub: true,
+            invalidateOnRefresh: true,
+            onLeave: () => setArchiveExitProgress(1)
+          }
+        });
+
+        // Three.js 回傳實體紙面的螢幕投影，真正的 DOM 頁面從遠處一路貼合該範圍。
+        // 相機靠近到滿版時 transform 自然回到原始版面，因此不需要切換第二套排版。
+        exitTimeline
+          .to(exitState, {
+            progress: 1,
+            duration: 1,
+            ease: 'none',
+            onUpdate: () => setArchiveExitProgress(exitState.progress)
+          }, 0);
+      });
+
+      mm.add('(prefers-reduced-motion: reduce)', () => {
+        applyReducedMotion();
+        return clearReducedMotion;
+      });
+    }
+
+    async function initMotion() {
+      // Reduced-motion 使用者完全不下載 GSAP：直接套用靜態對焦狀態。
+      if (prefersReducedMotion.matches) {
+        applyReducedMotion();
+        return;
+      }
+      try {
+        const [{ gsap: gsapModule }, { ScrollTrigger: STModule }] = await Promise.all([
+          import('gsap'),
+          import('gsap/ScrollTrigger')
+        ]);
+        if (motionCancelled) return;
+        gsap = gsapModule;
+        ScrollTrigger = STModule;
+        gsap.registerPlugin(STModule);
+        const mm = gsap.matchMedia();
+        media = mm;
+        if (motionCancelled) return;
+        setupMotionTimelines(gsapModule, mm);
+        refreshTriggers();
+        setStoryViewActive(isStoryViewActive);
+      } catch {
+        applyReducedMotion();
+      }
+    }
+
+    void initMotion();
 
     return () => {
-      media.revert();
+      motionCancelled = true;
+      media?.revert();
       if (focusFrame !== null) window.cancelAnimationFrame(focusFrame);
       if (prismFrame !== null) window.cancelAnimationFrame(prismFrame);
       if (archivePauseFrame !== null) window.cancelAnimationFrame(archivePauseFrame);

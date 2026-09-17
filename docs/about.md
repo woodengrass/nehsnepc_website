@@ -48,7 +48,7 @@ The HUD ancestor is currently `aria-hidden="true"`, so the nested `aria-live` fo
 
 ## GSAP Story
 
-GSAP and ScrollTrigger are statically imported into the About client bundle, not the shared layout. `gsap.matchMedia()` separates normal and reduced-motion behavior and is reverted during cleanup.
+GSAP and ScrollTrigger are dynamically imported inside the About client effect and only for `no-preference` users — reduced-motion users never download GSAP. The loaded instance's `gsap.matchMedia()` separates normal and reduced-motion behavior and is reverted during cleanup; all `gsap.set` call sites fall back to direct style writes when GSAP is absent.
 
 For normal motion, the story ScrollTrigger:
 
@@ -61,11 +61,11 @@ For normal motion, the story ScrollTrigger:
 
 A second scrubbed trigger maps the `.obscura-exit` entrance into the Three.js exit transition. The 3D camera, story, exit runway, and fixed afterword use `lvh`, treating browser chrome as an overlay rather than resizing the scene. Its range is the exit section's measured height minus the measured exit-stage height, so progress reaches one at the real end of the available exit scroll without depending on dynamic browser viewport values. The exit section provides a black runway only; while archive 3D is active, the afterword uses fixed viewport positioning and remains hidden until `projectAfterword()` adds `.is-projecting`. This prevents the real page from appearing at the bottom before the projected exit page reaches it. After the 3D class changes DOM height, `ScrollTrigger.refresh()` runs on the next frame.
 
-For reduced motion, the component immediately sets focus to the target, does not create pinned timelines, does not import the Three.js scene, and displays ordinary full-height DOM panels. This is the primary low-motion and non-WebGL path.
+For reduced motion, the component immediately sets focus to the target, never imports GSAP, does not create pinned timelines, does not import the Three.js scene, and displays ordinary full-height DOM panels. This is the primary low-motion and non-WebGL path.
 
 ## Three.js Archive
 
-`lib/archive_scene.js` is imported only after unlock or meaningful story progress. A cached promise prevents duplicate initialization. Success adds `.is-archive-3d`, synchronizes existing progress, and refreshes ScrollTrigger. Import, texture, renderer, or WebGL failures call the DOM fallback.
+`lib/archive_scene.js` is imported only after unlock or meaningful story progress. A cached promise prevents duplicate initialization. Textures load in two phases: critical textures (focus, exit, station mains, tunnel) first so the scene can build, then satellite textures in the background with per-station attach, mobile re-layout, and drift-baseline refresh — the settled frame matches a single-pass load exactly. Success adds `.is-archive-3d`, synchronizes existing progress, and refreshes ScrollTrigger. Import, texture, renderer, or WebGL failures call the DOM fallback.
 
 Renderer configuration:
 
@@ -77,7 +77,7 @@ Renderer configuration:
 
 The scene contains an entry portal, two station groups, canvas-text labels, photo cards, a tunnel gallery, dust, wireframe fragments, and an invisible page plane used to project the real DOM afterword. Station and tunnel photo frames are sized to each source image's aspect ratio and render the complete image without crop; the frame dimensions are intentionally smaller than the original layout. Story progress follows camera stops through smooth interpolation and a damped spring. Desktop pointer movement contributes damped parallax.
 
-Mobile is classified once at initialization with `(max-width: 767px)`. It remains a WebGL experience when motion is allowed, and loads focus, station-main, satellite, and final textures because it renders satellite photos in a compact bottom-row layout (two columns, staggered rows/Z to avoid overlap). It also uses lower particle/fragment/photo counts, lower pixel ratio, no antialiasing, and no pointer parallax. Crossing the breakpoint after scene creation does not rebuild the complexity profile.
+Mobile is classified once at initialization with `(max-width: 767px)`. It remains a WebGL experience when motion is allowed, and loads critical textures first, then satellite textures in the background, because it renders satellite photos in a compact bottom-row layout (two columns, staggered rows/Z to avoid overlap). It also uses lower particle/fragment/photo counts, lower pixel ratio, no antialiasing, and no pointer parallax. Crossing the breakpoint after scene creation does not rebuild the complexity profile.
 
 The render loop pauses when the document is hidden, the scene leaves the observed viewport, the scene has completed its hidden post-unlock warm-up, or the DOM afterword has completely taken over at the exit. Entering the story resumes rendering; reverse exit scroll also resumes it before the projected afterword needs to animate again. Pause requests are idempotent, so repeated scroll updates do not reset the animation delta. ResizeObserver updates renderer size, camera aspect, portal crop, and exit geometry; portal crops are deferred while the portal is invisible and refreshed when it returns. Frame delta is capped after inactivity.
 
