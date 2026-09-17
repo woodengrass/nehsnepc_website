@@ -99,8 +99,9 @@ lib/                    共用程式：content.ts、tools.ts、seo.tsx、og.tsx�
                         format.ts、about_content.ts、archive_scene.js、
                         exposure/（純計算器模組）
 content/articles/       repo 自管的 MDX 文章
-public/                 靜態素材：images/（來源）、images/generated/
+public/                 靜態素材：images/generated/
                         （已提交的變體）、models/src|opt/
+assets/                 版控圖片來源：sources/、satellites/
 scripts/                optimize_images.js、optimize_models.js
 docs/                   各領域技術文件，一個領域一份
 ```

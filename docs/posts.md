@@ -132,7 +132,7 @@ Article metadata includes title, description, author, tag keywords, canonical UR
 1. Copy `content/articles/example.mdx` to `content/articles/<url-safe-slug>.mdx` and replace its sample content.
 2. Add valid frontmatter using an ISO date and supported category.
 3. Use standard Markdown/GFM and only registered MDX components. The template demonstrates headings, blockquotes, `Callout`, `Figure`, tables, and `Model3D` usage.
-4. Put referenced assets under `public/`; generated article families require explicit additions to the image optimization script.
+4. Put source images under `assets/`, add the family to `scripts/optimize_images.js`, run `npm run images:build`, and reference the `/images/generated/` path.
 5. Keep `draft: true` while developing, then remove/set false to publish.
 6. Run `npm run build`.
 7. Verify the index, category, detail route, mobile cards/body, heading anchors, image alternatives, metadata, `/sitemap.xml`, and `/rss.xml`.

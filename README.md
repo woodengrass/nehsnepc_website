@@ -105,8 +105,9 @@ lib/                    Shared code: content.ts, tools.ts, seo.tsx, og.tsx,
                         format.ts, about_content.ts, archive_scene.js,
                         exposure/ (pure calculator module)
 content/articles/       Repository-owned MDX articles
-public/                 Static assets: images/ (sources), images/generated/
+public/                 Static assets: images/generated/
                         (committed variants), models/src|opt/
+assets/                 Versioned image sources: sources/, satellites/
 scripts/                optimize_images.js, optimize_models.js
 docs/                   Maintained technical reference, one document per area
 ```
