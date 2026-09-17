@@ -16,6 +16,7 @@ export default function ContactPage() {
   const contactBodyRef = useRef<HTMLDivElement>(null);
   const socialBodyRef = useRef<HTMLDivElement>(null);
   const shootTriggerRef = useRef<HTMLButtonElement>(null);
+  const copyTimerRef = useRef<number | ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const toggleItem = (id: AccordionId) => {
     setOpenItem((current) => (current === id ? null : id));
@@ -43,11 +44,17 @@ export default function ContactPage() {
     });
   }, [openItem]);
 
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== undefined) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
   const copyEmail = async () => {
     try {
       await navigator.clipboard.writeText(EMAIL);
       setEmailLabel('copied');
-      window.setTimeout(() => setEmailLabel(EMAIL), 1800);
+      copyTimerRef.current = window.setTimeout(() => setEmailLabel(EMAIL), 1800);
     } catch {
       window.location.href = `mailto:${EMAIL}`;
     }

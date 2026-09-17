@@ -49,9 +49,6 @@ export default function TallyModal({ onClose }: { onClose: () => void }) {
         duration-[260ms]
         ease-[cubic-bezier(0.22,1,0.36,1)]
         motion-reduce:transition-none
-        visible
-        pointer-events-auto
-        opacity-100
       `}
       role="dialog"
       aria-modal="true"
