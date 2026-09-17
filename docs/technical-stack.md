@@ -39,7 +39,7 @@ The site uses App Router with Server Components by default. Client components ar
 
 `tsconfig.json` enables strict mode, `noEmit`, `moduleResolution: bundler`, ES modules, React JSX, DOM libraries, incremental builds, JSON modules, isolated modules, JavaScript allowance, and skipped library checks. `@/*` maps to the repository root. The project includes `.ts`/`.tsx` source and generated Next route types. `next-env.d.ts` is generated and must not be manually edited.
 
-The package sets `type: module`, so JavaScript scripts and libraries use ESM syntax. Browser-only JavaScript such as `lib/archive_scene.js` must not execute during server rendering. The calculator shell dynamically imports the browser engine at `@/lib/exposure/exposure_calculator` (typed via the sibling `.d.ts`) only on its tool route, with a reload prompt if the import fails.
+The package sets `type: module`, so JavaScript scripts and libraries use ESM syntax. Browser-only JavaScript such as `lib/archive_scene.js` must not execute during server rendering. The exposure calculator is a route-scoped client component backed by the pure `lib/exposure/exposure.ts` module; it needs no dynamic import.
 
 ## Styling
 
@@ -55,7 +55,7 @@ See `frontend.md` for design tokens, fonts, breakpoints, and global body state.
 | `/about` | Client-enhanced focus and optional Three.js story |
 | `/contact` | Client accordions, clipboard, and lazy Tally modal |
 | `/tools` | Server catalogue from `lib/tools.ts` |
-| `/tools/exposure-calculator` | Dynamic client calculator engine |
+| `/tools/exposure-calculator` | Client calculator (controlled React + pure exposure module) |
 | `/licensing` | Static licensing and attribution page |
 | `/tutorial` | Filesystem article index |
 | `/tutorial/category/[category]` | Three static category routes |
@@ -89,12 +89,12 @@ Detailed schema and publication behavior are in `posts.md`.
 
 | Set/source | Widths | AVIF/WebP quality |
 | --- | --- | --- |
-| Hero, `public/images/banner/hero-1.jpg` | 640, 1280, 1920, 2560 | 50 / 72 |
-| Contact, `public/images/contact-bg.jpg` | 480, 800, 1200, 1600 | 50 / 74 |
-| Logo, `public/images/logo.png` | 96, 192, 384 | configured in script |
-| Exposure calculator, `public/images/exposure-calculator.png` | 640 | 52 / 76 |
+| Hero, `assets/sources/hero-1.jpg` | 640, 1280, 1920, 2560 | 50 / 72 |
+| Contact, `assets/sources/contact-bg.jpg` | 480, 800, 1200, 1600 | 50 / 74 |
+| Logo, `assets/sources/logo.png` | 96, 192, 384 | configured in script |
+| Exposure calculator, `assets/sources/exposure-calculator.png` | 640, 960, 1280 | 52 / 76 |
 
-Resizing uses `withoutEnlargement`; AVIF effort is 5 and WebP effort is 6. The script also processes the ten current ignored local `temp/*.jpg` files into `about-satellite-01-640` through `about-satellite-10-640` for the About satellite and main cards. Satellite sources `06`–`10` are Unsplash works (see `LICENSING.md`); `temp/` is git-ignored so originals are not distributed, and generated derivatives inherit their source license. The script creates the output directory but does not delete stale files. New article images are not auto-discovered; extend the script or process them separately. Runtime code mostly owns native `<picture>`/`<img>` responsiveness instead of Next Image.
+Resizing uses `withoutEnlargement`; AVIF effort is 5 and WebP effort is 6. The script also processes the ten versioned `assets/satellites/*.jpg` files into `about-satellite-01-640` through `about-satellite-10-640` for the About satellite and main cards. Satellite sources `06`–`10` are Unsplash works (see `LICENSING.md`); sources live under `assets/` so a fresh clone can regenerate every variant, and generated derivatives inherit their source license. The script creates the output directory but does not delete stale files. New article images are not auto-discovered; extend the script or process them separately. Article covers render through the `TutorialCover` component (`components/articles/TutorialCover.tsx`), which builds AVIF/WebP `srcset` from the same generated families when the cover points at them and falls back to a plain lazy `<img>` otherwise.
 
 ## Model Pipeline
 
@@ -136,7 +136,7 @@ Then inspect core routes, all article/category routes, sitemap, robots, RSS, Ope
 ## Performance Boundaries
 
 - Keep root layout and home server-rendered where possible.
-- Do not import GSAP, Three.js, model-viewer, or calculator code into shared layout/navigation.
+- Do not import GSAP, Three.js, or model-viewer into shared layout/navigation.
 - Keep About Three.js and model-viewer dynamically gated.
 - Optimize image/model source assets before production.
 - Treat native image `sizes`, intrinsic dimensions, loading, and decoding as application responsibilities.

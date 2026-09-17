@@ -162,7 +162,7 @@ The goal is to minimize unnecessary complexity.
 - `npm run dev` — Next.js dev server (Turbopack)
 - `npm run build` — production Next.js build and TypeScript validation
 - `npm run start` — serve production build
-- `npm run images:build` — regenerate AVIF/WebP variants into `public/images/generated/` (requires `sharp`, sources in `public/images/banner/` and `public/images/`)
+- `npm run images:build` — regenerate AVIF/WebP variants into `public/images/generated/` (requires `sharp`, sources in `assets/sources/` and `assets/satellites/`)
 - `npm run models:build` — transform GLB models from `public/models/src/*.glb` to `public/models/opt/*.glb` (deduplication, pruning, resampling, and WebP textures via glTF Transform; inspect `scripts/optimize_models.js` before claiming Draco geometry compression)
 
 No lint, typecheck, test, or formatter is configured beyond `next build`'s TS check.
@@ -173,10 +173,10 @@ Next.js 16.3.3 (App Router, TypeScript, build-time prerendering where possible).
 
 - `app/layout.tsx` — root layout: lang=zh-TW, Noto Serif TC via Google Fonts, global grain overlay, `<SiteNav>`, and Organization/WebSite JSON-LD. The current layout does not configure `next/font`; `--font-heading-next` and `--font-body-next` references therefore use their CSS fallbacks.
 - `app/page.tsx` → home; `components/home/Hero.tsx` is currently a server-rendered composition without GSAP.
-- `app/about/page.tsx` → camera obscura experience; `components/about/AboutExperience.tsx` controls focus and GSAP, while `lib/archive_scene.js` is dynamically imported after unlock for motion-allowed users. Mobile uses a reduced-complexity Three.js profile; reduced-motion users receive the DOM fallback.
-- `app/contact/page.tsx` → `components/contact/ContactPage.tsx` (accordion, Tally modal lazy-mounted, email copy)
+- `app/about/page.tsx` → camera obscura experience; `components/about/AboutExperience.tsx` controls focus and lazily imports GSAP (`no-preference` users only — reduced-motion users never download it), while `lib/archive_scene.js` is dynamically imported after unlock for motion-allowed users and loads critical textures first, satellites in the background. Mobile uses a reduced-complexity Three.js profile; reduced-motion users receive the DOM fallback.
+- `app/contact/page.tsx` → `components/contact/ContactPage.tsx` (accordion, email copy) + `components/contact/TallyModal.tsx` (Tally dialog, loaded via `next/dynamic` `ssr: false` only after first open; owns focus trap, Escape handling, and `body.has-modal`)
 - `app/tools/page.tsx` → 工具卡片展示（data 在 `lib/tools.ts`）
-- `app/tutorial/` — 教學：index、`category/[category]` (tutorial | news | showcase)、`[slug]` with MDX via `next-mdx-remote/rsc`
+- `app/tutorial/` — 教學：index、`category/[category]` (tutorial | news | showcase)、`[slug]` with MDX via `next-mdx-remote/rsc`; covers render through `components/articles/TutorialCover.tsx` (responsive AVIF/WebP srcset from generated families, lazy except the slug hero)
 
 ### Content system
 
@@ -184,7 +184,7 @@ Next.js 16.3.3 (App Router, TypeScript, build-time prerendering where possible).
 - MDX components registered in `components/mdx/index.ts`: `Figure`, `Callout`, `Model3D`, `a` (MDXLink auto-detects external).
 - `Model3D` (`components/mdx/Model3D.tsx`) lazy-loads the `@google/model-viewer` runtime via IntersectionObserver when the frame nears the viewport; `touch-action="pan-y"` preserves vertical mobile scrolling. Do not document an exact bundle size without measuring the current build.
 - Add GLB sources to `public/models/src/` then run `npm run models:build`; reference the output path (`/models/opt/<name>.glb`) in MDX.
-- Image variants are pre-generated and committed under `public/images/generated/`; run `npm run images:build` after changing sources.
+- Image variants are pre-generated and committed under `public/images/generated/`; run `npm run images:build` after changing sources under `assets/`. Only `generated/` is served — never reference `assets/` from runtime code.
 
 ### SEO
 
@@ -234,4 +234,4 @@ Vercel. `vercel.json` only holds legacy redirects (`/pages/about.html` → `/abo
 - Heavy libraries (Three.js, GSAP, model-viewer) must stay isolated from shared components/layout. Do not state exact bundle sizes without measuring the current production build.
 - The About page locks scrolling (`body.is-focus-locked`) until focus is reached; check `prefers-reduced-motion` if it loads stuck.
 - `archive_scene.js` calls `ScrollTrigger.refresh()` after DOM changes; `AboutExperience` cleans up via `gsap.matchMedia().revert()` for React StrictMode double-mount.
-- `components/tools/ExposureCalculator.tsx` dynamically imports `@/lib/exposure/exposure_calculator` (typed via sibling `.d.ts`); keep the DOM ID contract and per-instance `AbortController` cleanup in sync.
+- `components/tools/ExposureCalculator.tsx` is a controlled React client component backed by pure functions in `lib/exposure/exposure.ts`; keep state in the component and math in the module, with no direct DOM mutation.

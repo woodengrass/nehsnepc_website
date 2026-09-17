@@ -32,10 +32,10 @@
 需求：
 
 - Node.js `20.9.0` 以上（Next.js 與 Sharp 要求）。
-- npm（以下指令用 npm；`packageManager` 鎖定為 pnpm，兩者皆可）。
+- pnpm（`packageManager` 鎖定為 pnpm@10.15.1）。
 
 ```bash
-npm ci
+pnpm install
 ```
 
 唯一的應用程式環境變數為選填：
@@ -66,7 +66,7 @@ JSON-LD、sitemap、robots 與 RSS 連結。這是公開值，不可放機密。
 client 邊界：導覽、About 對焦體驗、聯絡互動、曝光計算器、閱讀進度、3D 模型預覽。
 
 **重型 runtime 隔離且 lazy。** Three.js（About archive）、GSAP（About 故事線）、
-`@google/model-viewer`（文章內嵌）、曝光引擎都只在需要的路由動態載入——絕不
+`@google/model-viewer`（文章內嵌）都只在需要的路由動態載入——絕不
 進 shared layout 或導覽。保持這樣。
 
 **檔案系統內容，不是 CMS。** 文章在 `content/articles/*.mdx`，frontmatter 由
@@ -75,10 +75,9 @@ Zod 驗證（[`lib/content.ts`](./lib/content.ts)）。非草稿路由在建置�
 
 **曝光計算器形狀。**
 [`components/tools/ExposureCalculator.tsx`](./components/tools/ExposureCalculator.tsx)
-只負責穩定的 DOM 容器，動態載入
-[`lib/exposure/exposure_calculator.js`](./lib/exposure/exposure_calculator.js)
-引擎（型別在同目錄 `.d.ts`）。引擎自己管可變狀態，和殼層共享固定的 DOM ID
-合約——改一邊就要同步改另一邊。細節見 [`docs/tools.md`](./docs/tools.md)。
+是受控的 React client 元件，攝影數學以純函數放在
+[`lib/exposure/exposure.ts`](./lib/exposure/exposure.ts)。細節見
+[`docs/tools.md`](./docs/tools.md)。
 
 **SEO 用產的，不用手寫的。** Sitemap、robots、RSS、OG 圖都是路由，從同一內容
 來源產生（[`lib/seo.tsx`](./lib/seo.tsx)、[`app/sitemap.ts`](./app/sitemap.ts)、
@@ -98,7 +97,7 @@ components/             依區域分的 UI：home、about、contact、tools、
                         articles、mdx（Figure、Callout、Model3D、MDXLink）
 lib/                    共用程式：content.ts、tools.ts、seo.tsx、og.tsx、
                         format.ts、about_content.ts、archive_scene.js、
-                        exposure/（計算器引擎＋.d.ts）
+                        exposure/（純計算器模組）
 content/articles/       repo 自管的 MDX 文章
 public/                 靜態素材：images/（來源）、images/generated/
                         （已提交的變體）、models/src|opt/

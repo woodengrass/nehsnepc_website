@@ -9,11 +9,11 @@ overview, installation, quick start, and project structure, see the root
 
 | Area | Document | Primary source files |
 | --- | --- | --- |
-| Shared UI and visual system | [Frontend Architecture](./frontend.md) | `app/layout.tsx`, `app/globals.css`, `components/SiteNav.tsx`, `components/home/Hero.tsx` |
+| Shared UI and visual system | [Frontend Architecture](./frontend.md) | `app/layout.tsx`, `app/globals.css`, `components/SiteNav.tsx`, `components/SiteNavMenu.tsx`, `components/home/Hero.tsx` |
 | Tool catalogue and exposure calculator | [Tools](./tools.md) | `app/tools/**`, `components/tools/**`, `lib/tools.ts`, `lib/exposure/**` |
-| Contact channels and request form | [Contact](./contact.md) | `app/contact/page.tsx`, `components/contact/ContactPage.tsx` |
-| Camera-obscura and archive experience | [About](./about.md) | `app/about/page.tsx`, `components/about/AboutExperience.tsx`, `lib/archive_scene.js` |
-| MDX articles and publication surfaces | [Posts](./posts.md) | `content/articles/**`, `app/tutorial/**`, `lib/content.ts`, `components/mdx/**` |
+| Contact channels and request form | [Contact](./contact.md) | `app/contact/page.tsx`, `components/contact/ContactPage.tsx`, `components/contact/TallyModal.tsx` |
+| Camera-obscura and archive experience | [About](./about.md) | `app/about/page.tsx`, `app/about/layout.tsx`, `components/about/AboutExperience.tsx`, `lib/archive_scene.js` |
+| MDX articles and publication surfaces | [Posts](./posts.md) | `content/articles/**`, `app/tutorial/**`, `lib/content.ts`, `components/mdx/**`, `components/articles/TutorialCover.tsx` |
 | Embedded GLB preview and optimization | [3D Model Preview](./model-preview.md) | `components/mdx/Model3D.tsx`, `scripts/optimize_models.js`, `public/models/**` |
 | Runtime, builds, assets, SEO, and deployment | [Technical Stack](./technical-stack.md) | `package.json`, configuration files, `scripts/**`, SEO metadata routes |
 

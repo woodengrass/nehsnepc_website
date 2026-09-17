@@ -5,7 +5,6 @@ import SiteNav from '@/components/SiteNav';
 import { SITE_NAME, SITE_URL, JsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 
 import './globals.css';
-import './styles/about.css';
 
 export const viewport: Viewport = {
   themeColor: '#090909',
@@ -43,20 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
-        <div
-          className={`
-            pointer-events-none
-            fixed
-            inset-0
-            z-999
-            bg-[url("data:image/svg+xml,%3Csvg_viewBox='0_0_512_512'_xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter_id='g'%3E%3CfeTurbulence_type='fractalNoise'_baseFrequency='.72'_numOctaves='4'_stitchTiles='stitch'/%3E%3C/filter%3E%3Crect_width='100%25'_height='100%25'_filter='url(%23g)'/%3E%3C/svg%3E")]
-            bg-size-[420px_420px]
-            bg-repeat
-            opacity-[0.045]
-            mix-blend-multiply
-          `}
-          aria-hidden="true"
-        />
+        <div className="grain-overlay" aria-hidden="true" />
         <SiteNav />
         <JsonLd data={organizationJsonLd()} />
         <JsonLd data={websiteJsonLd()} />

@@ -41,13 +41,6 @@
     --transition-fast: 260ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  *,
-  *::before,
-  *::after {
-    margin: 0;
-    padding: 0;
-  }
-
   html {
     min-height: 100%;
     overflow-x: hidden;
@@ -128,4 +121,18 @@
   to {
     transform: translateX(0) scale(1.09);
   }
+}
+
+/* 全站顆粒：靜態 SVG 噪聲，contain 隔離合成，視覺與原 Tailwind 寫法一致。 */
+.grain-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background-image: url("data:image/svg+xml,%3Csvg_viewBox='0_0_512_512'_xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter_id='g'%3E%3CfeTurbulence_type='fractalNoise'_baseFrequency='.72'_numOctaves='4'_stitchTiles='stitch'/%3E%3C/filter%3E%3Crect_width='100%25'_height='100%25'_filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 420px 420px;
+  background-repeat: repeat;
+  opacity: 0.045;
+  mix-blend-mode: multiply;
+  contain: strict;
 }

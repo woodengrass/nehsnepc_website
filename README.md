@@ -32,10 +32,10 @@
 Prerequisites:
 
 - Node.js `20.9.0` or newer (required by Next.js and Sharp).
-- npm (commands below use npm; `packageManager` is pinned to pnpm, either works).
+- pnpm (`packageManager` is pinned to pnpm@10.15.1).
 
 ```bash
-npm ci
+pnpm install
 ```
 
 The only application environment variable is optional:
@@ -69,9 +69,9 @@ focus experience, contact interactions, the exposure calculator, reading
 progress, and 3D model previews.
 
 **Heavy runtimes stay isolated and lazy.** Three.js (About archive), GSAP (About
-story), `@google/model-viewer` (article embeds), and the exposure engine are
-dynamically imported only on the routes that need them — never in shared
-layout or navigation. Keep it that way.
+story), and `@google/model-viewer` (article embeds) are dynamically imported
+only on the routes that need them — never in shared layout or navigation.
+Keep it that way.
 
 **Filesystem content, not a CMS.** Articles live in `content/articles/*.mdx`
 with Zod-validated frontmatter ([`lib/content.ts`](./lib/content.ts)).
@@ -80,11 +80,9 @@ a rebuild. `draft: true` articles appear in development only.
 
 **Exposure calculator shape.**
 [`components/tools/ExposureCalculator.tsx`](./components/tools/ExposureCalculator.tsx)
-renders stable DOM containers and dynamically imports the engine at
-[`lib/exposure/exposure_calculator.js`](./lib/exposure/exposure_calculator.js)
-(typed via the sibling `.d.ts`). The engine owns its mutable state and shares a
-fixed DOM ID contract with the shell — change one side and you must change
-both. Details live in [`docs/tools.md`](./docs/tools.md).
+is a controlled React client component; all photographic math lives as pure
+functions in [`lib/exposure/exposure.ts`](./lib/exposure/exposure.ts).
+Details live in [`docs/tools.md`](./docs/tools.md).
 
 **SEO is generated, not hand-written.** Sitemap, robots, RSS, and the OG image
 are routes derived from the same content source ([`lib/seo.tsx`](./lib/seo.tsx),
@@ -105,7 +103,7 @@ components/             UI by area: home, about, contact, tools,
                         articles, mdx (Figure, Callout, Model3D, MDXLink)
 lib/                    Shared code: content.ts, tools.ts, seo.tsx, og.tsx,
                         format.ts, about_content.ts, archive_scene.js,
-                        exposure/ (calculator engine + .d.ts)
+                        exposure/ (pure calculator module)
 content/articles/       Repository-owned MDX articles
 public/                 Static assets: images/ (sources), images/generated/
                         (committed variants), models/src|opt/

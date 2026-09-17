@@ -11,23 +11,23 @@ This document covers the shared application shell, home page, visual language, s
 | `app/layout.tsx` | Root document, default metadata, viewport, global navigation, grain layer, Google font link, and site JSON-LD |
 | `app/page.tsx` | Home route metadata and `Hero` composition |
 | `components/home/Hero.tsx` | Server-rendered home identity and route index; no client state or GSAP |
-| `components/SiteNav.tsx` | Shared client navigation, active-route matching, menu state, Escape handling, and body scroll lock |
-| `app/globals.css` | Tailwind import, design tokens, reset, base typography, focus styles, hidden global scrollbar, body state classes, and reduced motion |
-| `app/styles/about.css` | About-only selectors imported globally by the root layout |
+| `components/SiteNav.tsx` + `components/SiteNavMenu.tsx` | Server header shell with hidden placeholder markup; client menu island (hamburger, overlay, active-route matching, Escape handling, body scroll lock). Ten near-identical link-delay classes collapsed to one base plus inline `transition-delay` |
+| `app/globals.css` | Tailwind import, design tokens, base typography, `.grain-overlay`, focus styles, hidden global scrollbar, body state classes, and reduced motion |
+| `app/styles/about.css` | About-only selectors imported by `app/about/layout.tsx`, loaded only on `/about` |
 | `lib/seo.tsx` | Canonical site URL and JSON-LD builders |
 | `app/opengraph-image.tsx`, `lib/og.tsx` | Global 1200 by 630 Open Graph image |
 
-All App Router files are Server Components by default. `SiteNav` is the only shared client boundary. Keep page-specific client code out of `app/layout.tsx` so heavy dependencies do not enter every route.
+All App Router files are Server Components by default. The shared shell stays server-rendered; `SiteNavMenu` is the only shared client island. Keep page-specific client code out of `app/layout.tsx` so heavy dependencies do not enter every route.
 
 ## Root Layout
 
 `app/layout.tsx` sets `<html lang="zh-TW">`, `themeColor: #090909`, and `viewportFit: cover`. Default metadata supplies the site title, title template, Traditional Chinese description, Open Graph site identity, and large-image Twitter card. Page routes add their own canonical metadata.
 
-The body order is route content, fixed grain overlay, `SiteNav`, then Organization and WebSite JSON-LD. The grain uses an inline SVG turbulence background on a fixed, pointer-inert, `aria-hidden` layer. It is global and therefore carries a compositing cost on every route.
+The body order is route content, fixed grain overlay, `SiteNav`, then Organization and WebSite JSON-LD. The grain is the `.grain-overlay` CSS class (same inline SVG turbulence, `contain: strict`) on a fixed, pointer-inert, `aria-hidden` layer. It is global and therefore carries a compositing cost on every route.
 
 The layout preconnects to Google Fonts and loads Noto Serif TC from `fonts.googleapis.com`. This is a runtime third-party dependency. The current layout does not configure `next/font` for Cormorant Garamond or Raleway. `app/globals.css` and components still refer to `--font-heading-next` and `--font-body-next`; those variables are not currently defined by the layout, so browser font fallbacks apply. Preserve this distinction in future documentation until the implementation changes.
 
-`app/styles/about.css` is imported by the root layout and downloaded globally. Its selectors are largely constrained by `.obscura`, `html:has(.obscura)`, and About state classes.
+`app/styles/about.css` is imported by `app/about/layout.tsx` and loads only on `/about`. Its selectors are largely constrained by `.obscura`, `html:has(.obscura)`, and About state classes.
 
 ## Visual System
 
@@ -65,7 +65,7 @@ The global body uses the CJK serif stack based on Noto Serif TC, Source Han Seri
 
 ## Shared Navigation
 
-`components/SiteNav.tsx` defines five destinations in the `PAGES` constant: Home, About, Tutorial, Tools, and Contact. Non-home active matching includes child routes, so `/tutorial/...` activates Tutorial and `/tools/exposure-calculator` activates Tools.
+`components/SiteNavMenu.tsx` defines five destinations in the `PAGES` constant: Home, About, Tutorial, Tools, and Contact. Non-home active matching includes child routes, so `/tutorial/...` activates Tutorial and `/tools/exposure-calculator` activates Tools. Overlay link stagger uses one shared class plus per-index inline `transition-delay` (100ms with 50ms steps), identical to the previous delay utilities.
 
 The current visible control is the fixed hamburger menu at all widths. Desktop navigation markup and establishment copy exist but carry `hidden` classes. Opening the menu toggles `body.menu-open`, and global CSS locks scrolling. Escape and selecting a link close the menu. The trigger uses a native button with a Chinese `aria-label` and `aria-expanded`; active links use `aria-current="page"`.
 
@@ -85,7 +85,7 @@ Any navigation change must test keyboard order, Escape, focus visibility, route-
 
 The first section is an identity composition with a minimum height of `max(760px, 100svh)` on desktop and `max(720px, 100svh)` on mobile. The visual center is deliberately weighted to the left: the `NEHS / NEPC` identity sits directly on the paper ground with a red registration edge and a narrow offset red bar, while the vertical film strip enters from the right as a partial obstruction. The title uses black and deep-navy type contrast instead of a pale backing panel. Technical information is limited to coordinates, frame notation, film stock, and frame numbers. One frame has a small local offset and shadow to suggest a pasted contact sheet; other elements remain aligned so the imperfection stays controlled. Decorative elements are `aria-hidden` where appropriate.
 
-The film strip contains twelve available crops of the same generated hero image through native `<picture>` elements. AVIF variants are selected at 640 and 1280 widths, with a 1280 WebP `<img>` fallback. Different `object-position` values create a panoramic sequence. Frame visibility is decided entirely by CSS media queries before the first paint: mobile-width viewports always show two frames, while desktop viewports at or below `740px` height show two, medium-height screens show six, tall screens show eight, and larger screens retain all twelve. Mobile no longer changes frame count when the browser address bar changes the dynamic viewport height. These images are decorative and have empty alt text. CSS aspect ratios reserve space, but the elements do not supply intrinsic width/height attributes.
+The film strip contains twelve available crops of the same generated hero image through native `<picture>` elements. AVIF variants are selected at 640 and 1280 widths, with a 1280 WebP `<img>` fallback. Different `object-position` values create a panoramic sequence. Frame visibility is decided entirely by CSS media queries before the first paint: mobile-width viewports always show two frames, while desktop viewports at or below `740px` height show two, medium-height screens show six, tall screens show eight, and larger screens retain all twelve. Mobile no longer changes frame count when the browser address bar changes the dynamic viewport height. These images are decorative and have empty alt text. CSS aspect ratios reserve space, but the elements do not supply intrinsic width/height attributes. The first two frames load eager (the first with high fetch priority); frames below the fold load lazy with async decoding, so hidden frames no longer decode on mobile.
 
 The `Explore index` anchor scrolls to `#home-index` and is positioned at the lower-left edge of the hero so it reinforces the left-side visual center. The second section uses a dark navy field and four large route rows. Desktop rows contain number, English title, Chinese description, and arrow; mobile hides the description column. Hover changes the entire row to red, while native links preserve essential functionality for touch and keyboard users.
 
