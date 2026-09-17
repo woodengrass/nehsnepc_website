@@ -9,8 +9,8 @@ The tools area contains a server-rendered catalogue and one interactive exposure
 | `app/tools/page.tsx` | `/tools` catalogue, metadata, responsive cards |
 | `lib/tools.ts` | Typed catalogue data and availability contract |
 | `app/tools/exposure-calculator/page.tsx` | Calculator route metadata and client component |
-| `components/tools/ExposureCalculator.tsx` | React-rendered shell and dynamic engine lifecycle |
-| `@/lib/exposure/exposure_calculator` | Exposure calculator engine module dynamically loaded by the client shell |
+| `components/tools/ExposureCalculator.tsx` | Controlled React calculator UI and state |
+| `lib/exposure/exposure.ts` | Framework-free exposure math, presets, and state transitions |
 
 Both routes appear in `app/sitemap.ts`. Legacy `/portfolio` URLs redirect to `/tools` through `vercel.json`.
 
@@ -27,15 +27,27 @@ The layout is three columns above 980px, two columns to 768px, and one column at
 
 ## Current Engine Availability
 
-`lib/exposure/exposure_calculator.js` supplies the dynamically imported calculator engine (types in the sibling `.d.ts`). The React shell and engine share a fixed DOM ID contract; update both together when changing calculator controls.
+`lib/exposure/exposure.ts` holds the framework-free calculator core: preset
+tables, formatters, exposure math, direct-input parsing, compensation, and
+flash synchronization as pure functions. It never touches the DOM, so it is
+importable during server rendering and testable in isolation.
 
 ## Exposure Calculator Architecture
 
-`components/tools/ExposureCalculator.tsx` is a client component that renders stable containers and dynamically imports `@/lib/exposure/exposure_calculator` in `useEffect`. Its expected module exports `initExposureCalculator()`, whose returned cleanup function is invoked on unmount. The engine uses a per-instance `AbortController`; the cleanup aborts only its own listeners.
+`components/tools/ExposureCalculator.tsx` is a client component that owns all
+calculator state with `useState` (`base`/`baseAmbient`, `camera`, `locks`,
+`evLocked`, `target`, `nds`, `flashes`) and renders every control as
+controlled React elements. There is no `innerHTML`, no native
+`addEventListener`, no `AbortController`, and no dynamic import — the delete of
+the legacy `lib/exposure/exposure_calculator.js` engine removed the DOM ID
+contract entirely. Remaining element IDs exist only for label association.
 
-The shell is React-rendered, but `#cameraControls`, `#ndList`, and `#flashList` are rebuilt with `innerHTML`. Parent-level delegated listeners survive those rebuilds. IDs queried by the engine are an internal API: changing one requires synchronized changes in both the TSX shell and JavaScript module.
-
-Dynamic import failure shows a `role="alert"` reload prompt. Flash names are HTML-escaped before `innerHTML` rendering.
+Free-text fields (camera direct values, long exposure, flash GN/distance) use
+a small `CommitField` with local draft state: typing never writes to parent
+state, and the parent commits on Enter or blur. Invalid commits are ignored
+and the field falls back to the formatted value. Flash names are plain
+controlled inputs; React escapes them automatically, so no manual HTML
+escaping is needed.
 
 ## Engine Contract
 
@@ -91,16 +103,27 @@ Multiple ND filters can be added and their stops sum. Flash entries support cust
 
 ## Events and Rendering
 
-- Camera slider `input` updates the value and compensates or moves the target.
-- Lock `change` updates camera or ND lock state.
-- Direct values commit on Enter or focus loss.
-- Target `input` changes the target and runs compensation.
-- ND add/range/delete operations recalculate or compensate.
-- Flash add, field input, mode selection, estimate, confirm, and delete mutate local flash state.
-- Full renders rebuild generated markup; lighter refreshes update labels during slider interaction.
-- Lock, baseline-reset, and flash-only handlers update just their section plus the reading, skipping unrelated rebuilds (and preserving focus on the toggled control).
+All interaction is React state updates plus re-render; nothing mutates the DOM
+directly:
 
-Because generated HTML includes state values, never introduce untrusted text without escaping. Flash names are local user input and are HTML-escaped at render.
+- Camera slider `onChange` maps the preset index to a value, then compensates
+  (when target-locked, excluding the moved key) or follows the target.
+- Lock toggles, target-lock toggle, and baseline reset only touch their own
+  slice of state plus the derived reading — no flash resync, focus preserved.
+- Direct values and long exposure commit on Enter or blur through
+  `parseDirectValue`; the long-exposure field stays in sync with the shutter
+  slider because both derive from the same state.
+- Target slider clamps to ±10 EV and always runs compensation.
+- ND add/range/delete recalculate or compensate (ND compensation excludes `nd`
+  and rewrites only the first filter), then resync custom flashes.
+- Flash add, name/power/GN/distance edits, mode selection, estimate, confirm,
+  and delete only touch flash state. Custom-mode powers resync after any
+  camera/target/ND change via `syncCustomFlashPowers`.
+- Sliders stay mounted across keystrokes (stable `key`s, draft state in
+  `CommitField`), so dragging and typing never lose focus.
+
+Because rendering is JSX, user-supplied text such as flash names is escaped
+by React automatically.
 
 ## Responsive and Accessibility Behavior
 
@@ -111,9 +134,7 @@ Implemented accessibility includes native ranges, checkboxes, number inputs and 
 Known limitations:
 
 - flash fields use implicit wrapping labels rather than explicit `for`/`id` pairs (valid association, but harder to target precisely);
-- invalid input has no visible or announced error;
-- dynamic import failure shows only a reload prompt (no retry logic);
-- `innerHTML` makes React ownership and DOM ownership easy to mix accidentally.
+- invalid input has no visible or announced error.
 
 ## Modification Workflow
 
@@ -127,8 +148,8 @@ When adding a tool:
 
 When changing the calculator:
 
-1. Keep `@/lib/exposure/exposure_calculator` typed via its `.d.ts` and make `npm run build` pass.
-2. Preserve or synchronously rename all shell IDs.
+1. Keep calculator math in `lib/exposure/exposure.ts` as pure functions and make `npm run build` pass.
+2. Preserve the controlled-component contract: state in the TSX file, math in the exposure module, no direct DOM mutation.
 3. Verify every preset and formula against expected photographic stops.
 4. Test direct ISO, aperture, fraction, seconds, invalid, and out-of-preset input.
 5. Test target locking with each lock combination and all parameters locked.

@@ -1,27 +1,458 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
+
+import {
+  DEFAULT_CAMERA,
+  ND_PRESETS,
+  TARGET_MAX,
+  TARGET_MIN,
+  VALUE_SETS,
+  ambientEv,
+  ambientStops,
+  clampTarget,
+  compensate,
+  estimatedPower,
+  flashStops,
+  formatEditableValue,
+  formatPower,
+  parseDirectValue,
+  signed,
+  sliderIndex,
+  syncCustomFlashPowers,
+  totalNdStops,
+  type CameraKey,
+  type CameraValues,
+  type FlashEntry,
+  type FlashMode,
+  type Locks,
+  type NdFilter
+} from '@/lib/exposure/exposure';
+
+const CAMERA_KEYS: readonly CameraKey[] = ['iso', 'shutter', 'aperture'];
+
+const CAMERA_LABELS: Record<CameraKey, string> = {
+  iso: 'ISO',
+  shutter: '快門',
+  aperture: '光圈'
+};
+
+const CAMERA_PREFIX: Record<CameraKey, string> = {
+  iso: 'ISO ',
+  shutter: '',
+  aperture: 'f/'
+};
+
+interface CalculatorState {
+  base: CameraValues;
+  baseAmbient: number;
+  camera: CameraValues;
+  locks: Locks;
+  evLocked: boolean;
+  target: number;
+  nds: NdFilter[];
+  flashes: FlashEntry[];
+}
+
+function createInitialState(): CalculatorState {
+  return {
+    base: { ...DEFAULT_CAMERA },
+    baseAmbient: ambientStops(DEFAULT_CAMERA, 0),
+    camera: { ...DEFAULT_CAMERA },
+    locks: { iso: false, shutter: false, aperture: false, nd: false },
+    evLocked: false,
+    target: 0,
+    nds: [],
+    flashes: []
+  };
+}
+
+interface CommitFieldProps
+  extends Omit<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    'value' | 'onChange' | 'onBlur'
+  > {
+  value: string;
+  onCommit: (raw: string) => void;
+}
+
+/**
+ * Free-text field with local draft state. Typing never writes to parent state;
+ * the parent commits on Enter or blur. Invalid commits are ignored by the
+ * caller, so the field falls back to the formatted `value` prop.
+ */
+function CommitField({ value, onCommit, onKeyDown, ...rest }: CommitFieldProps) {
+  const [draft, setDraft] = useState<string | null>(null);
+
+  const commit = (raw: string) => {
+    setDraft(null);
+    onCommit(raw);
+  };
+
+  return (
+    <input
+      {...rest}
+      value={draft ?? value}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={(event) => commit(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          commit((event.target as HTMLInputElement).value);
+        }
+        onKeyDown?.(event);
+      }}
+    />
+  );
+}
 
 export default function ExposureCalculator() {
-  const [loadFailed, setLoadFailed] = useState(false);
+  const [state, setState] = useState<CalculatorState>(createInitialState);
+  const ndIdRef = useRef(1);
+  const flashSeqRef = useRef(0);
 
-  useEffect(() => {
-    let disposed = false;
-    let cleanup: (() => void) | undefined;
+  const ndTotal = totalNdStops(state.nds);
+  const ambient = ambientEv(state.camera, ndTotal, state.baseAmbient);
+  const targetSlider = Math.round(state.target * 10) / 10;
 
-    import('@/lib/exposure/exposure_calculator')
-      .then(({ initExposureCalculator }) => {
-        if (!disposed) cleanup = initExposureCalculator();
-      })
-      .catch(() => {
-        if (!disposed) setLoadFailed(true);
+  const withSyncedFlashes = (
+    prev: CalculatorState,
+    camera: CameraValues,
+    nds: NdFilter[]
+  ): FlashEntry[] =>
+    syncCustomFlashPowers(prev.flashes, camera, totalNdStops(nds));
+
+  const handleCameraSlider = (key: CameraKey, index: number) => {
+    const value = VALUE_SETS[key][index];
+    if (value === undefined) return;
+    const camera = { ...state.camera, [key]: value };
+    if (state.evLocked) {
+      const compensated = compensate({
+        camera,
+        nds: state.nds,
+        locks: state.locks,
+        target: state.target,
+        baseAmbient: state.baseAmbient,
+        exclude: key
       });
+      setState({
+        ...state,
+        camera: compensated.camera,
+        nds: compensated.nds,
+        flashes: withSyncedFlashes(
+          state,
+          compensated.camera,
+          compensated.nds
+        )
+      });
+    } else {
+      const target = ambientEv(camera, ndTotal, state.baseAmbient);
+      setState({
+        ...state,
+        camera,
+        target,
+        flashes: withSyncedFlashes(state, camera, state.nds)
+      });
+    }
+  };
 
-    return () => {
-      disposed = true;
-      cleanup?.();
-    };
-  }, []);
+  const handleLockToggle = (key: CameraKey, checked: boolean) => {
+    // 鎖定只改變後續補償對象，顯示值不變。
+    setState({ ...state, locks: { ...state.locks, [key]: checked } });
+  };
+
+  const handleDirectCommit = (key: CameraKey, raw: string) => {
+    const parsed = parseDirectValue(key, raw);
+    if (parsed === null) return;
+    const camera = { ...state.camera, [key]: parsed };
+    if (state.evLocked) {
+      const compensated = compensate({
+        camera,
+        nds: state.nds,
+        locks: state.locks,
+        target: state.target,
+        baseAmbient: state.baseAmbient,
+        exclude: key
+      });
+      setState({
+        ...state,
+        camera: compensated.camera,
+        nds: compensated.nds,
+        flashes: withSyncedFlashes(
+          state,
+          compensated.camera,
+          compensated.nds
+        )
+      });
+    } else {
+      const target = ambientEv(camera, ndTotal, state.baseAmbient);
+      setState({
+        ...state,
+        camera,
+        target,
+        flashes: withSyncedFlashes(state, camera, state.nds)
+      });
+    }
+  };
+
+  const handleLongExposureCommit = (raw: string) => {
+    const seconds = Number(raw);
+    if (!Number.isFinite(seconds) || seconds <= 1) return;
+    const camera = { ...state.camera, shutter: seconds };
+    if (state.evLocked) {
+      const compensated = compensate({
+        camera,
+        nds: state.nds,
+        locks: state.locks,
+        target: state.target,
+        baseAmbient: state.baseAmbient,
+        exclude: 'shutter'
+      });
+      setState({
+        ...state,
+        camera: compensated.camera,
+        nds: compensated.nds,
+        flashes: withSyncedFlashes(
+          state,
+          compensated.camera,
+          compensated.nds
+        )
+      });
+    } else {
+      const target = ambientEv(camera, ndTotal, state.baseAmbient);
+      setState({
+        ...state,
+        camera,
+        target,
+        flashes: withSyncedFlashes(state, camera, state.nds)
+      });
+    }
+  };
+
+  const handleTarget = (raw: number) => {
+    const target = clampTarget(raw);
+    const compensated = compensate({
+      camera: state.camera,
+      nds: state.nds,
+      locks: state.locks,
+      target,
+      baseAmbient: state.baseAmbient,
+      exclude: null
+    });
+    setState({
+      ...state,
+      camera: compensated.camera,
+      nds: compensated.nds,
+      target,
+      flashes: withSyncedFlashes(
+        state,
+        compensated.camera,
+        compensated.nds
+      )
+    });
+  };
+
+  const handleLockEv = (checked: boolean) => {
+    setState({
+      ...state,
+      evLocked: checked,
+      target: ambientEv(state.camera, ndTotal, state.baseAmbient)
+    });
+  };
+
+  const handleResetBaseline = () => {
+    const base = { ...state.camera };
+    const baseAmbient = ambientStops(base, ndTotal);
+    const flashes = state.flashes.map((flash) => ({
+      ...flash,
+      basePower: flash.power,
+      draftPower: flash.power,
+      baseExposureStops: flashStops(state.camera, ndTotal)
+    }));
+    // 只動內部基準與讀數，相機/ND/閃燈顯示不變。
+    setState({ ...state, base, baseAmbient, target: 0, flashes });
+  };
+
+  const handleAddNd = () => {
+    const nds: NdFilter[] = [
+      ...state.nds,
+      { id: ndIdRef.current++, name: 'ND2', stops: 1 }
+    ];
+    if (state.evLocked) {
+      const compensated = compensate({
+        camera: state.camera,
+        nds,
+        locks: state.locks,
+        target: state.target,
+        baseAmbient: state.baseAmbient,
+        exclude: 'nd'
+      });
+      setState({
+        ...state,
+        nds: compensated.nds,
+        camera: compensated.camera,
+        flashes: withSyncedFlashes(
+          state,
+          compensated.camera,
+          compensated.nds
+        )
+      });
+    } else {
+      const target = ambientEv(state.camera, totalNdStops(nds), state.baseAmbient);
+      setState({
+        ...state,
+        nds,
+        target,
+        flashes: withSyncedFlashes(state, state.camera, nds)
+      });
+    }
+  };
+
+  const handleLockNd = (checked: boolean) => {
+    setState({ ...state, locks: { ...state.locks, nd: checked } });
+  };
+
+  const handleNdSlider = (id: number, index: number) => {
+    const preset = ND_PRESETS[index];
+    if (!preset) return;
+    const nds = state.nds.map((filter) =>
+      filter.id === id
+        ? { ...filter, name: preset.name, stops: preset.stops }
+        : filter
+    );
+    if (state.evLocked) {
+      const compensated = compensate({
+        camera: state.camera,
+        nds,
+        locks: state.locks,
+        target: state.target,
+        baseAmbient: state.baseAmbient,
+        exclude: 'nd'
+      });
+      setState({
+        ...state,
+        nds: compensated.nds,
+        camera: compensated.camera,
+        flashes: withSyncedFlashes(
+          state,
+          compensated.camera,
+          compensated.nds
+        )
+      });
+    } else {
+      const target = ambientEv(state.camera, totalNdStops(nds), state.baseAmbient);
+      setState({
+        ...state,
+        nds,
+        target,
+        flashes: withSyncedFlashes(state, state.camera, nds)
+      });
+    }
+  };
+
+  const handleRemoveNd = (id: number) => {
+    const nds = state.nds.filter((filter) => filter.id !== id);
+    if (state.evLocked) {
+      const compensated = compensate({
+        camera: state.camera,
+        nds,
+        locks: state.locks,
+        target: state.target,
+        baseAmbient: state.baseAmbient,
+        exclude: 'nd'
+      });
+      setState({
+        ...state,
+        nds: compensated.nds,
+        camera: compensated.camera,
+        flashes: withSyncedFlashes(
+          state,
+          compensated.camera,
+          compensated.nds
+        )
+      });
+    } else {
+      const target = ambientEv(state.camera, totalNdStops(nds), state.baseAmbient);
+      setState({
+        ...state,
+        nds,
+        target,
+        flashes: withSyncedFlashes(state, state.camera, nds)
+      });
+    }
+  };
+
+  const handleAddFlash = () => {
+    const power = -2;
+    flashSeqRef.current += 1;
+    const id = flashSeqRef.current;
+    setState({
+      ...state,
+      flashes: [
+        ...state.flashes,
+        {
+          id,
+          name: `閃燈 ${id}`,
+          mode: 'custom',
+          power,
+          draftPower: power,
+          basePower: power,
+          baseExposureStops: flashStops(state.camera, ndTotal),
+          gn: 60,
+          distance: 2
+        }
+      ]
+    });
+  };
+
+  const updateFlash = (
+    id: number,
+    update: (flash: FlashEntry) => FlashEntry
+  ) => {
+    setState({
+      ...state,
+      flashes: state.flashes.map((flash) =>
+        flash.id === id ? update(flash) : flash
+      )
+    });
+  };
+
+  const handleFlashMode = (id: number, mode: FlashMode) => {
+    updateFlash(id, (flash) => ({ ...flash, mode }));
+  };
+
+  const handleRemoveFlash = (id: number) => {
+    setState({
+      ...state,
+      flashes: state.flashes.filter((flash) => flash.id !== id)
+    });
+  };
+
+  const handleConfirmFlash = (id: number) => {
+    updateFlash(id, (flash) => ({
+      ...flash,
+      power: flash.draftPower,
+      basePower: flash.draftPower,
+      baseExposureStops: flashStops(state.camera, ndTotal)
+    }));
+  };
+
+  const handleCalculateFlash = (id: number) => {
+    const flash = state.flashes.find((entry) => entry.id === id);
+    if (!flash) return;
+    const power =
+      Math.round(
+        estimatedPower(state.camera, ndTotal, flash.gn, flash.distance) * 10
+      ) / 10;
+    updateFlash(id, (entry) => ({
+      ...entry,
+      mode: 'custom',
+      power,
+      draftPower: power,
+      basePower: power,
+      baseExposureStops: flashStops(state.camera, ndTotal)
+    }));
+  };
 
   return (
     <main
@@ -95,45 +526,11 @@ export default function ExposureCalculator() {
             hover:text-[var(--color-bg)]
           `}
           type="button"
+          onClick={handleResetBaseline}
         >
           設目前為基準
         </button>
       </header>
-
-      {loadFailed && (
-        <p
-          className={`
-            mt-10
-            flex
-            items-center
-            justify-between
-            gap-4
-            border
-            border-[var(--color-line)]
-            px-6
-            py-4
-            text-[0.82rem]
-            leading-[1.7]
-          `}
-          role="alert"
-        >
-          計算器載入失敗，請重新載入頁面。
-          <button
-            className={`
-              shrink-0
-              border-b
-              border-[var(--color-line)]
-              pb-[3px]
-              text-[0.58rem]
-              tracking-[0.08em]
-            `}
-            type="button"
-            onClick={() => window.location.reload()}
-          >
-            重新載入
-          </button>
-        </p>
-      )}
 
       <div
         className={`
@@ -205,7 +602,7 @@ export default function ExposureCalculator() {
               font-normal
             `}
           >
-            0.0 EV
+            {`${signed(ambient)} EV`}
           </strong>
         </div>
         <div
@@ -235,10 +632,11 @@ export default function ExposureCalculator() {
               accent-white
             `}
             type="range"
-            min="-10"
-            max="10"
+            min={TARGET_MIN}
+            max={TARGET_MAX}
             step="0.1"
-            defaultValue="0"
+            value={targetSlider}
+            onChange={(event) => handleTarget(Number(event.target.value))}
           />
           <output
             id="targetEvLabel"
@@ -249,7 +647,7 @@ export default function ExposureCalculator() {
               max-[560px]:col-start-3
             `}
           >
-            0.0 EV
+            {`${signed(state.target)} EV`}
           </output>
           <label
             className={`
@@ -265,6 +663,8 @@ export default function ExposureCalculator() {
                 accent-white
               `}
               type="checkbox"
+              checked={state.evLocked}
+              onChange={(event) => handleLockEv(event.target.checked)}
             />{' '}
             保持目標
           </label>
@@ -350,6 +750,11 @@ export default function ExposureCalculator() {
             [&_.lock]:tracking-[0.06em]
             [&_.lock]:text-[var(--color-muted)]
             [&_.lock_input]:accent-[var(--color-text)]
+            [&_[data-direct]]:w-[4em]
+            [&_[data-direct]]:border-0
+            [&_[data-direct]]:bg-transparent
+            [&_[data-direct]]:p-0
+            [&_[data-direct]]:text-right
             [&_[data-direct]]:cursor-text
             [&_[data-direct]:focus]:border-b
             [&_[data-direct]:focus]:border-[var(--color-line)]
@@ -370,7 +775,65 @@ export default function ExposureCalculator() {
             max-[560px]:[&_.lock]:col-start-1
             max-[560px]:[&_.lock]:row-start-2
           `}
-        />
+        >
+          {CAMERA_KEYS.map((key) => {
+            const label = CAMERA_LABELS[key];
+            return (
+              <div key={key} className="slider-row parameter-row">
+                <label>{label}</label>
+                <input
+                  data-camera={key}
+                  type="range"
+                  min="0"
+                  max={VALUE_SETS[key].length - 1}
+                  value={sliderIndex(key, state.camera[key])}
+                  aria-label={label}
+                  onChange={(event) =>
+                    handleCameraSlider(key, Number(event.target.value))
+                  }
+                />
+                <output title="點擊數值可直接輸入">
+                  <span>{CAMERA_PREFIX[key]}</span>
+                  <CommitField
+                    data-direct={key}
+                    aria-label={`直接輸入${label}`}
+                    value={formatEditableValue(key, state.camera[key])}
+                    onCommit={(raw) => handleDirectCommit(key, raw)}
+                  />
+                </output>
+                <label className="lock">
+                  <input
+                    data-lock={key}
+                    type="checkbox"
+                    aria-label={`${label}鎖定`}
+                    checked={state.locks[key]}
+                    onChange={(event) =>
+                      handleLockToggle(key, event.target.checked)
+                    }
+                  />{' '}
+                  鎖定
+                </label>
+                {key === 'shutter' && (
+                  <CommitField
+                    className="long-exposure"
+                    type="text"
+                    inputMode="decimal"
+                    aria-label="長曝秒數"
+                    placeholder="長曝秒數"
+                    value={
+                      state.camera.shutter > 1
+                        ? String(
+                            Number(state.camera.shutter.toFixed(3))
+                          )
+                        : ''
+                    }
+                    onCommit={handleLongExposureCommit}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </section>
         </div>
 
@@ -438,6 +901,8 @@ export default function ExposureCalculator() {
                   accent-[var(--color-text)]
                 `}
                 type="checkbox"
+                checked={state.locks.nd}
+                onChange={(event) => handleLockNd(event.target.checked)}
               />{' '}
               鎖定
             </label>
@@ -451,6 +916,7 @@ export default function ExposureCalculator() {
                 tracking-[0.08em]
               `}
               type="button"
+              onClick={handleAddNd}
             >
               + 新增
             </button>
@@ -463,7 +929,9 @@ export default function ExposureCalculator() {
             text-[rgba(10,10,10,0.72)]
           `}
         >
-          無濾鏡
+          {state.nds.length
+            ? state.nds.map((filter) => filter.name).join(' + ')
+            : '無濾鏡'}
         </div>
         <p
           className={`
@@ -496,7 +964,32 @@ export default function ExposureCalculator() {
             [&_.remove]:tracking-[0.08em]
             [&_.remove]:text-[var(--color-muted)]
           `}
-        />
+        >
+          {state.nds.map((filter) => (
+            <div key={filter.id} className="nd-card">
+              <input
+                type="range"
+                min="0"
+                max={ND_PRESETS.length - 1}
+                step="1"
+                value={filter.stops - 1}
+                aria-label="ND 濾鏡減光檔數"
+                onChange={(event) =>
+                  handleNdSlider(filter.id, Number(event.target.value))
+                }
+              />
+              <output>{filter.name}</output>
+              <button
+                className="remove"
+                type="button"
+                aria-label={`刪除 ${filter.name}`}
+                onClick={() => handleRemoveNd(filter.id)}
+              >
+                刪除
+              </button>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section
@@ -544,6 +1037,7 @@ export default function ExposureCalculator() {
               tracking-[0.08em]
             `}
             type="button"
+            onClick={handleAddFlash}
           >
             + 新增
           </button>
@@ -622,7 +1116,136 @@ export default function ExposureCalculator() {
             [&_.flash-card_input]:text-[0.7rem]
             [&_.flash-card_input]:outline-none
           `}
-        />
+        >
+          {state.flashes.map((flash) => (
+            <article key={flash.id} className="flash-card">
+              <div className="flash-top">
+                <input
+                  value={flash.name}
+                  aria-label="閃燈名稱"
+                  onChange={(event) =>
+                    updateFlash(flash.id, (entry) => ({
+                      ...entry,
+                      name: event.target.value
+                    }))
+                  }
+                />
+                <div className="flash-mode">
+                  <button
+                    className={flash.mode === 'custom' ? 'active' : ''}
+                    type="button"
+                    onClick={() => handleFlashMode(flash.id, 'custom')}
+                  >
+                    自訂基準
+                  </button>
+                  <button
+                    className={flash.mode === 'estimate' ? 'active' : ''}
+                    type="button"
+                    onClick={() => handleFlashMode(flash.id, 'estimate')}
+                  >
+                    功率估算
+                  </button>
+                </div>
+                <button
+                  className="remove"
+                  type="button"
+                  aria-label={`刪除 ${flash.name}`}
+                  onClick={() => handleRemoveFlash(flash.id)}
+                >
+                  刪除
+                </button>
+              </div>
+              {flash.mode === 'custom' ? (
+                <>
+                  <div className="flash-fields">
+                    <label>
+                      亮度
+                      <input
+                        type="range"
+                        min="-9"
+                        max="0"
+                        step="0.1"
+                        value={flash.draftPower}
+                        aria-label={`${flash.name}亮度`}
+                        onChange={(event) => {
+                          const draftPower = Number(event.target.value);
+                          updateFlash(flash.id, (entry) => ({
+                            ...entry,
+                            draftPower
+                          }));
+                        }}
+                      />
+                    </label>
+                    <label>
+                      預覽
+                      <strong>{formatPower(flash.draftPower)}</strong>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleConfirmFlash(flash.id)}
+                    >
+                      確定
+                    </button>
+                  </div>
+                  <p className="flash-status">
+                    目前基準{' '}
+                    <strong>{formatPower(flash.power)}</strong>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flash-fields">
+                    <label>
+                      GN
+                      <CommitField
+                        type="number"
+                        min="1"
+                        step="0.1"
+                        aria-label={`${flash.name} GN 值`}
+                        value={String(flash.gn)}
+                        onCommit={(raw) => {
+                          const parsed = Number(raw);
+                          if (!Number.isFinite(parsed)) return;
+                          updateFlash(flash.id, (entry) => ({
+                            ...entry,
+                            gn: Math.max(1, parsed)
+                          }));
+                        }}
+                      />
+                    </label>
+                    <label>
+                      距離（m）
+                      <CommitField
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        aria-label={`${flash.name}距離公尺`}
+                        value={String(flash.distance)}
+                        onCommit={(raw) => {
+                          const parsed = Number(raw);
+                          if (!Number.isFinite(parsed)) return;
+                          updateFlash(flash.id, (entry) => ({
+                            ...entry,
+                            distance: Math.max(0.1, parsed)
+                          }));
+                        }}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleCalculateFlash(flash.id)}
+                    >
+                      計算
+                    </button>
+                  </div>
+                  <p className="flash-status">
+                    將依 GN、距離、ISO、光圈與 ND 估算功率。
+                  </p>
+                </>
+              )}
+            </article>
+          ))}
+        </div>
       </section>
         </aside>
       </div>
