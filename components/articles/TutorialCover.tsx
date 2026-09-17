@@ -8,6 +8,7 @@ type TutorialCoverProps = {
 
 // 與 scripts/optimize_images.js 的輸出寬度保持一致；
 // cover 若指向 generated 家族內的檔案，即可組出完整響應式 srcset。
+// contact/logo/exposure-calculator 僅為寬度註冊表保留，目前未經 generatedFamily 使用（contact/exposure 使用硬編碼 srcset）。
 const GENERATED_WIDTHS: Record<string, number[]> = {
   hero: [640, 1280, 1920, 2560],
   contact: [480, 800, 1200, 1600],
@@ -19,7 +20,6 @@ function generatedFamily(src: string): { name: string; widths: number[] } | null
   const match = src.match(/^\/images\/generated\/(.+)\.(?:avif|webp|jpg|jpeg|png)$/);
   if (!match) return null;
   const base = match[1].replace(/-\d+$/, '');
-  if (base.startsWith('about-satellite-')) return { name: base, widths: [640] };
   const widths = GENERATED_WIDTHS[base];
   return widths ? { name: base, widths } : null;
 }
