@@ -9,6 +9,7 @@ import remarkGfm from 'remark-gfm';
 
 import { mdxComponents } from '@/components/mdx';
 import ReadingProgress from '@/components/articles/ReadingProgress';
+import TutorialCover from '@/components/articles/TutorialCover';
 import { getAdjacentArticles, getAllArticles, getArticle, getCategory } from '@/lib/content';
 import { formatDate } from '@/lib/format';
 import { JsonLd, articleJsonLd, breadcrumbJsonLd } from '@/lib/seo';
@@ -185,7 +186,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           after:w-px
           after:bg-[rgba(240,238,232,0.35)]
         `}>
-          <img
+          <TutorialCover
+            src={article.cover}
+            alt={article.coverAlt ?? article.title}
+            sizes="(max-width: 767px) 100vw, 92vw"
+            eager
             className={`
               aspect-[16/8]
               w-full
@@ -194,8 +199,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               brightness-[0.8]
               max-[767px]:aspect-[4/3]
             `}
-            src={article.cover}
-            alt={article.coverAlt ?? article.title}
           />
         </div>
       ) : null}

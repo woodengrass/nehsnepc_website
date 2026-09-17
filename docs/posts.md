@@ -61,11 +61,11 @@ Reading time counts CJK characters at 400/minute and Latin tokens at 220/minute,
 
 ## Routes and Rendering
 
-`/tutorial` and category pages render editorial card grids. The first result receives a wider desktop treatment. Grid columns change from three to two to one. Cover images are native lazy/async `<img>` elements without generated `srcset`, explicit dimensions, or Next Image processing. Missing covers render an `NEPC` placeholder.
+`/tutorial` and category pages render editorial card grids. The first result receives a wider desktop treatment. Grid columns change from three to two to one. Cover images render through the `TutorialCover` component (`components/articles/TutorialCover.tsx`): covers pointing at generated families get AVIF/WebP `srcset` with card-appropriate `sizes` (lazy/async, alt falls back to the title); other paths keep the previous plain lazy `<img>`. Missing covers render an `NEPC` placeholder.
 
 `/tutorial/category/[category]` statically generates the three known category IDs and 404s unknown IDs. Its category-specific metadata currently lacks an explicit canonical. `params` is a Promise and must be awaited under Next 16 conventions.
 
-`/tutorial/[slug]` statically enumerates non-draft slugs, retrieves the article, 404s missing/production drafts, emits article and breadcrumb JSON-LD, renders metadata/lead image/body, and links globally newer/older articles. It does not set `dynamicParams = false`. The optional cover is rendered without a decorative `Lead image / 001` label.
+`/tutorial/[slug]` statically enumerates non-draft slugs, retrieves the article, 404s missing/production drafts, emits article and breadcrumb JSON-LD, renders metadata/lead image (eager `TutorialCover`)/body, and links globally newer/older articles. It does not set `dynamicParams = false`. The optional cover is rendered without a decorative `Lead image / 001` label.
 
 The detail page displays category, draft marker, title, description, published date, reading time, author, optional cover, MDX body, and adjacency. Tags, `updated`, related articles, table of contents, and author biography are not displayed in the body UI even though some feed/metadata surfaces consume them.
 

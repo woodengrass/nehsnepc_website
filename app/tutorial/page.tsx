@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { CATEGORIES, getAllArticles } from '@/lib/content';
 import { formatDate } from '@/lib/format';
+import TutorialCover from '@/components/articles/TutorialCover';
 
 export const metadata: Metadata = {
   title: 'Tutorial',
@@ -253,7 +254,10 @@ export default function TutorialPage() {
               `}>
                 {article.cover ? (
                   <>
-                    <img
+                    <TutorialCover
+                      src={article.cover}
+                      alt={article.coverAlt ?? article.title}
+                      sizes={index === 0 ? '(max-width: 980px) 100vw, 66vw' : '(max-width: 767px) 100vw, (max-width: 980px) 50vw, 33vw'}
                       className={`
                         h-[108%]
                         w-[108%]
@@ -271,10 +275,6 @@ export default function TutorialPage() {
                         hover:contrast-[1.06]
                         hover:brightness-[0.88]
                       `}
-                      src={article.cover}
-                      alt={article.coverAlt ?? ''}
-                      loading="lazy"
-                      decoding="async"
                     />
                     <span
                       aria-hidden="true"

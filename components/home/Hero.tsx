@@ -386,7 +386,14 @@ export default function Hero() {
                   srcSet="/images/generated/hero-640.avif 640w, /images/generated/hero-1280.avif 1280w"
                   sizes="(max-width: 767px) 45vw, 18vw"
                 />
-                <img className={position} src="/images/generated/hero-1280.webp" alt="" />
+                <img
+                  className={position}
+                  src="/images/generated/hero-1280.webp"
+                  alt=""
+                  loading={index < 2 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  fetchPriority={index === 0 ? 'high' : 'auto'}
+                />
               </picture>
             ))}
           </div>
