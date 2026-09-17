@@ -169,7 +169,7 @@ No lint, typecheck, test, or formatter is configured beyond `next build`'s TS ch
 
 ## Architecture
 
-Next.js 16.3.3 (App Router, TypeScript, build-time prerendering where possible). The current application is on `main`. `next.config.ts` does not set `output: 'export'`, so do not describe it as a pure static export.
+Next.js 16.3.3 (App Router, TypeScript, build-time prerendering where possible). The current application is on `main`. `next.config.ts` does not set `output: 'export'`, so do not describe it as a pure static export. `experimental.optimizePackageImports` covers three, gsap, @google/model-viewer (next.config.ts:6-10).
 
 - `app/layout.tsx` — root layout: lang=zh-TW, Noto Serif TC via Google Fonts, global grain overlay, `<SiteNav>`, and Organization/WebSite JSON-LD. The current layout does not configure `next/font`; `--font-heading-next` and `--font-body-next` references therefore use their CSS fallbacks.
 - `app/page.tsx` → home; `components/home/Hero.tsx` is currently a server-rendered composition without GSAP.
@@ -195,7 +195,7 @@ Next.js 16.3.3 (App Router, TypeScript, build-time prerendering where possible).
 
 ### Styling
 
-Tailwind 4 utilities and tokens/base rules in `app/globals.css` provide most styling. `app/styles/about.css` contains the About experience and is imported globally by the root layout. Runtime body classes (`is-focus-locked`, `menu-open`, `has-modal`) are toggled from client components.
+Tailwind 4 utilities and tokens/base rules in `app/globals.css` provide most styling. `app/styles/about.css` contains the About experience and is imported route-scoped by app/about/layout.tsx, loading only on /about (moved from root layout in 00fb5f0). Runtime body classes (`is-focus-locked`, `menu-open`, `has-modal`) are toggled from client components.
 
 ## Documentation Maintenance
 
@@ -233,5 +233,5 @@ Vercel. `vercel.json` only holds legacy redirects (`/pages/about.html` → `/abo
 - Noto Serif TC is not self-hosted; the root layout loads it through a Google Fonts stylesheet at runtime.
 - Heavy libraries (Three.js, GSAP, model-viewer) must stay isolated from shared components/layout. Do not state exact bundle sizes without measuring the current production build.
 - The About page locks scrolling (`body.is-focus-locked`) until focus is reached; check `prefers-reduced-motion` if it loads stuck.
-- `archive_scene.js` calls `ScrollTrigger.refresh()` after DOM changes; `AboutExperience` cleans up via `gsap.matchMedia().revert()` for React StrictMode double-mount.
+- `AboutExperience` calls `ScrollTrigger.refresh()` on the next frame after the archive scene changes DOM height; `AboutExperience` cleans up via `gsap.matchMedia().revert()` for React StrictMode double-mount.
 - `components/tools/ExposureCalculator.tsx` is a controlled React client component backed by pure functions in `lib/exposure/exposure.ts`; keep state in the component and math in the module, with no direct DOM mutation.
