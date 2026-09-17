@@ -98,7 +98,7 @@ The project intentionally uses native `<picture>` and `<img>` rather than `next/
 When changing photography:
 
 1. Preserve the authored crop and image role.
-2. Add or update source assets under `public/images/`.
+2. Add or update source assets under `assets/sources/` (About satellites: `assets/satellites/`).
 3. Update `scripts/optimize_images.js` if a new generated family is needed.
 4. Run `npm run images:build`.
 5. Verify AVIF and WebP paths, desktop/mobile `sizes`, loading priority, alt text, and layout stability.

@@ -15,7 +15,7 @@ The repository is a private ESM npm package. The installed stack centers on:
 | Motion/3D | GSAP 3, Three.js 0.183, model-viewer 4.3 |
 | Assets | Sharp 0.35, glTF Transform 4.4, draco3dgltf |
 
-Next.js and Sharp require Node.js `>=20.9.0`. Use a current Node 20 LTS or newer. `package-lock.json` is npm lockfile v3; use `npm ci` for reproducible installs and `npm install` only when intentionally changing dependencies.
+Next.js and Sharp require Node.js `>=20.9.0`. Use a current Node 20 LTS or newer. `pnpm-lock.yaml` is the tracked lockfile (`packageManager` `pnpm@10.15.1`); use `pnpm install --frozen-lockfile` for reproducible installs and `pnpm install` only when intentionally changing dependencies.
 
 ## Commands
 
@@ -33,7 +33,7 @@ There are no configured lint, formatter, unit, integration, end-to-end, or stand
 
 The site uses App Router with Server Components by default. Client components are isolated around browser behavior: shared navigation, About controller, Contact, exposure calculator, reading progress, and model preview. Dynamic route `params` are Promises in this Next version and must be awaited. Before changing framework APIs, read the relevant installed guide under `node_modules/next/dist/docs/`.
 
-`next.config.ts` allows the current Wi-Fi host `192.168.68.61` through `allowedDevOrigins` so physical devices can load Next development client chunks. Update this value if the computer's DHCP address changes. There is no `output: 'export'`, custom image loader, remote pattern, rewrite, header, React Compiler, webpack, or Turbopack customization. Routes are statically prerendered where possible, but deployment is a normal Next application rather than a pure `out/` export.
+`next.config.ts` allows the current Wi-Fi host `192.168.68.61` through `allowedDevOrigins` so physical devices can load Next development client chunks. Update this value if the computer's DHCP address changes. There is no `output: 'export'`, custom image loader, remote pattern, rewrite, header, React Compiler, webpack, or Turbopack customization. `experimental.optimizePackageImports` covers `three`, `gsap`, `@google/model-viewer` (`next.config.ts:6-10`). Routes are statically prerendered where possible, but deployment is a normal Next application rather than a pure `out/` export.
 
 ## TypeScript and Module Configuration
 
@@ -91,7 +91,7 @@ Detailed schema and publication behavior are in `posts.md`.
 | --- | --- | --- |
 | Hero, `assets/sources/hero-1.jpg` | 640, 1280, 1920, 2560 | 50 / 72 |
 | Contact, `assets/sources/contact-bg.jpg` | 480, 800, 1200, 1600 | 50 / 74 |
-| Logo, `assets/sources/logo.png` | 96, 192, 384 | configured in script |
+| Logo, `assets/sources/logo.png` | 96, 192, 384 | 58 / 82 |
 | Exposure calculator, `assets/sources/exposure-calculator.png` | 640, 960, 1280 | 52 / 76 |
 
 Resizing uses `withoutEnlargement`; AVIF effort is 5 and WebP effort is 6. The script also processes the ten versioned `assets/satellites/*.jpg` files into `about-satellite-01-640` through `about-satellite-10-640` for the About satellite and main cards. Satellite sources `06`–`10` are Unsplash works (see `LICENSING.md`); sources live under `assets/` so a fresh clone can regenerate every variant, and generated derivatives inherit their source license. The script creates the output directory but does not delete stale files. New article images are not auto-discovered; extend the script or process them separately. Article covers render through the `TutorialCover` component (`components/articles/TutorialCover.tsx`), which builds AVIF/WebP `srcset` from the same generated families when the cover points at them and falls back to a plain lazy `<img>` otherwise.
@@ -126,7 +126,7 @@ Vercel is the intended platform. `vercel.json` contains only permanent migration
 Local production validation:
 
 ```bash
-npm ci
+pnpm install --frozen-lockfile
 npm run build
 npm run start
 ```
