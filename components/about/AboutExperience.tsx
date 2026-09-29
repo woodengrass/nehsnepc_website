@@ -6,8 +6,14 @@ import { ABOUT_FOCUS_CONTENT } from '@/lib/about_content';
 type GsapInstance = typeof import('gsap').gsap;
 type GsapMatchMedia = ReturnType<GsapInstance['matchMedia']>;
 type ScrollTriggerInstance = typeof import('gsap/ScrollTrigger').ScrollTrigger;
+type ArchiveSceneModule = typeof import('@/lib/archive_scene');
+
+type ArchiveSceneModuleResult =
+  | { readonly status: 'ready'; readonly module: ArchiveSceneModule }
+  | { readonly status: 'failed'; readonly error: unknown };
 
 const FOCUS_POINT = 62;
+const FOCUS_INPUT_GUARD_MS = 50;
 const STATION_SNAP_POINTS = [0.325, 0.855];
 
 type ArchiveScene = {
@@ -68,6 +74,8 @@ export default function AboutExperience() {
     const hud: HTMLElement | null = page.querySelector('.obscura-hud');
 
     let focusFrame: number | null = null;
+    let focusTransitionTimer: number | null = null;
+    let focusInputGuardUntil = 0;
     let prismFrame: number | null = null;
     let archivePauseFrame: number | null = null;
     let prismSceneCanvas: HTMLCanvasElement | null = null;
@@ -77,10 +85,14 @@ export default function AboutExperience() {
     let archiveProgress = 0;
     let archiveExitProgress = 0;
     let archiveScene: ArchiveScene | null = null;
+    let archiveModulePromise: Promise<ArchiveSceneModuleResult> | null = null;
     let archiveLoadPromise: Promise<ArchiveScene | null> | null = null;
+    let archivePreloadTimer: number | null = null;
+    let archiveLoadGeneration = 0;
     let isExperienceUnlocked = false;
     let isFocusTransitionActive = false;
     let isStoryViewActive = false;
+    let isStaticFallback = false;
     let isExitSettled = false;
     let afterwordLayout: { left: number; top: number; width: number; height: number } | null = null;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -109,6 +121,8 @@ export default function AboutExperience() {
     }
 
     function finishFocusTransition() {
+      focusTransitionTimer = null;
+      focusInputGuardUntil = 0;
       isFocusTransitionActive = false;
       removeFocusScrollListeners();
       if (focusPointerId === null) removeFocusPointerListeners();
@@ -158,14 +172,39 @@ export default function AboutExperience() {
       }
     }
 
+    function getArchiveModule() {
+      if (archiveModulePromise) return archiveModulePromise;
+      archiveModulePromise = import('@/lib/archive_scene').then(
+        (module) => ({ status: 'ready', module } as const),
+        (error: unknown) => ({ status: 'failed', error } as const)
+      );
+      return archiveModulePromise;
+    }
+
+    function preloadArchiveModule() {
+      archivePreloadTimer = null;
+      if (isStaticFallback || prefersReducedMotion.matches) return;
+      void getArchiveModule();
+    }
+
     function loadArchiveScene() {
-      if (prefersReducedMotion.matches) return Promise.resolve(null);
+      if (isStaticFallback || prefersReducedMotion.matches) return Promise.resolve(null);
       if (archiveLoadPromise) return archiveLoadPromise;
-      archiveLoadPromise = import('@/lib/archive_scene')
-        .then(({ createArchiveScene }) => createArchiveScene(archiveCanvas, projectAfterword))
+      const loadGeneration = archiveLoadGeneration;
+      archiveLoadPromise = getArchiveModule()
+        .then((result) => {
+          if (result.status === 'failed') throw result.error;
+          return result.module.createArchiveScene(archiveCanvas, projectAfterword);
+        })
         .then((scene) => {
-          archiveScene = scene as ArchiveScene;
+          const loadedScene = scene as ArchiveScene;
+          if (motionCancelled || isStaticFallback || loadGeneration !== archiveLoadGeneration) {
+            loadedScene.destroy();
+            return null;
+          }
+          archiveScene = loadedScene;
           page.classList.add('is-archive-3d');
+          page.classList.remove('is-archive-preparing');
           archiveScene?.setProgress(archiveProgress, page.classList.contains('reduced-motion'));
           archiveScene?.setExitProgress(archiveExitProgress);
           setStoryViewActive(isStoryViewActive);
@@ -174,6 +213,7 @@ export default function AboutExperience() {
           return archiveScene;
         })
         .catch((error) => {
+          if (motionCancelled || loadGeneration !== archiveLoadGeneration) return null;
           console.error('Unable to initialize the archive scene.', error);
           showDomFallback();
           return null;
@@ -182,10 +222,9 @@ export default function AboutExperience() {
     }
 
     function showDomFallback() {
-      destroyArchiveScene();
-      page.classList.remove('is-archive-3d', 'is-in-story');
+      isStaticFallback = true;
       media?.revert();
-      setStoryViewActive(false);
+      applyReducedMotion();
     }
 
     function destroyArchiveScene() {
@@ -308,6 +347,8 @@ export default function AboutExperience() {
       if (isExperienceUnlocked) return;
       isExperienceUnlocked = true;
       isFocusTransitionActive = true;
+      focusInputGuardUntil = performance.now() + FOCUS_INPUT_GUARD_MS;
+      if (!isStaticFallback && !prefersReducedMotion.matches) page.classList.add('is-archive-preparing');
       document.documentElement.classList.remove('is-focus-locked');
       document.body.classList.remove('is-focus-locked');
       page.classList.add('is-unlocked');
@@ -321,11 +362,11 @@ export default function AboutExperience() {
       // 對焦完成後立即準備 3D 場景，避免使用者開始滑動時入口照片尚未載入。
       loadArchiveScene();
       if (gsap) {
+        focusTransitionTimer = window.setTimeout(finishFocusTransition, FOCUS_INPUT_GUARD_MS);
         gsap.fromTo('.obscura-flash', { autoAlpha: 0.95 }, {
           autoAlpha: 0,
           duration: 0.55,
-          ease: 'power2.out',
-          onComplete: finishFocusTransition
+          ease: 'power2.out'
         });
       } else {
         setAutoAlpha('.obscura-flash', 0);
@@ -371,6 +412,7 @@ export default function AboutExperience() {
     }
 
     function adjustFocus(amount: number) {
+      preloadArchiveModule();
       const nextValue = currentFocusValue + amount * focusSensitivity(currentFocusValue);
       const crossesFocus = (currentFocusValue - FOCUS_POINT) * (nextValue - FOCUS_POINT) <= 0;
       if (crossesFocus || Math.abs(nextValue - FOCUS_POINT) <= 1.1) {
@@ -438,6 +480,10 @@ export default function AboutExperience() {
 
     function handleWheel(event: WheelEvent) {
       if (isFocusTransitionActive) {
+        if (performance.now() >= focusInputGuardUntil) {
+          finishFocusTransition();
+          return;
+        }
         event.preventDefault();
         return;
       }
@@ -541,6 +587,15 @@ export default function AboutExperience() {
     setFocus(8);
 
     function applyReducedMotion() {
+      isStaticFallback = true;
+      archiveLoadGeneration += 1;
+      if (archivePreloadTimer !== null) window.clearTimeout(archivePreloadTimer);
+      archivePreloadTimer = null;
+      archiveModulePromise = null;
+      archiveLoadPromise = null;
+      destroyArchiveScene();
+      page.classList.remove('is-archive-preparing', 'is-archive-3d', 'is-in-story');
+      setStoryViewActive(false);
       page.classList.add('reduced-motion');
       setFocus(FOCUS_POINT);
       page.style.setProperty('--story-defocus', '0.7');
@@ -553,6 +608,11 @@ export default function AboutExperience() {
 
     function setupMotionTimelines(g: GsapInstance, mm: GsapMatchMedia) {
       mm.add('(prefers-reduced-motion: no-preference)', () => {
+        isStaticFallback = false;
+        clearReducedMotion();
+        if (archiveModulePromise === null && archivePreloadTimer === null) {
+          archivePreloadTimer = window.setTimeout(preloadArchiveModule, 400);
+        }
         // 每次媒體條件建立或重建動畫時，都先保證頁首仍由對焦畫面接管。
         setStoryViewActive(false);
         const progression = g.timeline({
@@ -605,6 +665,11 @@ export default function AboutExperience() {
             ease: 'none',
             onUpdate: () => setArchiveExitProgress(exitState.progress)
           }, 0);
+
+        if (isExperienceUnlocked) {
+          page.classList.add('is-archive-preparing');
+          void loadArchiveScene();
+        }
       });
 
       mm.add('(prefers-reduced-motion: reduce)', () => {
@@ -645,8 +710,10 @@ export default function AboutExperience() {
       motionCancelled = true;
       media?.revert();
       if (focusFrame !== null) window.cancelAnimationFrame(focusFrame);
+      if (focusTransitionTimer !== null) window.clearTimeout(focusTransitionTimer);
       if (prismFrame !== null) window.cancelAnimationFrame(prismFrame);
       if (archivePauseFrame !== null) window.cancelAnimationFrame(archivePauseFrame);
+      if (archivePreloadTimer !== null) window.clearTimeout(archivePreloadTimer);
       window.removeEventListener('load', runVisitorCoordinate);
       viewfinderImage.removeEventListener('load', handleViewfinderLoad);
       window.removeEventListener('resize', handleResize);
@@ -659,6 +726,7 @@ export default function AboutExperience() {
       page.removeEventListener('pointercancel', handlePointerEnd);
       window.removeEventListener('keydown', handleKeydown);
       destroyArchiveScene();
+      page.classList.remove('is-archive-preparing');
       document.documentElement.classList.remove('is-focus-locked');
       document.body.classList.remove('is-focus-locked');
     };
