@@ -273,12 +273,19 @@ body.is-focus-locked {
   display: none;
 }
 
-.obscura:not(.is-archive-3d) .obscura-story {
+.obscura.is-archive-preparing .obscura-panel {
+  visibility: hidden;
+  opacity: 0;
+  transition: none;
+  pointer-events: none;
+}
+
+.obscura:not(.is-archive-preparing):not(.is-archive-3d) .obscura-story {
   height: auto;
   pointer-events: auto;
 }
 
-.obscura:not(.is-archive-3d) .obscura-panel {
+.obscura:not(.is-archive-preparing):not(.is-archive-3d) .obscura-panel {
   position: relative;
   min-height: 100svh;
   opacity: 1;
@@ -327,8 +334,10 @@ body.is-focus-locked {
 .obscura-panel-contact { left: clamp(2rem, 9vw, 10rem); }
 
 .obscura-index { margin-bottom: 1.2rem; color: rgba(255, 255, 255, 0.64); font-family: var(--font-about-cjk); font-size: 1.25rem; }
-.obscura-panel h2 { font-family: var(--font-heading); font-size: clamp(2.8rem, 5vw, 5.8rem); font-weight: 300; line-height: 0.88; letter-spacing: -0.02em; }
+.obscura-panel h2 { color: var(--color-paper); font-family: var(--font-heading); font-size: clamp(2.8rem, 5vw, 5.8rem); font-weight: 300; line-height: 0.88; letter-spacing: -0.02em; }
+.obscura-panel h2 > span { white-space: nowrap; }
 .obscura-panel > p:last-child { max-width: 500px; margin-top: 2rem; color: rgba(255, 255, 255, 0.8); font-family: var(--font-about-cjk); font-size: 1.5rem; line-height: 1.7; letter-spacing: 0.04em; }
+.obscura-panel > p:last-child > span { white-space: nowrap; }
 .obscura-panel-practice .obscura-statement { display: flex; flex-direction: column; gap: 0.7rem; color: rgba(255, 255, 255, 0.86); font-size: clamp(0.7rem, 1.2vw, 1rem); line-height: 1.65; }
 .obscura-panel-practice .obscura-statement span:nth-child(2) { color: rgba(255, 255, 255, 0.43); }
 
@@ -360,6 +369,7 @@ body.is-focus-locked {
   height: 100lvh;
 }
 
+.obscura.is-archive-preparing .obscura-afterword,
 .obscura.is-archive-3d .obscura-afterword:not(.is-projecting) {
   visibility: hidden;
   opacity: 0;
@@ -625,7 +635,8 @@ body.is-focus-locked {
   .obscura-panel-practice::before { right: -1rem; left: auto; }
   .obscura-panel-manifesto, .obscura-panel-contact { left: 2rem; }
   .obscura-panel-practice { right: 2rem; }
-  .obscura-panel h2 { font-size: clamp(3.1rem, 14vw, 5.2rem); }
+  .obscura-panel h2 { font-size: clamp(2.6rem, 12vw, 4.5rem); }
+  .obscura-panel > p:last-child { font-size: 1.25rem; line-height: 1.75; letter-spacing: 0.02em; }
   .obscura-afterword {
     display: flex;
     flex-direction: column;
@@ -681,7 +692,7 @@ body.is-focus-locked {
   background: var(--color-paper);
 }
 
-.obscura:not(.is-archive-3d) .obscura-exit {
+.obscura:not(.is-archive-preparing):not(.is-archive-3d) .obscura-exit {
   height: auto;
   background: var(--color-paper);
 }
@@ -693,7 +704,7 @@ body.is-focus-locked {
   background: var(--color-paper);
 }
 
-.obscura:not(.is-archive-3d) .obscura-exit-stage {
+.obscura:not(.is-archive-preparing):not(.is-archive-3d) .obscura-exit-stage {
   position: relative;
   height: auto;
   overflow: visible;
@@ -711,7 +722,7 @@ body.is-focus-locked {
   pointer-events: auto;
 }
 
-.obscura:not(.is-archive-3d) .obscura-afterword {
+.obscura:not(.is-archive-preparing):not(.is-archive-3d) .obscura-afterword {
   position: relative;
   inset: auto;
   min-height: 100svh;

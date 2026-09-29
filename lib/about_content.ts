@@ -27,14 +27,18 @@ export const ABOUT_STATIONS = [
   {
     eyebrow: '01 / 社團宗旨',
     heading: '讓攝影不再有門檻，從看懂照片開始，慢慢拍出自己的想法',
+    headingPhrases: ['讓攝影', '不再有門檻，', '從看懂照片', '開始，', '慢慢拍出', '自己的想法'],
     body: '我們希望每個人都能用更簡單、直觀的方式理解攝影，並真正運用在日常中',
+    bodyPhrases: ['我們希望', '每個人', '都能用', '更簡單、', '直觀的方式', '理解攝影，', '並真正', '運用在日常中'],
     photo: 'station01Main',
     satellitePhotos: ['station01Satellite01', 'station01Satellite02', 'station01Satellite03', 'station01Satellite04']
   },
   {
     eyebrow: '02 / 課程內容',
     heading: '少一點艱澀術語，多一點圖像、實拍與真正能立刻用上的攝影知識',
+    headingPhrases: ['少一點', '艱澀術語，', '多一點', '圖像、實拍', '與真正能', '立刻用上的', '攝影知識'],
     body: '構圖・光線・色彩・人像・風景・後製・日常',
+    bodyPhrases: ['構圖・', '光線・', '色彩・', '人像・', '風景・', '後製・', '日常'],
     photo: 'station02Main',
     satellitePhotos: ['station02Satellite01', 'station02Satellite02', 'station02Satellite03', 'station02Satellite04']
   }

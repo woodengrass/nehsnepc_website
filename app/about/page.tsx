@@ -79,14 +79,14 @@ export default function AboutPage() {
       <section className="obscura-story" id="story" aria-label="About NEHS Photography Club">
         <article className="obscura-panel obscura-panel-manifesto" data-word="OBSERVE">
           <p className="obscura-index">{ABOUT_STATIONS[0].eyebrow}</p>
-          <h2>{ABOUT_STATIONS[0].heading}</h2>
-          <p>{ABOUT_STATIONS[0].body}</p>
+          <h2>{ABOUT_STATIONS[0].headingPhrases.map((phrase) => <span key={phrase}>{phrase}</span>)}</h2>
+          <p>{ABOUT_STATIONS[0].bodyPhrases.map((phrase) => <span key={phrase}>{phrase}</span>)}</p>
         </article>
 
         <article className="obscura-panel obscura-panel-practice" data-word="FRAME">
           <p className="obscura-index">{ABOUT_STATIONS[1].eyebrow}</p>
-          <h2>{ABOUT_STATIONS[1].heading}</h2>
-          <p>{ABOUT_STATIONS[1].body}</p>
+          <h2>{ABOUT_STATIONS[1].headingPhrases.map((phrase) => <span key={phrase}>{phrase}</span>)}</h2>
+          <p>{ABOUT_STATIONS[1].bodyPhrases.map((phrase) => <span key={phrase}>{phrase}</span>)}</p>
         </article>
       </section>
 
