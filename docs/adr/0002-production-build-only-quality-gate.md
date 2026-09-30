@@ -4,6 +4,8 @@
 
 Accepted
 
+**Superseded (narrow) by:** [ADR-0005](0005-add-content-admin-quality-gates.md) — adds pnpm test:content and pnpm test:admin for content/admin behavior next build cannot prove. No repo-wide lint/format rollout.
+
 ## Date
 
 2026-09-18

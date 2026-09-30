@@ -4,6 +4,8 @@
 
 Accepted
 
+**Superseded (partial) by:** [ADR-0004](0004-build-article-image-derivatives.md) — editor uploads under assets/articles/ generate public/images/generated/articles/ at prebuild (gitignored). Hero/contact/logo/exposure/satellite families stay committed per this ADR.
+
 ## Date
 
 2026-09-18
