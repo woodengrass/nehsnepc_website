@@ -1,4 +1,6 @@
-import { buildMissingSecretsResponse, getGithubSecretsStatus, isLocalMode } from '@/lib/keystatic/storage';
+import { getGithubGateFailure, isLocalMode } from '@/lib/keystatic/storage';
+
+export const dynamic = 'force-dynamic';
 
 type RouteHandler = {
   GET: (request: Request) => Promise<Response>;
@@ -8,13 +10,17 @@ type RouteHandler = {
 let cached: RouteHandler | null = null;
 
 /**
- * Lazy API bootstrap: secrets are checked BEFORE the Keystatic config/handler
- * is constructed, and GitHub mode never falls back to local writes.
+ * Lazy API bootstrap: in GitHub mode every guard (preview kill, secrets 503,
+ * repo pin 503, origin-configured 503, origin equality 403) runs BEFORE the
+ * Keystatic config/handler is constructed, and GitHub mode never falls back
+ * to local writes. Local loopback mode (`NODE_ENV=development` +
+ * `NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE=1`) skips the guards. Neither failure
+ * path invokes the official handler.
  */
-async function getHandler(): Promise<RouteHandler | Response> {
+async function getHandler(request: Request): Promise<RouteHandler | Response> {
   if (!isLocalMode()) {
-    const status = getGithubSecretsStatus();
-    if (!status.ok) return buildMissingSecretsResponse(status);
+    const failure = getGithubGateFailure(request);
+    if (failure) return failure;
   }
   if (!cached) {
     const [{ makeRouteHandler }, { default: keystaticConfig }] = await Promise.all([
@@ -27,13 +33,13 @@ async function getHandler(): Promise<RouteHandler | Response> {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  const handler = await getHandler();
+  const handler = await getHandler(request);
   if (handler instanceof Response) return handler;
   return handler.GET(request);
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const handler = await getHandler();
+  const handler = await getHandler(request);
   if (handler instanceof Response) return handler;
   return handler.POST(request);
 }

@@ -39,6 +39,16 @@ const MIN_CLIENT_ID = 8;
 const MIN_CLIENT_SECRET = 20;
 const MIN_SESSION_SECRET = 32;
 
+/**
+ * GitHub storage is pinned to this repository. Ordinary dev/production/preview
+ * never fall back to local writes; a different repo value is a misconfiguration
+ * and must fail closed (redacted 503) before the handler is constructed.
+ */
+export const EXPECTED_GITHUB_REPO = 'woodengrass/nehsnepc_website';
+
+/** Server-only env var holding the exact registered HTTPS origin (no trailing slash). */
+export const PRODUCTION_ORIGIN_ENV_VAR = 'KEYSTATIC_PRODUCTION_ORIGIN';
+
 /** Check GitHub-mode secrets without ever returning their values. */
 export function getGithubSecretsStatus(env: NodeJS.ProcessEnv = process.env): GithubSecretsStatus {
   const missing: string[] = [];
@@ -78,4 +88,135 @@ export function missingSecretsBody(status: GithubSecretsStatus): Record<string, 
 /** Build the redacted 503 response used by the API route before handler construction. */
 export function buildMissingSecretsResponse(status: GithubSecretsStatus): Response {
   return Response.json(missingSecretsBody(status), { status: 503 });
+}
+
+/**
+ * Normalize an origin to `scheme://host[:port]` via the URL parser (which also
+ * lowercases the host and drops default ports/trailing slashes). Non-URL input
+ * falls back to a trimmed, slash-stripped string so comparisons stay total.
+ */
+export function normalizeOrigin(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return '';
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return trimmed.replace(/\/+$/, '');
+  }
+}
+
+/** Exact registered HTTPS origin for production, normalized ('' when unset). Server-only. */
+export function getCanonicalOrigin(env: NodeJS.ProcessEnv = process.env): string {
+  return normalizeOrigin(env.KEYSTATIC_PRODUCTION_ORIGIN ?? '');
+}
+
+/** The canonical origin only counts when it is an exact `https://` origin. */
+export function isCanonicalOriginConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
+  const canonical = getCanonicalOrigin(env);
+  return canonical.startsWith('https://') && canonical.length > 'https://'.length;
+}
+
+/**
+ * Preview deployments must never serve the admin UI or API: Vercel sets
+ * `VERCEL_ENV=preview` there. Anything else (production/development/undefined)
+ * is not a preview.
+ */
+export function isPreviewEnv(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.VERCEL_ENV === 'preview';
+}
+
+/** Only GET/HEAD are safe to redirect; anything else must get a JSON failure. */
+export function isSafeMethod(method: string): boolean {
+  return method === 'GET' || method === 'HEAD';
+}
+
+/**
+ * Derive the normalized request origin for the equality check. Prefer the
+ * `Origin` header when present (browser POSTs carry it), then `Referer`,
+ * then the request URL origin (covers direct fetches/Host-spoofed probes).
+ * Never throws; returns '' when nothing parseable is available.
+ */
+export function getRequestOrigin(request: Request): string {
+  const originHeader = request.headers.get('origin');
+  if (originHeader && originHeader.trim().length > 0) return normalizeOrigin(originHeader);
+  const referer = request.headers.get('referer');
+  if (referer) {
+    try {
+      return normalizeOrigin(new URL(referer).origin);
+    } catch {
+      // Fall through to the request URL.
+    }
+  }
+  try {
+    return normalizeOrigin(new URL(request.url).origin);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Full pre-handler gate for non-local mode, evaluated in fail-closed order:
+ * preview kill -> secrets (503) -> repo pin (503) -> origin configured (503)
+ * -> origin equality (403). Returns a redacted `Response` to send, or `null`
+ * when the official handler may be constructed. Never reflects secret values
+ * or the request Host in any body.
+ */
+export function getGithubGateFailure(
+  request: Request,
+  env: NodeJS.ProcessEnv = process.env
+): Response | null {
+  if (isPreviewEnv(env)) return buildPreviewDisabledResponse();
+  const status = getGithubSecretsStatus(env);
+  if (!status.ok) return buildMissingSecretsResponse(status);
+  if (getGithubRepo(env) !== EXPECTED_GITHUB_REPO) return buildRepoMismatchResponse();
+  if (!isCanonicalOriginConfigured(env)) return buildOriginNotConfiguredResponse();
+  const canonical = getCanonicalOrigin(env);
+  if (getRequestOrigin(request) !== canonical) return buildOriginMismatchResponse();
+  return null;
+}
+
+/** Redacted 403 body for origin mismatches — canonical literal only, never the request Host. */
+export function buildOriginMismatchResponse(): Response {
+  return Response.json(
+    {
+      error: 'keystatic-origin-forbidden',
+      hint: `Request origin does not match ${PRODUCTION_ORIGIN_ENV_VAR}. Use the canonical production origin.`
+    },
+    { status: 403 }
+  );
+}
+
+/** Redacted 403 body for preview deployments — the admin surface is disabled there. */
+export function buildPreviewDisabledResponse(): Response {
+  return Response.json(
+    {
+      error: 'keystatic-preview-disabled',
+      hint: 'The Keystatic admin is unavailable on preview deployments.'
+    },
+    { status: 403 }
+  );
+}
+
+/** Redacted 503 body when the repo is not the pinned `owner/name`. The expected repo is public, not a secret. */
+export function buildRepoMismatchResponse(): Response {
+  return Response.json(
+    {
+      error: 'keystatic-github-repo-mismatch',
+      expectedRepo: EXPECTED_GITHUB_REPO,
+      hint: 'Set KEYSTATIC_GITHUB_REPO to the pinned repository (owner/name).'
+    },
+    { status: 503 }
+  );
+}
+
+/** Redacted 503 body when the canonical production origin is missing — names only, never values. */
+export function buildOriginNotConfiguredResponse(): Response {
+  return Response.json(
+    {
+      error: 'keystatic-origin-not-configured',
+      missing: [PRODUCTION_ORIGIN_ENV_VAR],
+      hint: `Set ${PRODUCTION_ORIGIN_ENV_VAR} to the exact registered HTTPS origin (no trailing slash).`
+    },
+    { status: 503 }
+  );
 }
