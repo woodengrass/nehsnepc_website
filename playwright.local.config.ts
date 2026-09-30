@@ -21,7 +21,7 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: `node scripts/dev_admin.mjs --port ${PORT}`,
+    command: `node scripts/dev_with_article_images.mjs --admin --port ${PORT}`,
     url: `${BASE_URL}/keystatic`,
     reuseExistingServer: false,
     timeout: 180_000,

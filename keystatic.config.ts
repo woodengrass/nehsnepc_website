@@ -1,6 +1,8 @@
+import { createElement } from 'react';
 import { collection, config, fields } from '@keystatic/core';
 import { block, wrapper } from '@keystatic/core/content-components';
 
+import EditorFigurePreview from './components/mdx/EditorFigurePreview';
 import { figureTransformFilename } from './lib/keystatic/image-naming';
 import { getGithubRepo, githubStorage } from './lib/keystatic/storage';
 
@@ -22,16 +24,29 @@ const storage = isLocalAdmin ? ({ kind: 'local' } as const) : githubStorage(getG
 //   so serialized MDX round-trips through the existing pipeline.
 // - `title` is the slug field: frontmatter holds the display name (string),
 //   the filename holds the slug — matching the current `example`/`exposure_and_brightness` shape.
+// - Article image fields write versioned sources DIRECTLY under
+//   `assets/articles/<entry-slug>/` and serialize public paths under
+//   `/images/generated/articles/<entry-slug>/` (ADR-0004): the prebuild/dev
+//   generator emits the fallback at the serialized path plus width-suffixed
+//   AVIF/WebP derivatives, and public rendering derives srcsets from the
+//   measured-width manifest. Raw `public/images/articles/` is never used.
 // - Figure images use uuid-collision-safe `transformFilename` (honored inside the
-//   MDX editor); Model3D.poster stays a plain text path (no upload).
+//   MDX editor); top-level `fields.image` (cover) forces `<fieldKey>.<ext>`
+//   (`cover.<ext>`), so no transform is set there. Model3D.poster stays a
+//   plain text path (no upload).
+// - Figure blocks preview through the client-safe `EditorFigurePreview`
+//   (in-memory blob before save, raw serialized src after); public rendering
+//   uses the server-only `Figure` with manifest srcsets.
 
 const FigureBlock = block({
   label: 'Figure',
+  ContentView: ({ value }) =>
+    createElement(EditorFigurePreview, { src: value.src, alt: value.alt, caption: value.caption }),
   schema: {
     src: fields.image({
       label: 'Image',
-      directory: 'public/images/articles',
-      publicPath: '/images/articles/',
+      directory: 'assets/articles',
+      publicPath: '/images/generated/articles/',
       transformFilename: figureTransformFilename
     }),
     alt: fields.text({ label: 'Alt', validation: { isRequired: true } }),
@@ -102,8 +117,8 @@ export default config({
         }),
         cover: fields.image({
           label: 'Cover',
-          directory: 'public/images/articles',
-          publicPath: '/images/articles/'
+          directory: 'assets/articles',
+          publicPath: '/images/generated/articles/'
         }),
         coverAlt: fields.text({ label: 'Cover alt' }),
         draft: fields.checkbox({ label: 'Draft', defaultValue: false }),
@@ -133,8 +148,8 @@ export default config({
             divider: true,
             codeBlock: true,
             image: {
-              directory: 'public/images/articles',
-              publicPath: '/images/articles/',
+              directory: 'assets/articles',
+              publicPath: '/images/generated/articles/',
               transformFilename: figureTransformFilename
             }
           }

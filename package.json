@@ -4,13 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "admin:dev": "node scripts/dev_admin.mjs",
+    "dev": "node scripts/dev_with_article_images.mjs",
+    "admin:dev": "node scripts/dev_with_article_images.mjs --admin",
     "build": "next build",
     "content:validate": "tsx scripts/validate_articles.ts",
-    "prebuild": "npm run content:validate",
+    "prebuild": "npm run content:validate && npm run images:articles",
     "start": "next start",
-    "images:build": "node scripts/optimize_images.js",
+    "images:build": "node scripts/optimize_images.js && node scripts/optimize_article_images.js",
+    "images:articles": "node scripts/optimize_article_images.js",
     "models:build": "node scripts/optimize_models.js"
   },
   "dependencies": {

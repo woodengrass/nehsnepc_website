@@ -14,6 +14,10 @@ import { z } from 'zod';
  * Cross-entry / conditional / media / full-MDX checks live in repository and
  * build validation only — they are not guaranteed pre-save validation for CMS
  * entries.
+ *
+ * Media rule (post-migration, ADR-0004): article covers and Figure sources are
+ * editor-managed paths under `/images/generated/articles/<slug>/…`, backed by
+ * versioned sources under `assets/articles/<slug>/…`. Anything else fails.
  */
 
 // ---------------------------------------------------------------------------
@@ -44,8 +48,8 @@ export function getCategory(id: string) {
   return CATEGORIES.find((category) => category.id === id);
 }
 
-/** Public-path prefixes accepted for cover / inline images. */
-export const COVER_PREFIXES = ['/images/articles/', '/images/generated/'] as const;
+/** Public-path prefix accepted for managed article covers / inline images. */
+export const COVER_PREFIXES = ['/images/generated/articles/'] as const;
 
 /** Public-path prefix accepted for optimized GLB models. */
 export const MODEL_PREFIX = '/models/opt/';
@@ -262,33 +266,14 @@ export function findModel3DUsages(body: string): Model3DUsage[] {
 }
 
 // ---------------------------------------------------------------------------
-// Filesystem + migration manifest
+// Filesystem helpers
 // ---------------------------------------------------------------------------
 
-/** One row of scripts/article-image-migration.json. */
-export type MigrationRow = {
-  slug: string;
-  /** Article field, e.g. cover | Figure:0 | Model3D:0 */
-  field: string;
-  /** cover | figure | model | poster */
-  kind: string;
-  /** Current legacy public path referenced by the article body/frontmatter. */
-  legacyPath: string;
-  /** Managed source the path migrates to (under assets/articles/<slug>/). */
-  futureSource: string;
-  /** Original pipeline source asset (e.g. assets/sources/hero-1.jpg). */
-  sourceAsset?: string;
-  /** Generated widths for the source family. */
-  widths?: number[];
-  /** Poster legacy path when kind === model (shares the hero family). */
-  posterLegacyPath?: string;
-  /** Poster managed source when kind === model. */
-  posterFutureSource?: string;
-  posterSourceAsset?: string;
-  posterWidths?: number[];
-  coverAlt?: string;
-  note?: string;
-};
+/** Source root for editor-managed article images (tracked versioned originals). */
+export const ARTICLE_SOURCE_ROOT = 'assets/articles';
+
+/** Generated-derivative root served to readers (gitignored build outputs). */
+export const ARTICLE_GENERATED_PREFIX = '/images/generated/articles/';
 
 export function publicFileExists(publicPath: string, root = process.cwd()): boolean {
   if (!publicPath.startsWith('/')) return false;

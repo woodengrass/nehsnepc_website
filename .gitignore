@@ -4,3 +4,9 @@ out/
 next-env.d.ts
 .vercel/
 dist/
+# ADR-0004: editor-managed article derivatives regenerate at prebuild/dev.
+# Sources under assets/articles/ are tracked; generated outputs are not.
+public/images/generated/articles/
+public/images/generated/articles.manifest.json
+.env*
+!.env.example

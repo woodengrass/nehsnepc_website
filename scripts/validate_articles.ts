@@ -7,17 +7,21 @@
  * Groups:
  *  (1) enumerate content/articles/*.md|mdx — 0 files / dup slugs / bad slug
  *  (2) gray-matter + strict schema (slug:line: rule messages)
- *  (3) filesystem existence + LEGACY_PLACEHOLDER warnings for manifest rows
+ *  (3) filesystem existence + managed-path enforcement (no legacy exception)
  *  (4) body scan (Figure / Model3D / <img> / unknown components / MDX compile)
  *  (5) cross-surface parity (getAllArticles / sitemap / RSS / formatDate)
  *  (6) summary + exit 1 on errors
  *
- * Pre-migration media rule: a public path is accepted iff it is a managed
- * mapping under /images/articles/ (or /models/opt/ for GLB) OR exactly one of
- * the legacy paths enumerated in scripts/article-image-migration.json.
- * Any other /images/generated/* or /models/* path fails. Generated-derivative
- * existence is never required before generation (managed derivatives may not
- * exist yet).
+ * Post-migration media rule (ADR-0004): an article cover or Figure src is
+ * accepted iff it lives under `/images/generated/articles/<slug>/…` with an
+ * image extension, backed by a versioned source under the mirrored
+ * `assets/articles/<slug>/…` path (source existence IS required — sources are
+ * tracked; generated-derivative existence is never required before
+ * generation, since `prebuild` validates before generating). Any other
+ * `/images/*` or `/models/*` path fails. `Model3D` src stays
+ * `/models/opt/*.glb` (must exist); `Model3D` poster stays a text path under
+ * `/images/generated/` (committed families, must exist unless it points at a
+ * managed `/images/generated/articles/` derivative).
  */
 
 import fs from 'node:fs';
@@ -27,6 +31,8 @@ import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 
 import {
+  ARTICLE_GENERATED_PREFIX,
+  ARTICLE_SOURCE_ROOT,
   COVER_PREFIXES,
   MIN_ALT_LENGTH,
   MODEL_PREFIX,
@@ -36,8 +42,7 @@ import {
   isAllowedCoverPath,
   isAllowedModelPath,
   isUrlSafeSlug,
-  publicFileExists,
-  type MigrationRow
+  publicFileExists
 } from '../lib/content-contract.js';
 import { getAllArticles } from '../lib/content.js';
 import { formatDate } from '../lib/format.js';
@@ -45,17 +50,11 @@ import { formatDate } from '../lib/format.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
 const ARTICLES_DIR = path.join(ROOT, 'content', 'articles');
-const MIGRATION_FILE = path.join(here, 'article-image-migration.json');
 
 const errors: string[] = [];
-const warnings: string[] = [];
 
 function fail(message: string): void {
   errors.push(message);
-}
-
-function warn(message: string): void {
-  warnings.push(message);
 }
 
 function frontmatterLine(raw: string, key: string): number {
@@ -79,38 +78,6 @@ function frontmatterLine(raw: string, key: string): number {
   return 1;
 }
 
-type Manifest = MigrationRow[];
-
-function loadManifest(): Manifest {
-  if (!fs.existsSync(MIGRATION_FILE)) {
-    fail(`manifest: missing ${path.relative(ROOT, MIGRATION_FILE)}`);
-    return [];
-  }
-  try {
-    const raw = JSON.parse(fs.readFileSync(MIGRATION_FILE, 'utf8')) as unknown;
-    const rows = Array.isArray(raw) ? (raw as Manifest) : ((raw as { rows: Manifest }).rows ?? []);
-    if (!Array.isArray(rows)) {
-      fail('manifest: expected an array of rows (or { rows: [...] })');
-      return [];
-    }
-    rows.forEach((row, index) => {
-      for (const key of ['slug', 'field', 'kind', 'legacyPath', 'futureSource'] as const) {
-        const value = (row as Record<string, unknown>)[key];
-        if (typeof value !== 'string' || value.length === 0) {
-          fail(`manifest: row ${index} missing required ${key} (article/field/legacy-path/future-source required)`);
-        }
-      }
-      if (row.futureSource !== undefined && !row.futureSource.startsWith('assets/articles/')) {
-        fail(`manifest: row ${index} futureSource must live under assets/articles/<slug>/ (got ${JSON.stringify(row.futureSource)})`);
-      }
-    });
-    return rows;
-  } catch (error) {
-    fail(`manifest: unparsable JSON: ${error instanceof Error ? error.message : String(error)}`);
-    return [];
-  }
-}
-
 function parseNumericAttr(raw: string | null): number | null {
   if (raw === null) return null;
   const inner = raw.startsWith('{') ? raw.slice(1, -1).trim().replace(/^["']|["']$/g, '') : raw.replace(/^["']|["']$/g, '');
@@ -120,13 +87,6 @@ function parseNumericAttr(raw: string | null): number | null {
 }
 
 async function main(): Promise<void> {
-  const manifest = loadManifest();
-  const allowlisted = new Set<string>();
-  for (const row of manifest) {
-    if (typeof row.legacyPath === 'string') allowlisted.add(row.legacyPath);
-    if (typeof row.posterLegacyPath === 'string') allowlisted.add(row.posterLegacyPath);
-  }
-
   // ---- (1) enumerate -------------------------------------------------------
   if (!fs.existsSync(ARTICLES_DIR)) {
     fail(`articles: missing directory ${path.relative(ROOT, ARTICLES_DIR)}`);
@@ -189,35 +149,39 @@ async function main(): Promise<void> {
     if (!frontmatter.draft) nonDraftSlugs.push(slug);
 
     // ---- (3) media existence ----------------------------------------------
-    const checkMedia = (value: string | undefined, label: string) => {
+    // Managed article image: the public path mirrors the versioned source 1:1
+    // (/images/generated/articles/<rel> <-> assets/articles/<rel>). Sources
+    // are tracked, so their existence IS required; generated-derivative
+    // existence is never required before generation.
+    const managedSourceExists = (publicPath: string): boolean => {
+      const rel = publicPath.slice(ARTICLE_GENERATED_PREFIX.length).split('?')[0].split('#')[0];
+      if (rel.length === 0 || rel.includes('..')) return false;
+      try {
+        return fs.statSync(path.join(ROOT, ARTICLE_SOURCE_ROOT, rel)).isFile();
+      } catch {
+        return false;
+      }
+    };
+
+    const checkManagedImage = (value: string | undefined, label: string, lineKey: string) => {
       if (value === undefined) return;
       const p = value.trim();
+      const line = frontmatterLine(raw, lineKey);
       mediaRefs.push({ slug, kind: label, value: p });
-      if (allowlisted.has(p)) {
-        warn(`LEGACY_PLACEHOLDER ${slug}: ${label} ${p} is a pre-migration legacy path (see scripts/article-image-migration.json)`);
-        if (!publicFileExists(p, ROOT)) {
-          fail(`${slug}:${frontmatterLine(raw, label === 'cover' ? 'cover' : 'frontmatter')}: ${label} legacy file missing: ${p}`);
-        }
+      if (!isAllowedCoverPath(p)) {
+        fail(`${slug}:${line}: ${label} ${p} must use a managed ${ARTICLE_GENERATED_PREFIX} path with an image extension`);
         return;
       }
-      const managed = p.startsWith('/images/articles/') || (label !== 'cover' && p.startsWith(MODEL_PREFIX));
-      if (managed) {
-        // Generated-derivative existence is never required before generation.
-        return;
+      if (!managedSourceExists(p)) {
+        fail(`${slug}:${line}: ${label} versioned source missing: ${ARTICLE_SOURCE_ROOT}/${p.slice(ARTICLE_GENERATED_PREFIX.length)} (editor upload not saved?)`);
       }
-      const looksLegacy = p.startsWith('/images/generated/') || p.startsWith('/models/') || p.startsWith('/images/');
-      if (looksLegacy) {
-        fail(`${slug}:${frontmatterLine(raw, 'cover')}: ${label} ${p} is an unlisted legacy path (must be enumerated in scripts/article-image-migration.json or use a managed /images/articles/ mapping)`);
-        return;
-      }
-      fail(`${slug}:${frontmatterLine(raw, 'cover')}: ${label} has unexpected path shape: ${p}`);
     };
 
     if (frontmatter.cover !== undefined) {
-      if (!isAllowedCoverPath(frontmatter.cover.trim()) && !allowlisted.has(frontmatter.cover.trim())) {
+      if (!isAllowedCoverPath(frontmatter.cover.trim())) {
         fail(`${slug}:${frontmatterLine(raw, 'cover')}: cover: path must start with ${COVER_PREFIXES.join(' or ')} with an image extension`);
       }
-      checkMedia(frontmatter.cover, 'cover');
+      checkManagedImage(frontmatter.cover, 'cover', 'cover');
     }
 
     // ---- (4) body scan ------------------------------------------------------
@@ -227,22 +191,14 @@ async function main(): Promise<void> {
       if (!fig.src || fig.src.trim().length === 0) {
         fail(`${slug}:1: ${label}: src is required`);
       } else {
-        if (!isAllowedCoverPath(fig.src.trim()) && !allowlisted.has(fig.src.trim())) {
-          fail(`${slug}:1: ${label}: src ${JSON.stringify(fig.src)} must be an /images/articles/ or allowlisted legacy image path`);
-        }
-        mediaRefs.push({ slug, kind: label, value: fig.src.trim() });
-        if (allowlisted.has(fig.src.trim())) {
-          warn(`LEGACY_PLACEHOLDER ${slug}: ${label} src ${fig.src.trim()} is a pre-migration legacy path`);
-        } else if (!fig.src.trim().startsWith('/images/articles/')) {
-          const looksLegacy = fig.src.trim().startsWith('/images/') || fig.src.trim().startsWith('/models/');
-          if (looksLegacy) {
-            fail(`${slug}:1: ${label}: src ${fig.src.trim()} is an unlisted legacy path`);
+        const src = fig.src.trim();
+        if (!isAllowedCoverPath(src)) {
+          fail(`${slug}:1: ${label}: src ${JSON.stringify(fig.src)} must be a managed ${ARTICLE_GENERATED_PREFIX} image path`);
+        } else {
+          mediaRefs.push({ slug, kind: label, value: src });
+          if (!managedSourceExists(src)) {
+            fail(`${slug}:1: ${label}: versioned source missing: ${ARTICLE_SOURCE_ROOT}/${src.slice(ARTICLE_GENERATED_PREFIX.length)}`);
           }
-        }
-        if (!fig.src.trim().startsWith('/images/articles/') && !publicFileExists(fig.src.trim(), ROOT) && allowlisted.has(fig.src.trim())) {
-          // existence already checked via allowlist branch; nothing extra
-        } else if (!allowlisted.has(fig.src.trim()) && !fig.src.trim().startsWith('/images/articles/') && !publicFileExists(fig.src.trim(), ROOT)) {
-          fail(`${slug}:1: ${label}: file missing: ${fig.src.trim()}`);
         }
       }
       if (fig.alt === null || fig.alt.trim().length < MIN_ALT_LENGTH) {
@@ -261,19 +217,14 @@ async function main(): Promise<void> {
       if (!model.src || model.src.trim().length === 0) {
         fail(`${slug}:1: ${label}: src is required`);
       } else {
-        if (!isAllowedModelPath(model.src.trim()) && !allowlisted.has(model.src.trim())) {
+        const src = model.src.trim();
+        if (!isAllowedModelPath(src)) {
           fail(`${slug}:1: ${label}: src ${JSON.stringify(model.src)} must be a .glb under ${MODEL_PREFIX}`);
-        }
-        mediaRefs.push({ slug, kind: label, value: model.src.trim() });
-        if (allowlisted.has(model.src.trim())) {
-          warn(`LEGACY_PLACEHOLDER ${slug}: ${label} src ${model.src.trim()} is a pre-migration legacy path`);
-          if (!publicFileExists(model.src.trim(), ROOT)) {
-            fail(`${slug}:1: ${label}: legacy model file missing: ${model.src.trim()}`);
+        } else {
+          mediaRefs.push({ slug, kind: label, value: src });
+          if (!publicFileExists(src, ROOT)) {
+            fail(`${slug}:1: ${label}: file missing: ${src}`);
           }
-        } else if (!model.src.trim().startsWith(MODEL_PREFIX)) {
-          fail(`${slug}:1: ${label}: src ${model.src.trim()} is an unlisted legacy path`);
-        } else if (!publicFileExists(model.src.trim(), ROOT)) {
-          fail(`${slug}:1: ${label}: file missing: ${model.src.trim()}`);
         }
       }
       if (model.alt === null || model.alt.trim().length < MIN_ALT_LENGTH) {
@@ -284,16 +235,11 @@ async function main(): Promise<void> {
         mediaRefs.push({ slug, kind: `${label}:poster`, value: poster });
         if (poster.length === 0) {
           fail(`${slug}:1: ${label}: poster must be non-empty when present`);
-        } else if (allowlisted.has(poster)) {
-          warn(`LEGACY_PLACEHOLDER ${slug}: ${label} poster ${poster} is a pre-migration legacy path`);
-          if (!publicFileExists(poster, ROOT)) {
-            fail(`${slug}:1: ${label}: legacy poster file missing: ${poster}`);
-          }
-        } else if (poster.startsWith('/images/articles/')) {
-          // Managed derivative; existence never required before generation.
-        } else if (poster.startsWith('/images/')) {
-          fail(`${slug}:1: ${label}: poster ${poster} is an unlisted legacy path`);
-        } else if (!publicFileExists(poster, ROOT)) {
+        } else if (!poster.startsWith('/images/generated/')) {
+          fail(`${slug}:1: ${label}: poster ${poster} must stay a text path under /images/generated/`);
+        } else if (!poster.startsWith(ARTICLE_GENERATED_PREFIX) && !publicFileExists(poster, ROOT)) {
+          // Committed families must exist; managed derivatives may not exist
+          // yet (prebuild validates before generating).
           fail(`${slug}:1: ${label}: poster file missing: ${poster}`);
         }
       }
@@ -394,10 +340,7 @@ async function main(): Promise<void> {
   }
 
   // ---- (6) summary ------------------------------------------------------------
-  const uniqueLegacy = [...allowlisted].sort();
-  console.log(`[content:validate] files=${files.length} nonDraft=${nonDraftSlugs.length} errors=${errors.length} warnings=${warnings.length}`);
-  console.log(`[content:validate] allowlisted legacy paths (${uniqueLegacy.length}): ${uniqueLegacy.join(', ') || '(none)'}`);
-  for (const message of warnings) console.log(`[content:validate] WARN ${message}`);
+  console.log(`[content:validate] files=${files.length} nonDraft=${nonDraftSlugs.length} errors=${errors.length} warnings=0`);
   if (errors.length > 0) {
     for (const message of errors) console.log(`[content:validate] ERROR ${message}`);
     console.log(`[content:validate] FAILED with ${errors.length} error(s)`);

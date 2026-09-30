@@ -13,7 +13,12 @@ import {
 
 const ROOT = process.cwd();
 const ARTICLES_DIR = path.join(ROOT, 'content', 'articles');
-const ASSETS_DIR = path.join(ROOT, 'public', 'images', 'articles');
+// Editor-managed sources: Keystatic writes versioned originals directly here
+// (ADR-0004); generated derivatives live gitignored under
+// public/images/generated/articles/.
+const ASSETS_DIR = path.join(ROOT, 'assets', 'articles');
+const GENERATED_DIR = path.join(ROOT, 'public', 'images', 'generated', 'articles');
+const MANIFEST_FILE = path.join(ROOT, 'public', 'images', 'generated', 'articles.manifest.json');
 const HERO_SRC = path.join(ROOT, 'assets', 'sources', 'hero-1.jpg');
 const CONTACT_SRC = path.join(ROOT, 'assets', 'sources', 'contact-bg.jpg');
 
@@ -32,6 +37,14 @@ const UUID_RE = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 
 function sha256(file: string): string {
   return createHash('sha256').update(readFileSync(file)).digest('hex');
+}
+
+const MANAGED_PREFIX = '/images/generated/articles/';
+
+/** Serialized managed path -> versioned source on disk (1:1 mirror). */
+function serializedToSourceAbs(serialized: string): string {
+  const rel = serialized.slice(MANAGED_PREFIX.length);
+  return path.join(ASSETS_DIR, ...rel.split('/'));
 }
 
 function listAssetFiles(): string[] {
@@ -130,10 +143,51 @@ test.describe('keystatic compat gate (local loopback)', () => {
         notes.push(`removed disposable asset ${rel}`);
       }
     }
+    // Remove now-empty disposable slug directories (file removal leaves them).
+    for (const fx of FIXTURES) {
+      const slugDir = path.join(ASSETS_DIR, fx.slug);
+      try {
+        if (existsSync(slugDir) && readdirSync(slugDir).length === 0) {
+          rmSync(slugDir, { recursive: true, force: true });
+          notes.push(`removed empty disposable dir ${fx.slug}`);
+        }
+      } catch (error) {
+        notes.push(`slug dir cleanup skipped ${fx.slug}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
     // Remove now-empty disposable directories (never touch pre-existing files).
     if (existsSync(ASSETS_DIR) && assetsBefore.length === 0 && listAssetFiles().length === 0) {
       rmSync(ASSETS_DIR, { recursive: true, force: true });
-      notes.push('removed empty public/images/articles');
+      notes.push('removed empty assets/articles');
+    }
+    // Remove disposable generated derivatives + manifest rows for fixtures.
+    // (The dev watcher regenerates outputs for fixture sources mid-run.)
+    if (existsSync(GENERATED_DIR)) {
+      for (const fx of FIXTURES) {
+        const slugDir = path.join(GENERATED_DIR, fx.slug);
+        if (existsSync(slugDir)) {
+          rmSync(slugDir, { recursive: true, force: true });
+          notes.push(`removed disposable generated dir ${fx.slug}`);
+        }
+      }
+    }
+    if (existsSync(MANIFEST_FILE)) {
+      try {
+        const manifest = JSON.parse(readFileSync(MANIFEST_FILE, 'utf8')) as { items?: Record<string, unknown> };
+        let dropped = 0;
+        for (const key of Object.keys(manifest.items ?? {})) {
+          if (FIXTURES.some((fx) => key === `${fx.slug}/cover.jpg` || key.startsWith(`${fx.slug}/`))) {
+            delete manifest.items![key];
+            dropped += 1;
+          }
+        }
+        if (dropped > 0) {
+          writeFileSync(MANIFEST_FILE, `${JSON.stringify(manifest, null, 2)}\n`);
+          notes.push(`dropped ${dropped} disposable manifest rows`);
+        }
+      } catch (error) {
+        notes.push(`manifest cleanup skipped: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
     writeFileSync(
       path.join(ROOT, '.omo', 'evidence', 'task-1-playwright-notes.log'),
@@ -208,27 +262,32 @@ test.describe('keystatic compat gate (local loopback)', () => {
       // Keystatic 0.6.9 documents top-level fields.image naming as
       // `<fieldKey>.<ext>` under `<publicPath><slug>/` (transformFilename
       // applies only inside MDX editors): the hero-1.jpg bytes migrate via
-      // the real top-level image control but serialize under the forced
-      // field-key name. Byte identity (SHA-256 vs the hero-1.jpg source) is
+      // the real top-level image control into the versioned source
+      // `assets/articles/<slug>/cover.jpg` but serialize under the managed
+      // generated prefix. Byte identity (SHA-256 vs the hero-1.jpg source) is
       // the migration proof — strictly stronger than a basename substring.
-      const forcedCover = `/images/articles/${fx.slug}/cover.jpg`;
+      const forcedCover = `/images/generated/articles/${fx.slug}/cover.jpg`;
       expect(cover, 'cover must migrate through the real image control to the documented field-key path').toBe(
         forcedCover
       );
-      expect(sha256(path.join(ROOT, 'public', forcedCover.replace(/^\//, ''))), 'cover bytes must equal hero-1.jpg').toBe(
+      expect(sha256(serializedToSourceAbs(forcedCover)), 'cover bytes must equal hero-1.jpg').toBe(
         sha256(HERO_SRC)
       );
       expect(figures.length, 'Figure src must exist').toBeGreaterThanOrEqual(1);
+      expect(figures[0], 'Figure src must migrate under the managed prefix').toContain(
+        `/images/generated/articles/${fx.slug}/`
+      );
       expect(figures[0], 'Figure src must migrate to contact-bg upload').toMatch(/contact-bg\.jpg$/i);
       expect(figures[0], 'Figure path must be uuid-collision-safe').toMatch(new RegExp(`${UUID_RE}-contact-bg\\.jpg$`, 'i'));
+      expect(sha256(serializedToSourceAbs(figures[0])), 'figure bytes must equal contact-bg.jpg').toBe(
+        sha256(CONTACT_SRC)
+      );
       // Model3D.poster stays a text path (no upload, no uuid).
       expect(poster).toBe('/images/generated/hero-1280.webp');
-      // Uploaded bytes must exist on disk under public/.
+      // Uploaded bytes must exist on disk as versioned sources under assets/.
       for (const p of [cover, ...figures].filter(Boolean) as string[]) {
-        if (p.startsWith('/')) {
-          const abs = path.join(ROOT, 'public', p.replace(/^\//, ''));
-          expect(existsSync(abs), `uploaded file must exist: ${p}`).toBe(true);
-        }
+        const abs = serializedToSourceAbs(p);
+        expect(existsSync(abs), `versioned source must exist: ${p}`).toBe(true);
       }
       imageSerializations[fx.slug] = { cover, figures, poster };
 
