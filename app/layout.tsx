@@ -41,9 +41,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body>
-        {children}
+        <div className="site-chrome">{children}</div>
         <div className="grain-overlay" aria-hidden="true" />
-        <SiteNav />
+        <div className="site-chrome-nav">
+          <SiteNav />
+        </div>
         <JsonLd data={organizationJsonLd()} />
         <JsonLd data={websiteJsonLd()} />
       </body>

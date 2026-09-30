@@ -9,6 +9,7 @@ This document covers the shared application shell, home page, visual language, s
 | Path | Responsibility |
 | --- | --- |
 | `app/layout.tsx` | Root document, default metadata, viewport, global navigation, grain layer, Google font link, and site JSON-LD |
+| `app/admin/page.tsx` | Noindex Traditional Chinese admin gateway (`data-admin-root`) linking into `/keystatic`; no nav, sitemap, or canonical entry |
 | `app/page.tsx` | Home route metadata and `Hero` composition |
 | `components/home/Hero.tsx` | Server-rendered home identity and route index; no client state or GSAP |
 | `components/SiteNav.tsx` + `components/SiteNavMenu.tsx` | Server header shell with hidden placeholder markup; client menu island (hamburger, overlay, active-route matching, Escape handling, body scroll lock). Ten near-identical link-delay classes collapsed to one base plus inline `transition-delay` |
@@ -23,7 +24,7 @@ All App Router files are Server Components by default. The shared shell stays se
 
 `app/layout.tsx` sets `<html lang="zh-TW">`, `themeColor: #090909`, and `viewportFit: cover`. Default metadata supplies the site title, title template, Traditional Chinese description, Open Graph site identity, and large-image Twitter card. Page routes add their own canonical metadata.
 
-The body order is route content, fixed grain overlay, `SiteNav`, then Organization and WebSite JSON-LD. The grain is the `.grain-overlay` CSS class (same inline SVG turbulence, `contain: strict`) on a fixed, pointer-inert, `aria-hidden` layer. It is global and therefore carries a compositing cost on every route.
+The body order is a `.site-chrome` wrapper around route content, the fixed grain overlay, a `.site-chrome-nav` wrapper around `SiteNav`, then Organization and WebSite JSON-LD. The wrappers are neutral on public routes (no visual change) and exist so admin surfaces can suppress site chrome with pure CSS: `body:has([data-admin-root]) .grain-overlay, body:has([data-admin-root]) .site-chrome-nav { display: none; }` in `app/globals.css`. The layout stays a Server Component with no `usePathname` or `headers()` call, preserving prerendering. Never import Keystatic or admin client code into the root layout, and never target Keystatic internal classes. The grain is the `.grain-overlay` CSS class (same inline SVG turbulence, `contain: strict`) on a fixed, pointer-inert, `aria-hidden` layer. It is global and therefore carries a compositing cost on every route.
 
 The layout preconnects to Google Fonts and loads Noto Serif TC from `fonts.googleapis.com`. This is a runtime third-party dependency. The current layout does not configure `next/font` for Cormorant Garamond or Raleway. `app/globals.css` and components still refer to `--font-heading-next` and `--font-body-next`; those variables are not currently defined by the layout, so browser font fallbacks apply. Preserve this distinction in future documentation until the implementation changes.
 
@@ -78,6 +79,17 @@ Known limitations:
 - an unused `hamburgerRef` remains in the component.
 
 Any navigation change must test keyboard order, Escape, focus visibility, route-active behavior, scroll restoration, mobile safe areas, and reduced motion.
+
+## Admin Gateway
+
+`app/admin/page.tsx` is a static Server Component marked with `data-admin-root`. It renders a Traditional Chinese gateway (H1 內容管理／Admin with a red left rule, four numbered guide blocks for login, article management, tools/pages, and precautions, plus a CTA link into `/keystatic` and footer links home/tutorial/contact). It carries no private repository data and imports no Keystatic code.
+
+Suppression and exclusion rules:
+
+- `app/globals.css` gives `[data-admin-root]` a full-viewport off-white ground with page padding and hides `.grain-overlay` plus `.site-chrome-nav` via the `:has` marker above — zero JavaScript, mirroring the existing `html:has(.obscura)` pattern.
+- Route metadata sets `title: 內容管理`, a non-public description, `robots: { index: false, follow: false }`, and no canonical.
+- `app/robots.ts` disallows `/admin`; `/admin` stays out of `SITE_NAV_PAGES` and the sitemap.
+- `body.menu-open` locking never triggers on `/admin` because the nav island is not rendered there.
 
 ## Home Page
 

@@ -68,6 +68,21 @@
     overflow: hidden;
   }
 
+  /* 管理入口隔離：admin/Keystatic 表面以 [data-admin-root] 標記，
+     經由 :has 隱藏全站顆粒與導覽鉻層，無需 pathname 客戶端邏輯。 */
+  body:has([data-admin-root]) .grain-overlay,
+  body:has([data-admin-root]) .site-chrome-nav {
+    display: none;
+  }
+
+  [data-admin-root] {
+    min-height: 100svh;
+    background: var(--color-bg);
+    color: var(--color-text);
+    padding: var(--page-pad);
+    padding-top: calc(var(--header-height) + 2rem);
+  }
+
   ::selection {
     color: var(--color-text);
     background: var(--color-red);
