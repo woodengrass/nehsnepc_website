@@ -7,6 +7,8 @@
     "dev": "next dev",
     "admin:dev": "node scripts/dev_admin.mjs",
     "build": "next build",
+    "content:validate": "tsx scripts/validate_articles.ts",
+    "prebuild": "npm run content:validate",
     "start": "next start",
     "images:build": "node scripts/optimize_images.js",
     "models:build": "node scripts/optimize_models.js"

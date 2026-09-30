@@ -4,21 +4,11 @@ import path from 'node:path';
 import matter from 'gray-matter';
 import { z } from 'zod';
 
-export const CATEGORIES = [
-  { id: 'tutorial', label: '攝影教學', description: '各類教學文章，覆蓋不同程度。' },
-  { id: 'news', label: '社團動態', description: '活動記錄、招新資訊與作品回顧。' },
-  { id: 'showcase', label: '3D 展示', description: '以 3D 模型拆解器材與空間，可旋轉互動。' }
-] as const;
+import { CATEGORIES, getCategory, isCategoryId } from './content-contract';
+import type { CategoryId } from './content-contract';
 
-export type CategoryId = (typeof CATEGORIES)[number]['id'];
-
-export function isCategoryId(value: string): value is CategoryId {
-  return CATEGORIES.some((category) => category.id === value);
-}
-
-export function getCategory(id: string) {
-  return CATEGORIES.find((category) => category.id === id);
-}
+export { CATEGORIES, getCategory, isCategoryId };
+export type { CategoryId };
 
 const dateSchema = z
   .union([z.string(), z.date()])
