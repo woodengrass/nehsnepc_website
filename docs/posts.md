@@ -72,7 +72,7 @@ Draft inclusion defaults to `NODE_ENV !== 'production'`. Development lists and a
 
 There is no publication scheduling; future-dated non-drafts publish immediately.
 
-Keystatic editing semantics: the editor exposes a branch selector that this version cannot remove or lock — always select `main` for the intended direct workflow. A save commits to the selected branch; typing alone does not write the content file (no autosave-on-keystroke). New entries default to `draft: true`. Setting `draft: false` on `main` publishes only after a successful Vercel build. The repository is public, so every committed draft is publicly readable on GitHub even while website routes exclude it — drafts are unpublished, never confidential. Concurrent edits to the same file can conflict; later saves win and conflicts are resolved in Git. Rollback is by Git revert of the commit or by redeploying a previous successful Vercel deployment. Renaming a slug is delete-plus-create with no automatic redirect (the old URL 404s).
+Keystatic editing semantics: the editor works on `preview/<github-username>` branches created through its native branch dialog (scoped to `preview/` by `branchPrefix`; the username itself stays a convention the editor types). A save commits to the preview branch; typing alone does not write the content file (no autosave-on-keystroke). New entries default to `draft: true`. Publishing means opening a pull request against `main` and self-merging with squash after a green Vercel build — `main` is branch-protected with no required approvals, and merged head branches auto-delete. Full GitHub steps live in the branch protection runbook (`technical-stack.md` deployment section). The repository is public, so every committed draft is publicly readable on GitHub even while website routes exclude it — drafts are unpublished, never confidential. Concurrent edits to the same file can conflict; later saves win and conflicts are resolved in Git. Rollback is by Git revert of the commit or by redeploying a previous successful Vercel deployment. Renaming a slug is delete-plus-create with no automatic redirect (the old URL 404s).
 
 The articles collection sets the supported `previewUrl: '/tutorial/{slug}'` (current published route for editor navigation). In-editor component previews use the existing `EditorFigurePreview` via the Figure `block()` `ContentView`; there is no second article renderer and public pages never read GitHub at runtime.
 
@@ -164,7 +164,7 @@ The two shipped articles (`example`, `exposure_and_brightness`) are fully migrat
 
 ## Trust Model
 
-MDX is trusted executable source rendered without sanitization: only GitHub identities with repository write access may author content, and there is no sandbox, no role narrower than repo write, and no review queue — a save to `main` plus a green build publishes. Never grant write access to untrusted authors, and never render untrusted Markdown through this pipeline without a new security design (see ADR-0003 revisit triggers).
+MDX is trusted executable source rendered without sanitization: only GitHub identities with repository write access may author content, and there is no sandbox, no role narrower than repo write, and no required-approvals gate — merging a `preview/*` pull request (self-merge allowed) plus a green build publishes. Never grant write access to untrusted authors, and never render untrusted Markdown through this pipeline without a new security design (see ADR-0003 revisit triggers).
 
 ## Dates and Metadata
 
@@ -184,7 +184,7 @@ Article metadata includes title, description, author, tag keywords, canonical UR
 
 Two paths, same contract:
 
-**A. Browser editor (preferred for non-developers).** Open `/admin`, read the eight guide blocks and the public-draft aside, follow the link into `/keystatic`, and sign in with a GitHub account that holds repository write access. Create or open an `Articles` entry and fill the structured fields (title, description, ISO date, optional updated date, category, tags, cover plus coverAlt, draft checkbox, author default `NEHS 攝影社`). Write the body with GFM plus only the `Figure`, `Callout`, and `Model3D` blocks (see Editor GFM Limits). Upload images through the image fields — files land versioned under `assets/articles/<slug>/`. Keep `draft: true` while developing. Save explicitly (typing never autosaves); the save commits to the selected branch, so confirm the branch selector reads `main`.
+**A. Browser editor (preferred for non-developers).** Open `/admin`, read the eight guide blocks and the public-draft aside, follow the link into `/keystatic`, and sign in with a GitHub account that holds repository write access. Create or open an `Articles` entry and fill the structured fields (title, description, ISO date, optional updated date, category, tags, cover plus coverAlt, draft checkbox, author default `NEHS 攝影社`). Write the body with GFM plus only the `Figure`, `Callout`, and `Model3D` blocks (see Editor GFM Limits). Upload images through the image fields — files land versioned under `assets/articles/<slug>/`. Keep `draft: true` while developing. Save explicitly (typing never autosaves); the save commits to the current `preview/<github-username>` branch, so create that branch through the editor's branch dialog before editing.
 
 **B. Hand editing.** Copy `content/articles/example.mdx` to `content/articles/<url-safe-slug>.mdx` and replace its sample content. Add valid frontmatter using an ISO date and supported category. Use standard Markdown/GFM and only registered MDX components. Place source images under `assets/articles/<slug>/` using the same naming (`cover.<ext>`, `<uuid>-<base>.<ext>`), and reference the `/images/generated/articles/<slug>/` paths.
 
@@ -192,9 +192,9 @@ Then, for both paths:
 
 1. Run `npm run content:validate` (fail-fast; fix every `slug:line: rule` error).
 2. Run `npm run images:articles` (or rely on `prebuild`/dev-watcher) so serialized paths resolve.
-3. Set `draft: false` to publish (only on `main` plus a green Vercel build).
+3. Set `draft: false` to publish, then open a pull request from the preview branch and self-merge with squash after a green Vercel build (no approvals required; heads auto-delete).
 4. Run `npm run build`.
-5. Verify the index, category, detail route, mobile cards/body, heading anchors, image alternatives, metadata, `/sitemap.xml`, and `/rss.xml`. The `/admin` gateway documents branch selection, save-versus-release, public-draft visibility, rollback, slug-rename, and concurrency handling.
+5. Verify the index, category, detail route, mobile cards/body, heading anchors, image alternatives, metadata, `/sitemap.xml`, and `/rss.xml`. The `/admin` gateway documents preview-branch creation, save-versus-release, public-draft visibility, rollback, slug-rename, and concurrency handling.
 
 The normal build does not run the non-article image or model optimization. Run `npm run images:build` or `npm run models:build` first when those source assets change.
 

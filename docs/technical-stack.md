@@ -170,7 +170,25 @@ The only first-party API is the Keystatic route handler (`/api/keystatic/[...par
 
 ## Deployment
 
-Vercel is the intended platform, Git-triggered: every push to `main` (including Keystatic browser saves, which are ordinary Git commits) rebuilds, and a failed build leaves the prior production deployment serving — publish intent (`draft: false` on `main`) takes effect only after a green build. `vercel.json` contains only permanent migration redirects, including legacy `.html`, `/portfolio`, `/articles/*`, and `/pages/*.html` paths. Preserve redirects unless legacy URLs are intentionally retired. Vercel infers framework/build settings; no region, runtime, build command, output, or header configuration is declared. There is no Deploy Hook: rebuilds come from Git pushes only.
+Vercel is the intended platform, Git-triggered: every push to `main` (including Keystatic browser saves, which are ordinary Git commits) rebuilds, and a failed build leaves the prior production deployment serving — publish intent (`draft: false` merged to `main` through a pull request) takes effect only after a green build. `vercel.json` contains only permanent migration redirects, including legacy `.html`, `/portfolio`, `/articles/*`, and `/pages/*.html` paths. Preserve redirects unless legacy URLs are intentionally retired. Vercel infers framework/build settings; no region, runtime, build command, output, or header configuration is declared. There is no Deploy Hook: rebuilds come from Git pushes only.
+
+### Branch protection runbook (MANUAL — GitHub side, code is ready, switch is not flipped)
+
+Current state: `main` is UNPROTECTED — direct-to-`main` saves are still technically possible. The code side is done (`branchPrefix: 'preview/'` in the Keystatic GitHub storage config, ADR-0003 amendment). Protection does NOT exist until a human flips it in GitHub settings. Do every step below as a repository admin:
+
+1. Open the repository on GitHub → Settings → Branches → Add classic branch protection rule. Branch name pattern: `main`.
+2. Tick **Require a pull request before merging**. Leave required approvals at zero — do NOT enable or require approvals; authors self-merge their own article PRs.
+3. Suggest squash: repository Settings → General → Pull Requests → tick **Allow squash merging** and keep it the default merge method, so each preview branch lands as one commit. Tick **Automatically delete head branches** so merged `preview/*` branches disappear without extra automation.
+4. Bypass list for typo fixes: back in the protection rule, add the designated admins under **Allow specified actors to bypass required pull requests**. Only bypass-listed admins may push `main` directly, and only for small typo fixes.
+5. Editor convention (no setting enforces the name — the prefix only scopes creation): editors create `preview/<github-username>` branches through Keystatic's native branch dialog, save there, then open a pull request against `main`.
+
+MANUAL checklist (human confirms, never mark green without doing it):
+
+- [ ] Protection rule on `main` is live: a direct push to `main` from a non-bypass account is rejected.
+- [ ] Self-merge works with zero required approvals: an editor can open and squash-merge their own `preview/*` PR.
+- [ ] Auto-delete confirmed: a merged head branch disappears from the branch list.
+- [ ] Vercel branch-preview confirmation: pushing a `preview/*` branch produces a Vercel preview deployment, so editors get a pre-publish preview build before merging.
+- [ ] Bypass check: a designated admin can still push a typo fix directly; a non-listed editor cannot.
 
 Vercel production environment variables (all four required in production; preview gets none of the admin surface regardless):
 
@@ -204,8 +222,8 @@ Then inspect core routes, all article/category routes, sitemap, robots, RSS, Ope
 
 - App installed/authorized for the pinned repository with the expected callback.
 - Collaborators who edit hold repository **write** access (Keystatic GitHub mode authorizes repo writers only; there is no narrower role).
-- Branch selector reads `main` during edits (unenforceable in this Keystatic version — convention, verified by human eyes).
-- `main` accepts direct writes (a save commits to the selected branch; no PR flow).
+- Editors create `preview/<github-username>` branches through Keystatic's native branch dialog (scoped to `preview/` by `branchPrefix`); nothing lands on `main` except through a self-merged pull request (squash, auto-delete heads). No approvals are required.
+- `main` is branch-protected (MANUAL step — see the branch protection runbook above; until the rule is live, direct writes are still technically possible). Only bypass-listed admins may push `main` directly, for typo fixes only.
 - Vercel production env holds all five values above; preview deployments show the admin-unavailable notice.
 
 ### Normal dev versus loopback admin
@@ -222,7 +240,7 @@ Then inspect core routes, all article/category routes, sitemap, robots, RSS, Ope
 
 ### Onboarding / offboarding
 
-- Onboarding: grant the editor repository write access, point them at `/admin` (guide blocks plus public-draft aside are the training surface), and confirm they understand branch-`main`, save-commits, draft-defaults, and public-draft disclosure.
+- Onboarding: grant the editor repository write access, point them at `/admin` (guide blocks plus public-draft aside are the training surface), and confirm they understand preview-branch creation, save-commits-to-branch, PR self-merge with squash, draft-defaults, and public-draft disclosure.
 - Offboarding: revoke repository write access. That single action removes editor access — there is no separate CMS account to delete. Previously committed content remains in Git history by design.
 
 ### Recovery

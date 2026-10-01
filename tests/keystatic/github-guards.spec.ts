@@ -51,7 +51,8 @@ test.describe('task 6: github-mode guards (static, no live github)', () => {
     expect(getStorageKind({ NODE_ENV: 'development' } as NodeJS.ProcessEnv)).toBe('github');
     expect(getStorageConfig({ NODE_ENV: 'development' } as NodeJS.ProcessEnv)).toEqual({
       kind: 'github',
-      repo: 'missing/missing'
+      repo: 'missing/missing',
+      branchPrefix: 'preview/'
     });
 
     // Minimum lengths: client id 8, client secret 20, session secret 32.

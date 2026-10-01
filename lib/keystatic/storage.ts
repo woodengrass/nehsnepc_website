@@ -60,8 +60,11 @@ export function getGithubSecretsStatus(env: NodeJS.ProcessEnv = process.env): Gi
   return { ok: missing.length === 0 && !repoMissing, missing, repoMissing };
 }
 
+/** Branch prefix for Keystatic-created preview branches (`preview/<github-username>` by convention). */
+export const PREVIEW_BRANCH_PREFIX = 'preview/' as const;
+
 /** Storage config for server-side use (API route, Node scripts, unit tests). */
-export function getStorageConfig(env: NodeJS.ProcessEnv = process.env): { kind: 'local' } | { kind: 'github'; repo: `${string}/${string}` } {
+export function getStorageConfig(env: NodeJS.ProcessEnv = process.env): { kind: 'local' } | { kind: 'github'; repo: `${string}/${string}`; branchPrefix: typeof PREVIEW_BRANCH_PREFIX } {
   if (isLocalMode(env)) return { kind: 'local' };
   return githubStorage(getGithubRepo(env));
 }
@@ -70,9 +73,16 @@ export function getStorageConfig(env: NodeJS.ProcessEnv = process.env): { kind: 
  * GitHub storage object with a safe repo fallback (never throws on missing env).
  * Used by `keystatic.config.ts`, which must NOT read non-public env directly
  * (Next.js rejects non-`NEXT_PUBLIC_` `process.env` access in client code).
+ *
+ * `branchPrefix` scopes Keystatic's native CreateBranchDialog to `preview/`
+ * branches; local storage takes no prefix and is unaffected.
  */
-export function githubStorage(repo: string): { kind: 'github'; repo: `${string}/${string}` } {
-  return { kind: 'github', repo: (repo.includes('/') ? repo : 'missing/missing') as `${string}/${string}` };
+export function githubStorage(repo: string): { kind: 'github'; repo: `${string}/${string}`; branchPrefix: typeof PREVIEW_BRANCH_PREFIX } {
+  return {
+    kind: 'github',
+    repo: (repo.includes('/') ? repo : 'missing/missing') as `${string}/${string}`,
+    branchPrefix: PREVIEW_BRANCH_PREFIX
+  };
 }
 
 /** Redacted 503 body — contains names only, never secret values. */
