@@ -35,30 +35,59 @@
 - pnpm（`packageManager` 鎖定為 pnpm@10.15.1）。
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
-唯一的應用程式環境變數為選填：
+環境範本只有佔位符（絕非真機密），請複製為 `.env.local` 再依 GitHub OAuth
+App 與專案設定填寫：
 
 ```bash
-NEXT_PUBLIC_SITE_URL=https://nehsnepc.com
+cp .env.example .env.local
 ```
 
-未設定時預設為 `https://nehsnepc.com`，控制 canonical URL、metadata base、
-JSON-LD、sitemap、robots 與 RSS 連結。這是公開值，不可放機密。 repo 內沒有
-`.env` 檔案。
+`.env.local` 已被 git 忽略；`.env.example` 留在版控內作為文件契約。變數：
+
+| 變數 | 可見性 | 說明 |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | 公開、選填 | Canonical origin，預設 `https://nehsnepc.com`。不可放機密。 |
+| `KEYSTATIC_GITHUB_CLIENT_ID` | 公開識別碼 | OAuth App id，至少 8 字元。 |
+| `KEYSTATIC_GITHUB_CLIENT_SECRET` | 僅伺服器 | OAuth App secret，至少 20 字元。 |
+| `KEYSTATIC_SECRET` | 僅伺服器 | Session secret，至少 32 字元。 |
+| `KEYSTATIC_GITHUB_REPO` | 鎖定 | 必須是 `woodengrass/nehsnepc_website`。 |
+| `KEYSTATIC_PRODUCTION_ORIGIN` | 僅伺服器 | 正式站 HTTPS origin 精確值，不加尾斜線。 |
+| `NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE` | 僅開發 | 只在 loopback `admin:dev` 設為 `1`；正式／預覽絕不設定。 |
+
+缺漏或過短的機密會 fail-closed（去識別化 503，只寫變數名稱）；來源不符
+回傳去識別化 403。完整規則與 runbook 見
+[`docs/technical-stack.md`](./docs/technical-stack.md)。
 
 ## 快速開始
 
 | 指令 | 何時執行 |
 | --- | --- |
-| `npm run dev` | 本地開發（Turbopack）。 |
-| `npm run build` | 正式建置。這是**唯一的自動化品質關卡**——沒有 lint、test、formatter 或獨立 typecheck。 |
+| `npm run dev` | 本地開發（Turbopack），含文章圖片預產生與監看。GitHub 模式（不做本地寫入）。 |
+| `npm run admin:dev` | Loopback 編輯器演練：僅 `127.0.0.1` 的本地 Keystatic 儲存。絕不上正式／預覽。 |
+| `npm run content:validate` | 文章契約 fail-fast 檢查（`prebuild` 會自動跑）。 |
+| `pnpm test:content` | 內容品質關卡（驗證器＋契約測試）。 |
+| `pnpm test:admin` | 管理後台瀏覽器關卡（Playwright loopback CRUD、草稿／發布版面、auth 負測、bundle 隔離）。 |
+| `npm run build` | 正式建置。這是**發布關卡**——沒有 lint、formatter 或獨立 typecheck。 |
 | `npm run start` | 本地跑正式建置結果。 |
-| `npm run images:build` | 改過來源圖片後執行。重新產生 AVIF/WebP 到 `public/images/generated/`（需 `sharp`）。 |
+| `npm run images:build` | 改過來源圖片後執行。重新產生已提交的 AVIF/WebP 家族＋文章衍生圖（需 `sharp`）。 |
+| `npm run images:articles` | 只產生文章衍生圖（`prebuild` 與 dev 監看也會跑）。 |
 | `npm run models:build` | 改過 `public/models/src/` 的 GLB 後執行。輸出最佳化檔案到 `public/models/opt/`。 |
 
-素材管線**不包含**在 `npm run build` 內；來源有改就要先跑對應指令再 build。
+發布順序：
+
+```bash
+pnpm install --frozen-lockfile
+npm run content:validate
+pnpm test:content
+pnpm test:admin
+npm run build
+```
+
+`prebuild`（驗證器＋文章圖片）會在 `build` 前自動執行；非文章素材管線
+**不包含**在 `build` 內，來源有改就要先跑對應指令再 build。
 
 ## 運作方式
 
@@ -69,9 +98,16 @@ client 邊界：導覽、About 對焦體驗、聯絡互動、曝光計算器、�
 `@google/model-viewer`（文章內嵌）都只在需要的路由動態載入——絕不
 進 shared layout 或導覽。保持這樣。
 
-**檔案系統內容，不是 CMS。** 文章在 `content/articles/*.mdx`，frontmatter 由
-Zod 驗證（[`lib/content.ts`](./lib/content.ts)）。非草稿路由在建置期列舉，所以
-改內容就要重 build。`draft: true` 的文章只出現在開發環境。
+**檔案系統內容＋瀏覽器編輯器。** 文章在 `content/articles/*.mdx`，frontmatter 由
+Zod 驗證（[`lib/content.ts`](./lib/content.ts)，嚴格契約
+[`lib/content-contract.ts`](./lib/content-contract.ts)）。非草稿路由在建置期
+列舉，所以改內容就要重 build。`/admin` 入口通往 Keystatic GitHub 模式編輯器
+（`/keystatic`）：具 repo 寫入權限者以 GitHub 登入，以結構化表單儲存文章，
+每次儲存都是一次普通 Git 提交。編輯器新增預設為草稿；分支選擇器請依慣例停
+在 `main`。儲存庫為公開，已提交的草稿任何人都能在 GitHub 讀到，但網站五個
+版面（文章頁、首頁、分類頁、sitemap、RSS）都會排除草稿——草稿是未發布，不
+是機密。細節見 [`docs/posts.md`](./docs/posts.md)，runbook 見
+[`docs/technical-stack.md`](./docs/technical-stack.md)。
 
 **曝光計算器形狀。**
 [`components/tools/ExposureCalculator.tsx`](./components/tools/ExposureCalculator.tsx)
@@ -90,19 +126,29 @@ Zod 驗證（[`lib/content.ts`](./lib/content.ts)）。非草稿路由在建置�
 app/                    路由（App Router）。各區 layout.tsx、page.tsx，
                         sitemap/robots/rss/og-image 路由、globals.css
   about/                暗箱對焦體驗
+  admin/                不索引的中文入口，通往 /keystatic
+  api/keystatic/        延遲 fail-closed 的 Keystatic 路由處理
   contact/              聯絡管道＋表單
+  keystatic/            OAuth 保護的編輯器 UI（不索引，預覽停用）
   tools/                工具索引＋曝光計算器路由
   tutorial/             文章首頁、category/[category]、[slug]
 components/             依區域分的 UI：home、about、contact、tools、
                         articles、mdx（Figure、Callout、Model3D、MDXLink）
-lib/                    共用程式：content.ts、tools.ts、seo.tsx、og.tsx、
-                        format.ts、about_content.ts、archive_scene.js、
-                        exposure/（純計算器模組）
+lib/                    共用程式：content.ts、content-contract.ts、tools.ts、
+                        seo.tsx、og.tsx、format.ts、about_content.ts、
+                        archive_scene.js、exposure/（純計算器模組）、
+                        keystatic/（儲存關卡、圖片命名）
 content/articles/       repo 自管的 MDX 文章
+assets/articles/        版控的文章圖片版本化來源
 public/                 靜態素材：images/generated/
-                        （已提交的變體）、models/src|opt/
+                        （非文章變體已提交；文章衍生圖＋manifest 為 git 忽略
+                        的建置產物）、models/src|opt/
 assets/                 版控圖片來源：sources/、satellites/
-scripts/                optimize_images.js、optimize_models.js
+scripts/                optimize_images.js、optimize_article_images.js、
+                        validate_articles.ts、dev_with_article_images.mjs、
+                        optimize_models.js、test_admin_workflow.ts
+keystatic.config.ts     編輯器 schema（結構對應 components/mdx/*）
+.env.example            只有佔位符的環境範本（複製為 .env.local）
 docs/                   各領域技術文件，一個領域一份
 ```
 

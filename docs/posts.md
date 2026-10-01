@@ -37,7 +37,16 @@ author: 'NEHS Photography Club' # optional, defaults to NEHS 攝影社
 
 `date` and `updated` accept strings or YAML Date values. Date objects normalize to `YYYY-MM-DD`, but arbitrary strings are not rejected as invalid dates. Cover existence and cover-alt pairing are not validated. Tags are not required to be unique/nonempty. Use ISO `YYYY-MM-DD` dates and URL-safe unique filenames to preserve sorting, formatting, RSS, and route generation.
 
-Invalid frontmatter logs `[content] Skipping <file>: invalid frontmatter` and silently removes the article rather than failing the build. MDX compilation errors can still fail rendering/building.
+Invalid frontmatter logs `[content] Skipping <file>: invalid frontmatter` and silently removes the article rather than failing the build. MDX compilation errors can still fail rendering/building. This loose runtime behavior is deliberate defense-in-depth only: the build-time validator in `scripts/validate_articles.ts` fails fast instead (see Validation below), and `npm run build` never ships invalid content because `prebuild` runs the validator first.
+
+## Editor Defaults Versus Runtime Defaults
+
+Two defaults coexist; do not conflate them:
+
+- Runtime/file default (`lib/content.ts`, `lib/content-contract.ts`): `tags` defaults to `[]`, `draft` defaults to `false`, `author` defaults to `NEHS 攝影社`. A hand-written file that omits `draft` publishes on the next green build.
+- Keystatic new-entry default (`keystatic.config.ts`): the editor creates entries with `draft: true` and `author: 'NEHS 攝影社'`. A browser-created article stays a draft until an editor explicitly clears the checkbox.
+
+The strict validator accepts both `draft` values; only the website surfaces decide visibility.
 
 ## Categories
 
@@ -53,9 +62,17 @@ Changing this array affects schema validation, static category params, labels, f
 
 ## Drafts, Sorting, and Queries
 
-Draft inclusion defaults to `NODE_ENV !== 'production'`. Development lists and article lookup include drafts; production excludes them. `generateStaticParams`, sitemap, and RSS explicitly call `getAllArticles(false)`, so drafts are never emitted there. There is no publication scheduling; future-dated non-drafts publish immediately.
+Draft inclusion defaults to `NODE_ENV !== 'production'`. Development lists and article lookup include drafts; production excludes them. Five website surfaces exclude drafts, each by an explicit `false` argument or production guard — never by convention:
 
-Keystatic editing semantics: the editor exposes a branch selector that this version cannot remove or lock — always select `main` for the intended direct workflow. A save commits to the selected branch; typing alone does not write the content file (no autosave-on-keystroke). New entries remain draft. Setting `draft: false` on `main` publishes only after a successful Vercel build. The repository is public, so every committed draft is publicly readable on GitHub even while website routes exclude it. Concurrent edits to the same file can conflict; later saves win and conflicts are resolved in Git. Rollback is by Git revert of the commit or by redeploying a previous successful Vercel deployment. Renaming a slug is delete-plus-create with no automatic redirect (the old URL 404s).
+1. Article route static params (`app/tutorial/[slug]/page.tsx` calls `getAllArticles(false)`).
+2. Article lookup (`getArticle` returns null for drafts when `NODE_ENV === 'production'`; development renders them with a `/ DRAFT` marker).
+3. Tutorial index (`app/tutorial/page.tsx`, development-only draft marker).
+4. Category pages (`app/tutorial/category/[category]/page.tsx`, development-only draft marker).
+5. Discovery feeds (`app/sitemap.ts` and `app/rss.xml/route.ts` both call `getAllArticles(false)`).
+
+There is no publication scheduling; future-dated non-drafts publish immediately.
+
+Keystatic editing semantics: the editor exposes a branch selector that this version cannot remove or lock — always select `main` for the intended direct workflow. A save commits to the selected branch; typing alone does not write the content file (no autosave-on-keystroke). New entries default to `draft: true`. Setting `draft: false` on `main` publishes only after a successful Vercel build. The repository is public, so every committed draft is publicly readable on GitHub even while website routes exclude it — drafts are unpublished, never confidential. Concurrent edits to the same file can conflict; later saves win and conflicts are resolved in Git. Rollback is by Git revert of the commit or by redeploying a previous successful Vercel deployment. Renaming a slug is delete-plus-create with no automatic redirect (the old URL 404s).
 
 The articles collection sets the supported `previewUrl: '/tutorial/{slug}'` (current published route for editor navigation). In-editor component previews use the existing `EditorFigurePreview` via the Figure `block()` `ContentView`; there is no second article renderer and public pages never read GitHub at runtime.
 
@@ -117,6 +134,38 @@ Ordinary Markdown links map to `MDXLink`. `http`, `https`, and `mailto` are trea
 
 `Model3D` embeds a lazy GLB viewer. Its complete API, pipeline, and limitations are documented in [3D Model Preview](./model-preview.md).
 
+### Editor GFM Limits
+
+The Keystatic MDX field (`keystatic.config.ts` `content` field `options`) enables exactly: bold, italic, strikethrough, code, headings 2–4 (H1 is reserved for the title field), blockquote, ordered and unordered lists, tables, links, dividers, code blocks, and images (uploaded into `assets/articles/` with the same Figure naming). Anything outside this set must be plain Markdown or one of the three blocks above; the editor cannot insert raw HTML, custom JSX, or unregistered components.
+
+## Validation (Fail-Fast)
+
+`npm run content:validate` (`tsx scripts/validate_articles.ts`, also the first half of `prebuild`) enforces the strict contract in `lib/content-contract.ts` and exits 1 with `slug:line: rule` messages on any failure. Groups:
+
+1. Enumeration: `content/articles/*.{md,mdx}` must be non-empty; slugs must be URL-safe (`SLUG_RE`: lowercase alphanumerics joined by `-`/`_`); duplicate slugs across `.md`/`.mdx` fail.
+2. Frontmatter: strict Zod schema — non-empty title/description, ISO `YYYY-MM-DD` real calendar dates (rejects shape errors and rollovers such as `2026-02-30`; quoted YAML dates recommended), category allowlist, trimmed unique non-empty tags, cover/coverAlt pairing (both absent or both non-empty; alt at least 4 characters).
+3. Filesystem/media: covers and Figure `src` must live under `/images/generated/articles/<slug>/` with an image extension, backed by a versioned source under the mirrored `assets/articles/<slug>/` path (source existence is required; generated-derivative existence is not, because `prebuild` validates before generating). `Model3D` `src` must be an existing `/models/opt/*.glb`; `Model3D` `poster` must be an existing text path under `/images/generated/`. There is no legacy exception: migration is complete and every legacy path fails.
+4. Body scan: Figure requires `src`, meaningful `alt`, and paired positive-integer `width`/`height`; `Model3D` requires `src` and meaningful `alt`; raw `<img>` (especially external) fails; unknown MDX components fail; the body must compile under `@mdx-js/mdx`.
+5. Cross-surface parity: `getAllArticles`, sitemap, RSS, and `formatDate` must agree on the same article set and dates.
+
+## Article Images (Editor-Managed)
+
+Sources are tracked versioned originals under `assets/articles/<entry-slug>/`; generated derivatives under `public/images/generated/articles/` plus the manifest `public/images/generated/articles.manifest.json` are gitignored build artifacts regenerated at prebuild/dev time (see `technical-stack.md`).
+
+- Cover: the top-level `cover` image field writes `cover.<ext>` under the entry slug directory and serializes `/images/generated/articles/<slug>/cover.jpg` (field-key forcing; `transformFilename` is a documented no-op there by Keystatic design).
+- Figure: images uploaded inside the MDX editor use the uuid-collision-safe `figureTransformFilename` (`<uuid>-<sanitized-basename><ext>`) and serialize `/images/generated/articles/<slug>/<uuid>-<base>.jpg`.
+- `Model3D.poster` stays a plain text path (no upload); point it at a committed `/images/generated/` family image or a managed article derivative.
+- Budget and types: 8 MiB per source (`ARTICLE_IMAGE_MAX_BYTES`, enforced pre-Sharp with a warning skip); input allowlist `.jpg/.jpeg/.png/.webp/.avif` only — SVG, RAW, TIFF, PSD, HEIC, video, and GLB uploads are rejected with a warning. Symlinks are never followed; traversal escapes are skipped.
+- Alt text is required everywhere it matters: cover/coverAlt pairing, Figure `alt`, `Model3D` `alt` (minimum 4 meaningful characters each, enforced by the validator).
+- Generation: `scripts/optimize_article_images.js` mirrors each source 1:1 to a fallback at the exact serialized path plus non-upscaled 640/1280/1920 AVIF/WebP derivatives (hero Sharp params verbatim), records measured widths in the atomic manifest, and skips unchanged sources (mtime + size). `TutorialCover` and `Figure` derive `srcset` from the manifest — no hardcoded width table, so new slugs are responsive by construction. Orphan pruning is opt-in (`--prune`, default off).
+- Prebuild (`content:validate` then `images:articles`) runs before every `npm run build`; the dev launcher (`npm run dev`, `npm run admin:dev`) generates once at startup and watches `assets/articles/` (debounced, serialized, node:fs only).
+
+The two shipped articles (`example`, `exposure_and_brightness`) are fully migrated: covers and Figures point at managed paths and their versioned sources are SHA-256 byte-identical to the club originals `assets/sources/hero-1.jpg` and `assets/sources/contact-bg.jpg` (see `LICENSING.md`).
+
+## Trust Model
+
+MDX is trusted executable source rendered without sanitization: only GitHub identities with repository write access may author content, and there is no sandbox, no role narrower than repo write, and no review queue — a save to `main` plus a green build publishes. Never grant write access to untrusted authors, and never render untrusted Markdown through this pipeline without a new security design (see ADR-0003 revisit triggers).
+
 ## Dates and Metadata
 
 `formatDate` appends midnight UTC and formats with `Intl.DateTimeFormat('zh-TW')`, avoiding local rollover. Invalid accepted dates can still cause format errors or invalid RSS dates.
@@ -133,15 +182,21 @@ Article metadata includes title, description, author, tag keywords, canonical UR
 
 ## Authoring Workflow
 
-1. Copy `content/articles/example.mdx` to `content/articles/<url-safe-slug>.mdx` and replace its sample content.
-2. Add valid frontmatter using an ISO date and supported category.
-3. Use standard Markdown/GFM and only registered MDX components. The template demonstrates headings, blockquotes, `Callout`, `Figure`, tables, and `Model3D` usage.
-4. Put source images under `assets/`, add the family to `scripts/optimize_images.js`, run `npm run images:build`, and reference the `/images/generated/` path.
-5. Keep `draft: true` while developing, then set false to publish (only on `main` plus a green Vercel build).
-6. Run `npm run build`.
-7. Verify the index, category, detail route, mobile cards/body, heading anchors, image alternatives, metadata, `/sitemap.xml`, and `/rss.xml`. The `/admin` gateway documents branch selection, save-versus-release, public-draft visibility, rollback, slug-rename, and concurrency handling.
+Two paths, same contract:
 
-The normal build does not run image or model optimization. Run `npm run images:build` or `npm run models:build` first when their source assets change.
+**A. Browser editor (preferred for non-developers).** Open `/admin`, read the eight guide blocks and the public-draft aside, follow the link into `/keystatic`, and sign in with a GitHub account that holds repository write access. Create or open an `Articles` entry and fill the structured fields (title, description, ISO date, optional updated date, category, tags, cover plus coverAlt, draft checkbox, author default `NEHS 攝影社`). Write the body with GFM plus only the `Figure`, `Callout`, and `Model3D` blocks (see Editor GFM Limits). Upload images through the image fields — files land versioned under `assets/articles/<slug>/`. Keep `draft: true` while developing. Save explicitly (typing never autosaves); the save commits to the selected branch, so confirm the branch selector reads `main`.
+
+**B. Hand editing.** Copy `content/articles/example.mdx` to `content/articles/<url-safe-slug>.mdx` and replace its sample content. Add valid frontmatter using an ISO date and supported category. Use standard Markdown/GFM and only registered MDX components. Place source images under `assets/articles/<slug>/` using the same naming (`cover.<ext>`, `<uuid>-<base>.<ext>`), and reference the `/images/generated/articles/<slug>/` paths.
+
+Then, for both paths:
+
+1. Run `npm run content:validate` (fail-fast; fix every `slug:line: rule` error).
+2. Run `npm run images:articles` (or rely on `prebuild`/dev-watcher) so serialized paths resolve.
+3. Set `draft: false` to publish (only on `main` plus a green Vercel build).
+4. Run `npm run build`.
+5. Verify the index, category, detail route, mobile cards/body, heading anchors, image alternatives, metadata, `/sitemap.xml`, and `/rss.xml`. The `/admin` gateway documents branch selection, save-versus-release, public-draft visibility, rollback, slug-rename, and concurrency handling.
+
+The normal build does not run the non-article image or model optimization. Run `npm run images:build` or `npm run models:build` first when those source assets change.
 
 ## Article License
 
@@ -161,7 +216,7 @@ both when changing the article footer or structured data.
 
 ## Change Checklist
 
-- Update this file for schema, category, draft, date, route, card/detail, plugin, component, metadata, RSS, sitemap, or authoring changes.
+- Update this file for schema, editor defaults, category, draft, date, route, card/detail, plugin, component, GFM option, validation rule, media path/budget, trust, metadata, RSS, sitemap, or authoring changes.
 - Keep route metadata and public discovery surfaces synchronized.
 - Verify production draft exclusion separately from development visibility.
-- Run `npm run build` and inspect warnings for skipped content.
+- Run `npm run content:validate` before `npm run build` and inspect errors for skipped content.

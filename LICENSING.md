@@ -35,6 +35,32 @@ Original sources live under versioned `assets/sources/` and
 `assets/satellites/` directories. Generated derivatives under `public/images/generated/` inherit the
 license of their source image.
 
+## Article images — club originals plus migrated bytes
+
+Versioned article sources under `assets/articles/<slug>/` are © NEHS
+Photography Club, all rights reserved, exactly like the sources above:
+
+- `cover.<ext>` files are per-article cover originals (the Keystatic cover
+  field forces the `<fieldKey>.<ext>` name by design).
+- `<uuid>-<basename><ext>` files are Figure originals (uuid-collision-safe
+  editor naming; see `lib/keystatic/image-naming.ts`).
+
+Relationship to `assets/sources/` photos: the two shipped articles were
+migrated from the club originals, not re-licensed. Their versioned sources are
+SHA-256 byte-identical copies — both covers equal `assets/sources/hero-1.jpg`
+and both Figure originals equal `assets/sources/contact-bg.jpg` — so the
+`assets/articles/` files carry the same © NEHS Photography Club,
+all-rights-reserved ownership as the `assets/sources/` files they were copied
+from. No new license was created by the migration; no third-party bytes are
+involved.
+
+Generated article derivatives under `public/images/generated/articles/` plus
+the manifest `public/images/generated/articles.manifest.json` are unlicensed
+build artifacts, not separately licensed works: they are gitignored, regenerated
+by `prebuild` (`npm run images:articles`) and the dev watcher from the tracked
+sources above, and must never be copied out as standalone assets. Treat them
+like compiled output — the sources are the owned originals.
+
 ## Tutorial articles — CC BY-SA 4.0
 
 All articles in `content/articles/*.mdx` are released under

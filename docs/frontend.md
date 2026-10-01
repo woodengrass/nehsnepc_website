@@ -82,7 +82,7 @@ Any navigation change must test keyboard order, Escape, focus visibility, route-
 
 ## Admin Gateway
 
-`app/admin/page.tsx` is a static Server Component marked with `data-admin-root`. It renders a Traditional Chinese gateway (H1 內容管理／Admin with a red left rule, four numbered guide blocks for login, article management, tools/pages, and precautions, plus a CTA link into `/keystatic` and footer links home/tutorial/contact). It carries no private repository data and imports no Keystatic code.
+`app/admin/page.tsx` is a static Server Component marked with `data-admin-root`. It renders a Traditional Chinese gateway (H1 內容管理／Admin with a red left rule, eight numbered guide blocks, a red public-draft `aside`, a CTA link into `/keystatic`, a static-links section for the GitHub repository plus Vercel project, footer nav home/tutorial/contact, and no private repository data — it imports no Keystatic code). The eight blocks cover: 01 login, 02 branch selection (`main` by unenforceable convention), 03 save-versus-release (typing never autosaves; new entries default to draft; `draft: false` on `main` plus a green Vercel build publishes), 04 draft publicness, 05 concurrency (later saves win), 06 rollback (Git revert or redeploy a prior Vercel deployment; no status shown here), 07 slug rename (delete-plus-create, old URL 404s, no redirect), 08 pre-publish checks (rebuild, `images:build`, no unlicensed photos). The aside restates the public-draft warning plus the branch and publish rules. The links section holds static outbound links only (repository URL plus `https://vercel.com/dashboard` placeholder with a replace-when-known comment) and states the page never shows commit or deployment status.
 
 Suppression and exclusion rules:
 
