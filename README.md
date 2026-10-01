@@ -111,8 +111,7 @@ contract [`lib/content-contract.ts`](./lib/content-contract.ts)).
 Non-draft routes are enumerated at build time, so every content change requires
 a rebuild. The `/admin` gateway leads into the Keystatic GitHub-mode editor
 (`/keystatic`): repo writers sign in with GitHub and save structured articles
-as ordinary Git commits. New editor entries default to `draft: true`; the
-editor branch selector must stay on `main` by convention. The repository is
+as ordinary Git commits. New editor entries default to `draft: true`; saves commit to a `preview/<github-username>` branch created through the editor's branch dialog, and `main` is branch-protected so nothing lands there except through a pull request. The repository is
 public, so committed drafts are world-readable on GitHub even while five
 website surfaces (article route, index, category pages, sitemap, RSS) exclude
 them — drafts are unpublished, never confidential. Details live in

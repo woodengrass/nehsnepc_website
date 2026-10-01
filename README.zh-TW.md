@@ -103,8 +103,7 @@ Zod 驗證（[`lib/content.ts`](./lib/content.ts)，嚴格契約
 [`lib/content-contract.ts`](./lib/content-contract.ts)）。非草稿路由在建置期
 列舉，所以改內容就要重 build。`/admin` 入口通往 Keystatic GitHub 模式編輯器
 （`/keystatic`）：具 repo 寫入權限者以 GitHub 登入，以結構化表單儲存文章，
-每次儲存都是一次普通 Git 提交。編輯器新增預設為草稿；分支選擇器請依慣例停
-在 `main`。儲存庫為公開，已提交的草稿任何人都能在 GitHub 讀到，但網站五個
+每次儲存都是一次普通 Git 提交。編輯器新增預設為草稿；儲存會提交到透過編輯器分支對話框建立的 `preview/<github-username>` 分支，`main` 為分支保護，只能透過 pull request 合併。儲存庫為公開，已提交的草稿任何人都能在 GitHub 讀到，但網站五個
 版面（文章頁、首頁、分類頁、sitemap、RSS）都會排除草稿——草稿是未發布，不
 是機密。細節見 [`docs/posts.md`](./docs/posts.md)，runbook 見
 [`docs/technical-stack.md`](./docs/technical-stack.md)。
