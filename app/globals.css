@@ -75,6 +75,11 @@
     display: none;
   }
 
+  body:has([data-keystatic-root]) .grain-overlay,
+  body:has([data-keystatic-root]) .site-chrome-nav {
+    display: none;
+  }
+
   [data-admin-root] {
     min-height: 100svh;
     background: var(--color-bg);

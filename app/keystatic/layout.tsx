@@ -31,10 +31,12 @@ export default async function KeystaticLayout() {
   if (!isLocalMode()) {
     if (isPreviewEnv()) {
       return (
-        <main data-keystatic-unavailable>
-          <h1>Admin unavailable</h1>
-          <p>The Keystatic admin is unavailable on preview deployments.</p>
-        </main>
+        <div data-keystatic-root>
+          <main data-keystatic-unavailable>
+            <h1>Admin unavailable</h1>
+            <p>The Keystatic admin is unavailable on preview deployments.</p>
+          </main>
+        </div>
       );
     }
     if (isCanonicalOriginConfigured()) {
@@ -56,5 +58,9 @@ export default async function KeystaticLayout() {
       }
     }
   }
-  return <KeystaticApp />;
+  return (
+    <div data-keystatic-root>
+      <KeystaticApp />
+    </div>
+  );
 }
