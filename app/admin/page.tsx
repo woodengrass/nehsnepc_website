@@ -22,20 +22,46 @@ const GUIDE_BLOCKS = [
   },
   {
     index: '02',
-    title: '文章管理',
-    body: '在編輯器中新增或編輯教學文章。標記為草稿（draft）的文章僅供幹部預覽，不會出現在公開的教學索引中。'
+    title: '分支選擇',
+    body: '編輯器提供分支選擇器，本版本無法移除或鎖定。請一律選擇 main；儲存會直接提交到所選分支，不會另開審核流程。'
   },
   {
     index: '03',
-    title: '工具與頁面',
-    body: '工具介紹與頁面文字同樣在編輯器中維護。儲存後請檢查預覽，確認標題、內文與連結無誤再發布。'
+    title: '儲存與發佈',
+    body: '只有按儲存才會寫入內容檔並提交，打字過程不會自動儲存。新增文章預設為草稿；僅當 main 上的文章設為 draft:false 且 Vercel 建置成功，公開站才會出現。'
   },
   {
     index: '04',
-    title: '注意事項',
-    body: '發布前請重新建置網站並確認頁面正常顯示；照片請先經 images:build 產生最佳化版本；請勿上傳未授權照片。'
+    title: '草稿公開性',
+    body: '本站儲存庫為公開，已提交的草稿任何人都能在 GitHub 上讀到。網站路由會排除草稿，但草稿不是機密，請勿寫入不公開資訊。'
+  },
+  {
+    index: '05',
+    title: '同時編輯',
+    body: '多人同時編輯同一檔案可能發生衝突，以後儲存者為準。編輯前請先重新整理確認最新內容，衝突請以 Git 方式處理。'
+  },
+  {
+    index: '06',
+    title: '回退',
+    body: '需回退時請以 Git revert 還原該次提交，或在 Vercel 專案中重新部署前一個成功的部署。本頁不顯示部署狀態。'
+  },
+  {
+    index: '07',
+    title: 'Slug 更名',
+    body: '更改 slug 等同刪除舊檔並新增新檔，不會自動產生重新導向，舊連結會 404。對外已分享的連結請手動更新。'
+  },
+  {
+    index: '08',
+    title: '發佈前檢查',
+    body: '發佈前請重新建置網站並確認頁面正常顯示；照片請先經 images:build 產生最佳化版本；請勿上傳未授權照片。'
   }
 ] as const;
+
+const REPO_URL = 'https://github.com/woodengrass/nehsnepc_website';
+// Exact Vercel project URL unknown at implementation time — the dashboard
+// lands signed-in editors where their project is. Replace with the real
+// project URL when known (Todo 10 may record it if provided).
+const VERCEL_URL = 'https://vercel.com/dashboard';
 
 export default function AdminGateway() {
   return (
@@ -100,6 +126,25 @@ export default function AdminGateway() {
       >
         站內內容管理入口，僅限社團幹部使用。如需協助請透過「聯絡」頁與我們聯繫。
       </p>
+
+      <aside
+        aria-label="草稿公開性提醒"
+        className={`
+          mt-8
+          max-w-128
+          border-l-4
+          border-[var(--color-red)]
+          bg-[var(--color-surface)]
+          px-5
+          py-4
+          text-[0.85rem]
+          leading-[1.8]
+          text-[var(--color-text)]
+        `}
+      >
+        公開提醒：儲存庫為公開，已提交的草稿任何人都能在 GitHub 上讀到；網站路由會排除草稿，但草稿不是機密。編輯器分支請選擇
+        main，儲存即提交到所選分支；發佈須將 draft 設為 false 並等待 Vercel 建置成功。
+      </aside>
 
       <Link
         href="/keystatic"
@@ -189,6 +234,81 @@ export default function AdminGateway() {
           </section>
         ))}
       </div>
+
+      <section
+        aria-label="儲存庫與部署連結"
+        className={`
+          mt-16
+          border-t
+          border-[var(--color-line)]
+          py-8
+        `}
+      >
+        <p
+          className={`
+            font-[family-name:var(--font-source)]
+            text-[0.62rem]
+            tracking-[0.12em]
+            uppercase
+            text-[var(--color-muted)]
+          `}
+        >
+          Links／靜態連結
+        </p>
+        <h2
+          className={`
+            mt-3
+            font-[family-name:var(--font-source)]
+            text-[1.5rem]
+            leading-[1.4]
+            font-bold
+            tracking-[-0.01em]
+            text-[var(--color-text)]
+          `}
+        >
+          儲存庫與部署
+        </h2>
+        <p
+          className={`
+            mt-3
+            max-w-128
+            text-[0.9rem]
+            leading-[1.8]
+            text-[var(--color-text)]
+          `}
+        >
+          以下為靜態連結，僅供前往對應頁面；本站不會在此顯示提交編號或部署狀態。回退請以 Git revert
+          還原提交，或在 Vercel 專案中重新部署前一個成功的部署。
+        </p>
+        <div
+          className={`
+            mt-6
+            flex
+            flex-wrap
+            gap-x-8
+            gap-y-3
+            text-[0.9rem]
+            leading-[1.8]
+          `}
+        >
+          <a
+            href={REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-4"
+          >
+            GitHub 儲存庫
+          </a>
+          <a
+            href={VERCEL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-4"
+          >
+            Vercel 專案
+          </a>
+        </div>
+      </section>
 
       <nav
         aria-label="站內導覽"

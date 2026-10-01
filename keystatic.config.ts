@@ -37,6 +37,12 @@ const storage = isLocalAdmin ? ({ kind: 'local' } as const) : githubStorage(getG
 // - Figure blocks preview through the client-safe `EditorFigurePreview`
 //   (in-memory blob before save, raw serialized src after); public rendering
 //   uses the server-only `Figure` with manifest srcsets.
+// - Collection `previewUrl` uses Keystatic's documented string option with the
+//   `{slug}` placeholder only (`'/tutorial/{slug}'`): the editor offers a
+//   preview link to the current published route for navigation fidelity.
+//   Unsaved/local edits are NOT rendered there — public pages stay
+//   filesystem-built (`lib/content.ts`), so the preview points at the last
+//   successful build, not at draft content.
 
 const FigureBlock = block({
   label: 'Figure',
@@ -125,6 +131,8 @@ export default config({
       path: 'content/articles/*',
       slugField: 'title',
       format: { contentField: 'content' },
+      // Supported collection preview: navigates to the current published route.
+      previewUrl: '/tutorial/{slug}',
       schema: {
         title: fields.slug({
           name: {

@@ -55,6 +55,10 @@ Changing this array affects schema validation, static category params, labels, f
 
 Draft inclusion defaults to `NODE_ENV !== 'production'`. Development lists and article lookup include drafts; production excludes them. `generateStaticParams`, sitemap, and RSS explicitly call `getAllArticles(false)`, so drafts are never emitted there. There is no publication scheduling; future-dated non-drafts publish immediately.
 
+Keystatic editing semantics: the editor exposes a branch selector that this version cannot remove or lock — always select `main` for the intended direct workflow. A save commits to the selected branch; typing alone does not write the content file (no autosave-on-keystroke). New entries remain draft. Setting `draft: false` on `main` publishes only after a successful Vercel build. The repository is public, so every committed draft is publicly readable on GitHub even while website routes exclude it. Concurrent edits to the same file can conflict; later saves win and conflicts are resolved in Git. Rollback is by Git revert of the commit or by redeploying a previous successful Vercel deployment. Renaming a slug is delete-plus-create with no automatic redirect (the old URL 404s).
+
+The articles collection sets the supported `previewUrl: '/tutorial/{slug}'` (current published route for editor navigation). In-editor component previews use the existing `EditorFigurePreview` via the Figure `block()` `ContentView`; there is no second article renderer and public pages never read GitHub at runtime.
+
 Articles sort descending by lexicographic date. ISO dates work correctly; arbitrary strings do not. Equal dates have no explicit tie-breaker. Adjacent navigation crosses categories and can include drafts in development. `getRelatedArticles` prioritizes same-category articles but is currently unused by the UI.
 
 Reading time counts CJK characters at 400/minute and Latin tokens at 220/minute, rounds, and enforces a one-minute minimum. It scans raw MDX, so code, JSX attributes, and URLs can affect the estimate.
@@ -133,9 +137,9 @@ Article metadata includes title, description, author, tag keywords, canonical UR
 2. Add valid frontmatter using an ISO date and supported category.
 3. Use standard Markdown/GFM and only registered MDX components. The template demonstrates headings, blockquotes, `Callout`, `Figure`, tables, and `Model3D` usage.
 4. Put source images under `assets/`, add the family to `scripts/optimize_images.js`, run `npm run images:build`, and reference the `/images/generated/` path.
-5. Keep `draft: true` while developing, then remove/set false to publish.
+5. Keep `draft: true` while developing, then set false to publish (only on `main` plus a green Vercel build).
 6. Run `npm run build`.
-7. Verify the index, category, detail route, mobile cards/body, heading anchors, image alternatives, metadata, `/sitemap.xml`, and `/rss.xml`.
+7. Verify the index, category, detail route, mobile cards/body, heading anchors, image alternatives, metadata, `/sitemap.xml`, and `/rss.xml`. The `/admin` gateway documents branch selection, save-versus-release, public-draft visibility, rollback, slug-rename, and concurrency handling.
 
 The normal build does not run image or model optimization. Run `npm run images:build` or `npm run models:build` first when their source assets change.
 
