@@ -19,7 +19,14 @@ import path from 'node:path';
 import { getAllArticles, getArticle } from '../../lib/content';
 import { articleImageSet } from '../../lib/article-images';
 import { parsePreviewMdx, previewReadingMinutes } from '../../lib/preview/frontmatter';
-import { previewImageSet } from '../../lib/preview/manifest';
+import { previewImageSet, previewSourceRel } from '../../lib/preview/manifest';
+import {
+  PREVIEW_ORIGINAL_BUDGET_BYTES,
+  PreviewFetchError,
+  fetchCommittedImageOriginal,
+  fetchCommittedMdx,
+  isSafeOriginalRel
+} from '../../lib/preview/github';
 import { readingMinutes } from '../../lib/content';
 
 const ROOT = process.cwd();
@@ -163,6 +170,199 @@ test.describe('preview manifest math parity', () => {
     expect(previewImageSet('/images/generated/hero-1280.webp', { items: {} })).toBeNull();
     expect(articleImageSet('/images/generated/articles/../x.jpg')).toBeNull();
     expect(previewImageSet('/images/generated/articles/../x.jpg', { items: {} })).toBeNull();
+  });
+});
+
+test.describe('preview original fallback (ADR-0006 three states)', () => {
+  test('previewSourceRel mirrors generated prefix to the versioned source rel', () => {
+    expect(previewSourceRel('/images/generated/articles/example/cover.jpg')).toBe('example/cover.jpg');
+    expect(previewSourceRel('/images/generated/articles/a/b/c.png')).toBe('a/b/c.png');
+    expect(previewSourceRel('/images/generated/hero-1280.webp')).toBeNull();
+    expect(previewSourceRel('/images/generated/articles/../x.jpg')).toBeNull();
+    expect(previewSourceRel('/images/generated/articles/')).toBeNull();
+  });
+
+  test('isSafeOriginalRel accepts nested rels, rejects escapes', () => {
+    expect(isSafeOriginalRel('example/cover.jpg')).toBe(true);
+    expect(isSafeOriginalRel('a/b/c.png')).toBe(true);
+    expect(isSafeOriginalRel('')).toBe(false);
+    expect(isSafeOriginalRel('/example/cover.jpg')).toBe(false);
+    expect(isSafeOriginalRel('../x.jpg')).toBe(false);
+    expect(isSafeOriginalRel('a/../b.jpg')).toBe(false);
+    expect(isSafeOriginalRel('a\\b.jpg')).toBe(false);
+    expect(isSafeOriginalRel('a b.jpg')).toBe(false);
+  });
+
+  test('three-state matrix: generated set vs missing-original vs plain img', () => {
+    const manifest = { items: { 'example/cover.jpg': { widths: [640, 1280] } } };
+    const src = '/images/generated/articles/example/cover.jpg';
+    // State 1: row present → responsive set (srcset, no badge/placeholder).
+    const generated = previewImageSet(src, manifest);
+    expect(generated && 'set' in generated).toBe(true);
+    // State 2: managed path, row removed (in-memory only — real file untouched)
+    // → caller tries the versioned original; the mirror rel is exact.
+    const pruned = { items: {} };
+    const missing = previewImageSet(src, pruned);
+    expect(missing).toEqual({ missing: true });
+    expect(previewSourceRel(src)).toBe('example/cover.jpg');
+    // State 3: no manifest at all → plain <img>, same as the server reader.
+    expect(previewImageSet(src, null)).toBeNull();
+    // Non-managed paths never enter the chain on either side.
+    expect(previewImageSet('/images/generated/hero-1280.webp', pruned)).toBeNull();
+  });
+
+  // In-memory stubbed fetch battery: no network, no fixture files, and the
+  // committed manifest is never mutated — rows are pruned in stub objects.
+  const PNG = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64'
+  );
+
+  async function withStubbedFetch(
+    handler: (url: string) => Response,
+    run: (calls: string[]) => Promise<void>
+  ): Promise<void> {
+    const realFetch = globalThis.fetch;
+    const calls: string[] = [];
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = String(input);
+      calls.push(url);
+      return handler(url);
+    }) as typeof fetch;
+    try {
+      await run(calls);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  }
+
+  test('contents API primary returns an object URL (no srcset by definition)', async () => {
+    await withStubbedFetch(
+      () => new Response(PNG, { status: 200, headers: { 'content-type': 'image/png' } }),
+      async (calls) => {
+        const result = await fetchCommittedImageOriginal('example/new.jpg', 'preview/alice');
+        expect(result.byteSize).toBe(PNG.length);
+        expect(result.objectUrl.startsWith('blob:')).toBe(true);
+        expect(calls).toHaveLength(1);
+        expect(calls[0]).toContain('api.github.com');
+        expect(calls[0]).toContain('assets/articles/example/new.jpg');
+        expect(calls[0]).toContain('ref=preview%2Falice');
+        URL.revokeObjectURL(result.objectUrl);
+      }
+    );
+  });
+
+  test('contents 404 falls back to raw.githubusercontent on the same branch', async () => {
+    await withStubbedFetch(
+      (url) =>
+        url.includes('api.github.com')
+          ? new Response('Not Found', { status: 404 })
+          : new Response(PNG, { status: 200, headers: { 'content-type': 'image/png' } }),
+      async (calls) => {
+        const result = await fetchCommittedImageOriginal('example/new.jpg', 'main');
+        expect(result.byteSize).toBe(PNG.length);
+        expect(calls).toHaveLength(2);
+        expect(calls[1]).toContain('raw.githubusercontent.com');
+        expect(calls[1]).toContain('/main/assets/articles/example/new.jpg');
+        URL.revokeObjectURL(result.objectUrl);
+      }
+    );
+  });
+
+  test('original also missing → not-found (caller keeps the honest placeholder)', async () => {
+    await withStubbedFetch(
+      () => new Response('Not Found', { status: 404 }),
+      async (calls) => {
+        await expect(fetchCommittedImageOriginal('example/new.jpg', 'main')).rejects.toMatchObject({
+          name: 'PreviewFetchError',
+          kind: 'not-found'
+        });
+        expect(calls).toHaveLength(2);
+      }
+    );
+  });
+
+  test('oversize original is refused without rendering', async () => {
+    await withStubbedFetch(
+      () =>
+        new Response(PNG, {
+          status: 200,
+          headers: { 'content-length': String(PREVIEW_ORIGINAL_BUDGET_BYTES + 1) }
+        }),
+      async () => {
+        await expect(fetchCommittedImageOriginal('example/new.jpg', 'main')).rejects.toMatchObject({
+          name: 'PreviewFetchError'
+        });
+      }
+    );
+  });
+
+  test('rate-limit body surfaces as rate-limited, not silent', async () => {
+    await withStubbedFetch(
+      () => new Response(JSON.stringify({ message: 'API rate limit exceeded' }), { status: 403 }),
+      async () => {
+        await expect(fetchCommittedImageOriginal('example/new.jpg', 'main')).rejects.toMatchObject({
+          kind: 'rate-limited'
+        });
+      }
+    );
+  });
+
+  test('unsafe rel/branch never reach the network', async () => {
+    await withStubbedFetch(
+      () => new Response(PNG, { status: 200 }),
+      async (calls) => {
+        await expect(fetchCommittedImageOriginal('../x.jpg', 'main')).rejects.toBeInstanceOf(
+          PreviewFetchError
+        );
+        await expect(fetchCommittedImageOriginal('example/new.jpg', 'a..b')).rejects.toMatchObject({
+          kind: 'invalid-branch'
+        });
+        expect(calls).toHaveLength(0);
+      }
+    );
+  });
+
+  // Stall guard (ADR-0006): a never-resolving fetch must abort via the
+  // `timeoutMs` seam with the honest zh-TW timeout error — not hang. The
+  // 50 ms budget keeps this deterministic and fast; the 30 s production
+  // default (`PREVIEW_GITHUB_TIMEOUT_MS`) is proved by the stubbed-stall
+  // browser test in `page.spec.ts`.
+  test('stalled MDX fetch aborts with the timeout error, not a hang', async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = ((_input: unknown, init?: { signal?: AbortSignal }) =>
+      new Promise<never>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () =>
+          reject(new DOMException('The operation was aborted.', 'AbortError'))
+        );
+      })) as unknown as typeof fetch;
+    try {
+      const error = await fetchCommittedMdx('example', 'main', 50).catch((e: unknown) => e);
+      expect(error).toMatchObject({ name: 'PreviewFetchError', kind: 'timeout' });
+      expect((error as PreviewFetchError).message).toContain('逾時');
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+
+  test('stalled image legs fall through to the honest placeholder path', async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = ((_input: unknown, init?: { signal?: AbortSignal }) =>
+      new Promise<never>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () =>
+          reject(new DOMException('The operation was aborted.', 'AbortError'))
+        );
+      })) as unknown as typeof fetch;
+    try {
+      await expect(fetchCommittedImageOriginal('example/new.jpg', 'main', 50)).rejects.toMatchObject(
+        {
+          name: 'PreviewFetchError',
+          kind: 'not-found'
+        }
+      );
+    } finally {
+      globalThis.fetch = realFetch;
+    }
   });
 });
 

@@ -6,13 +6,21 @@
  * `fetch('/images/generated/articles.manifest.json')` instead of `node:fs`.
  *
  * Missing-manifest behavior matches the server (plain `<img>` fallback).
- * Missing-entry behavior is the honest preview gap (ADR-0006): a managed
- * path absent from the manifest means its derivatives were never generated
- * (typical for brand-new branch uploads), so the caller renders an explicit
- * placeholder instead of a silent broken image.
+ *
+ * Three-state fallback chain (ADR-0006):
+ *   1. generated → responsive `<picture>` (srcset math below);
+ *   2. managed path absent from a loaded manifest → versioned ORIGINAL
+ *      (`assets/articles/<rel>` on the same branch, via
+ *      `fetchCommittedImageOriginal`, plain lazy `<img>` + honest badge);
+ *   3. original also unavailable → honest placeholder (`MissingImage`).
+ * A managed path absent from the manifest means its derivatives were never
+ * generated (typical for brand-new branch uploads).
  */
 
 export const PREVIEW_GENERATED_PREFIX = '/images/generated/articles/';
+
+/** Versioned source dir mirrored 1:1 to the generated prefix by the pipeline. */
+export const PREVIEW_SOURCE_PREFIX = 'assets/articles/';
 
 export type PreviewManifestItem = {
   widths: number[];
@@ -70,10 +78,23 @@ export function isManagedPreviewSrc(src: string): boolean {
 }
 
 /**
+ * Mirror a serialized managed path to its versioned source rel:
+ * `/images/generated/articles/<rel>` → `<rel>` for
+ * `assets/articles/<rel>` on the same branch. Returns null for non-managed
+ * or traversal paths (those never reach the original chain).
+ */
+export function previewSourceRel(src: string): string | null {
+  if (!isManagedPreviewSrc(src)) return null;
+  return src.slice(PREVIEW_GENERATED_PREFIX.length).split('?')[0].split('#')[0];
+}
+
+/**
  * Resolve a managed src to its responsive set.
  * `manifest === null` (missing manifest): return null → plain `<img>`.
  * Managed src absent from a loaded manifest: return `{ missing: true }` →
- * honest placeholder (derivatives not yet generated).
+ * the caller tries the versioned original first (`previewSourceRel` +
+ * `fetchCommittedImageOriginal`) and keeps the honest placeholder only when
+ * the original is also unavailable.
  */
 export function previewImageSet(
   src: string,

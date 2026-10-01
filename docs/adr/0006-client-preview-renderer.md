@@ -58,6 +58,10 @@ following locks:
   ships twins (`PreviewFigure`, cover branch in `PreviewRenderer`) with
   identical class names and identical srcset math, fed by
   `fetch('/images/generated/articles.manifest.json')` instead of `node:fs`.
+  Since 2026-10-01 the twins add the middle fallback state: manifest miss →
+  versioned original (`fetchCommittedImageOriginal` in `lib/preview/github.ts`,
+  `previewSourceRel` in `lib/preview/manifest.ts`), plain lazy `<img>` +
+  honest badge; the dashed placeholder is now the last resort only.
 
 - **Read-only, noindex, off every surface.** Route metadata is
   `index: false, follow: false`; `robots.ts` disallows `/preview`; the route
@@ -93,9 +97,42 @@ following locks:
 
 - **Saved commits only.** Unsaved Keystatic keystrokes never appear; the
   preview UI states this on every load.
-- **New-upload images 404 pre-generation.** A managed path absent from the
-  manifest renders an explicit dashed placeholder ("圖片衍生檔尚未產生"),
-  never a silent gap; it resolves after merge plus a successful build.
+- **Three-state image fallback (amended 2026-10-01).** A managed path
+  (`/images/generated/articles/<rel>`) resolves in order:
+  1. manifest row present → responsive `<picture>` (AVIF/WebP srcsets);
+  2. row absent (derivatives never generated — typical for brand-new branch
+     uploads) → the versioned ORIGINAL `assets/articles/<rel>` on the SAME
+     branch, fetched client-side (GitHub REST contents API primary,
+     `raw.githubusercontent` fallback) into a blob object URL rendered as a
+     plain lazy `<img>` with no srcset, plus an honest
+     "未處理原圖預覽" badge;
+  3. original also unavailable (missing, offline, rate-limited, oversize) →
+     the explicit dashed placeholder ("圖片衍生檔尚未產生"), never a
+     silent gap; it resolves after merge plus a successful build.
+  Rationale (user-approved): the repo is public so originals are already
+  world-readable — no new exposure. The viewer is the editor; render pixels
+  only (no EXIF parsing or display anywhere in the chain). Client-side
+  budget: 8 MiB per original (`PREVIEW_ORIGINAL_BUDGET_BYTES`, declared
+  `content-length` checked before reading the body); oversize originals fall
+  through to the placeholder. Originals are never downloaded at build time
+  and never committed anywhere new.
+- **Rate-limit behavior (amended 2026-10-01).** All preview fetches
+  (MDX and originals) are unauthenticated, so the GitHub hourly quota is
+  shared. A rate-limit-shaped response (403 with `x-ratelimit-remaining: 0`
+  or a rate-limit/abuse JSON body) surfaces the honest zh-TW quota message
+  ("配額每小時重置") for MDX, and falls through to the placeholder for
+  images — quota exhaustion never renders a broken image. Test consequence:
+  only ONE browser test stays live (`page.spec.ts` desktop happy-path); all
+  other page tests stub their GitHub traffic, because a spent 60/hr quota
+  turns every live assertion into a quota-message failure.
+- **Stall timeout (amended 2026-10-01).** Every preview GitHub fetch carries
+  an `AbortController` budget of 30 s (`PREVIEW_GITHUB_TIMEOUT_MS` in
+  `lib/preview/github.ts`): a hung `api.github.com` connection surfaces the
+  honest zh-TW timeout error ("讀取逾時…請檢查連線後再試一次") for MDX
+  instead of hanging the UI (a stalled connection once hung a test run for
+  10 minutes with zero output). The MDX lookup aborts on the first stall
+  without retrying the sibling extension; image legs fall through to the
+  next URL and then the placeholder, same as any other failed leg.
 - **SEO/JSON-LD not previewed.** No `JsonLd`, no OpenGraph, no adjacent-
   article navigation — the preview is a reading check, not a metadata check.
 - **Frontmatter validation display.** Problems that would fail the

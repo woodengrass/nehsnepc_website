@@ -13,9 +13,11 @@ import MDXLink from '@/components/mdx/MDXLink';
 import Model3D from '@/components/mdx/Model3D';
 import { formatDate } from '@/lib/format';
 import { compilePreviewBody } from '@/lib/preview/pipeline';
+import { fetchCommittedImageOriginal } from '@/lib/preview/github';
 import {
   loadPreviewManifest,
   previewImageSet,
+  previewSourceRel,
   type PreviewImageSet,
   type PreviewManifest
 } from '@/lib/preview/manifest';
@@ -53,13 +55,87 @@ function PreviewPicture({ set, alt, width, height }: { set: PreviewImageSet; alt
   );
 }
 
+/**
+ * Middle state of the preview fallback chain (ADR-0006): the managed path
+ * has no manifest row (derivatives never generated), so fetch the versioned
+ * ORIGINAL (`assets/articles/<rel>`) on the same branch and render pixels
+ * only — a plain lazy `<img>` with no srcset (single source by definition)
+ * plus an honest badge. Object URL is revoked on unmount/rel change.
+ * When the original is also unavailable, keep the honest placeholder.
+ */
+function PreviewOriginalImage({
+  rel,
+  branch,
+  src,
+  alt,
+  width,
+  height
+}: {
+  rel: string;
+  branch: string;
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+}) {
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    let url: string | null = null;
+    setObjectUrl(null);
+    setFailed(false);
+    fetchCommittedImageOriginal(rel, branch).then(
+      (result) => {
+        if (cancelled) {
+          URL.revokeObjectURL(result.objectUrl);
+          return;
+        }
+        url = result.objectUrl;
+        setObjectUrl(result.objectUrl);
+      },
+      () => {
+        if (!cancelled) setFailed(true);
+      }
+    );
+    return () => {
+      cancelled = true;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [rel, branch]);
+  if (failed) return <MissingImage src={src} label={alt} />;
+  if (!objectUrl) {
+    return (
+      <span
+        role="status"
+        data-preview-original-loading={src}
+        className="block border border-[var(--color-line)] px-5 py-10 text-center text-[0.85rem] leading-[1.9] text-[var(--color-muted)]"
+      >
+        原圖載入中：{src}
+      </span>
+    );
+  }
+  return (
+    <span className="block">
+      <img src={objectUrl} alt={alt} width={width} height={height} loading="lazy" decoding="async" />
+      <span
+        data-preview-original-badge={src}
+        className="mt-2 block border-l-4 border-[var(--color-red)] pl-3 text-[0.78rem] leading-[1.9] text-[var(--color-muted)]"
+      >
+        未處理原圖預覽：此為分支上的原始檔案，尚未產生響應式衍生檔；合併並建置成功後會改用最佳化圖片。
+      </span>
+    </span>
+  );
+}
+
 function PreviewFigure({
   src,
   alt,
   caption,
   width,
   height,
-  manifest
+  manifest,
+  branch
 }: {
   src: string;
   alt: string;
@@ -67,8 +143,10 @@ function PreviewFigure({
   width?: number;
   height?: number;
   manifest: PreviewManifest | null;
+  branch: string;
 }) {
   const resolved = previewImageSet(src, manifest);
+  const sourceRel = resolved && 'missing' in resolved ? previewSourceRel(src) : null;
   return (
     <figure
       className={`
@@ -86,7 +164,11 @@ function PreviewFigure({
     `}
     >
       {resolved && 'missing' in resolved ? (
-        <MissingImage src={src} label={alt} />
+        sourceRel ? (
+          <PreviewOriginalImage rel={sourceRel} branch={branch} src={src} alt={alt} width={width} height={height} />
+        ) : (
+          <MissingImage src={src} label={alt} />
+        )
       ) : resolved ? (
         <PreviewPicture set={resolved.set} alt={alt} width={width} height={height} />
       ) : (
@@ -97,10 +179,16 @@ function PreviewFigure({
   );
 }
 
-function PreviewCover({ src, alt }: { src: string; alt: string }) {
-  // Cover has no manifest context at module scope; fetch state lives in the
-  // renderer and is threaded through as a prop there. This wrapper keeps the
-  // same fallback contract: manifest miss → plain <img>, never silent.
+function PreviewCover({ src, alt, branch, manifest }: { src: string; alt: string; branch: string; manifest: PreviewManifest | null }) {
+  // Same fallback contract as the figure branch: generated srcset first,
+  // then the versioned original on the same branch, never silent.
+  const resolved = previewImageSet(src, manifest);
+  if (resolved && 'missing' in resolved) {
+    const sourceRel = previewSourceRel(src);
+    if (!sourceRel) return <MissingImage src={src} label={alt} />;
+    return <PreviewOriginalImage rel={sourceRel} branch={branch} src={src} alt={alt} />;
+  }
+  if (resolved) return <PreviewPicture set={resolved.set} alt={alt} />;
   return <img src={src} alt={alt} loading="eager" decoding="async" />;
 }
 
@@ -281,21 +369,7 @@ export default function PreviewRenderer({ slug, branch, parsed }: PreviewRendere
           overflow-hidden
         `}
         >
-          {(() => {
-            const resolved = previewImageSet(data.cover, manifest);
-            if (resolved && 'missing' in resolved) {
-              return <MissingImage src={data.cover} label={data.coverAlt ?? data.title} />;
-            }
-            if (resolved) {
-              return (
-                <PreviewPicture
-                  set={resolved.set}
-                  alt={data.coverAlt ?? data.title}
-                />
-              );
-            }
-            return <PreviewCover src={data.cover} alt={data.coverAlt ?? data.title} />;
-          })()}
+          <PreviewCover src={data.cover} alt={data.coverAlt ?? data.title} branch={branch} manifest={manifest} />
         </div>
       ) : null}
 
@@ -410,7 +484,7 @@ export default function PreviewRenderer({ slug, branch, parsed }: PreviewRendere
               a: MDXLink,
               // Client-safe Figure twin: same classes, manifest via fetch.
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              Figure: (props: any) => <PreviewFigure {...props} manifest={manifest} />,
+              Figure: (props: any) => <PreviewFigure {...props} manifest={manifest} branch={branch} />,
               Callout,
               Model3D
             }}
