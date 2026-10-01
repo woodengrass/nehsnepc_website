@@ -12,7 +12,11 @@
     "start": "next start",
     "images:build": "node scripts/optimize_images.js && node scripts/optimize_article_images.js",
     "images:articles": "node scripts/optimize_article_images.js",
-    "models:build": "node scripts/optimize_models.js"
+    "models:build": "node scripts/optimize_models.js",
+    "test:content": "npm run content:validate && playwright test tests/content/contract.spec.ts",
+    "test:admin:guards": "playwright test tests/keystatic/github-guards.spec.ts",
+    "test:admin:local": "playwright test -c playwright.local.config.ts",
+    "test:admin": "npm run test:admin:guards && npm run test:admin:local && tsx scripts/test_admin_workflow.ts"
   },
   "dependencies": {
     "@google/model-viewer": "^4.3.1",

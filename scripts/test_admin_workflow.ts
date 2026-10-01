@@ -1,57 +1,87 @@
 /**
- * Task 8 orchestrator: save-semantics + two-phase draft/published proof.
+ * Task 9 orchestrator: lock the complete admin/content workflow.
  *
- * Serialized phases (servers NEVER overlap):
- *   0. snapshot hashes/paths + preflight (ports free)
+ * Serialized phases (servers NEVER overlap — each phase owns one fixed-port
+ * loopback server with readiness probe, reuseExistingServer:false semantics,
+ * bounded commands, and teardown before the next phase starts):
+ *   0. snapshot hashes/paths + preflight (all fixed ports free)
  *   1. save semantics: typing writes nothing; explicit Save writes the file;
  *      gateway copy + keystatic previewUrl file asserts
  *   2. local admin:dev loopback: serves /admin, never rewrites content; stop
  *   3. FAILURE CASE: invalid MDX fixture -> `npm run build` must exit nonzero
  *   4. DRAFT phase: draft:true fixture -> fresh build -> prod start ->
- *      assert ABSENT from route/index/category/sitemap/RSS -> stop
+ *      assert ABSENT from route/index/category/sitemap/RSS (+ /admin + robots
+ *      still serve) -> stop
  *   5. PUBLISHED phase: draft:false -> fresh rebuild -> prod start ->
- *      assert INCLUSION on all five surfaces -> stop
- *   6. production playwright smoke (own fixed-port config, own server) -> stop
+ *      assert INCLUSION on all five surfaces (+ /admin + robots) -> stop
+ *   6. production playwright smoke (own fixed-port config incl. bundle
+ *      isolation, desktop + mobile projects, own server) -> stop
  *   7. cleanup (finally): kill servers, delete fixtures + slug dirs,
- *      restore manifest, remove .next, prove ports released + tree restored
+ *      restore manifest, remove .next, prove ports released + tree restored,
+ *      write the evidence ZIP bundle
+ *
+ * Port audit (fixed loopback, never shared): 3101 compat lane
+ * (playwright.local.config.ts), 3136 production smoke
+ * (playwright.production.config.ts), 3141 local / 3142 draft / 3143 published
+ * (this script). Historic lanes 3121-3125 and 3151 are NOT used.
+ *
+ * Browser behavior (loopback CRUD via the keystatic-verify fixture family,
+ * OAuth/session negatives, mocked GitHub 401/403 failures, keyboard-only
+ * operation, mobile 390x844, image upload UUID-distinctness, Figure/Callout/
+ * Model3D round-trip) is proven by the test:admin:local specs on port 3101,
+ * which run BEFORE this orchestrator in `pnpm test:admin`. This script proves
+ * the filesystem/build boundary: each build contains the state it proves.
  *
  * Every long command is bounded (10-minute cap) with streamed output.
- * Evidence: .omo/evidence/task-8-git-backed-article-admin.json
- *           + .omo/evidence/task-8-phases/<phase>.json snapshots.
+ * Evidence: .omo/evidence/task-9-git-backed-article-admin.json
+ *           + .omo/evidence/task-9-phases/<phase>.json snapshots
+ *           + .omo/evidence/task-9-git-backed-article-admin.zip bundle
  * Do NOT commit.
  */
 
 import { createHash } from 'node:crypto';
 import { execFile, spawn, type ChildProcess } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync
+} from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 
 const ROOT = process.cwd();
 const ARTICLES_DIR = path.join(ROOT, 'content', 'articles');
-const ASSETS_SLUG_DIR = path.join(ROOT, 'assets', 'articles', 'task-8-workflow-proof');
-const GENERATED_SLUG_DIR = path.join(ROOT, 'public', 'images', 'generated', 'articles', 'task-8-workflow-proof');
+const ASSETS_SLUG_DIR = path.join(ROOT, 'assets', 'articles', 'keystatic-verify');
+const GENERATED_SLUG_DIR = path.join(ROOT, 'public', 'images', 'generated', 'articles', 'keystatic-verify');
 const MANIFEST_FILE = path.join(ROOT, 'public', 'images', 'generated', 'articles.manifest.json');
 const NEXT_DIR = path.join(ROOT, '.next');
-const EVIDENCE_FILE = path.join(ROOT, '.omo', 'evidence', 'task-8-git-backed-article-admin.json');
-const PHASES_DIR = path.join(ROOT, '.omo', 'evidence', 'task-8-phases');
+const EVIDENCE_FILE = path.join(ROOT, '.omo', 'evidence', 'task-9-git-backed-article-admin.json');
+const EVIDENCE_BUNDLE = path.join(ROOT, '.omo', 'evidence', 'task-9-git-backed-article-admin.zip');
+const PHASES_DIR = path.join(ROOT, '.omo', 'evidence', 'task-9-phases');
+const FLOW_EVIDENCE_DIR = path.join(ROOT, '.omo', 'evidence', 'task-9');
 
-const SLUG = 'task-8-workflow-proof';
-const INVALID_SLUG = 'task-8-invalid-proof';
-const TITLE = 'Task 8 Workflow Proof Article';
+const SLUG = 'keystatic-verify';
+const INVALID_SLUG = 'keystatic-verify-invalid';
+const TITLE = 'Keystatic Verify Workflow Proof Article';
 const FIXTURE_FILE = path.join(ARTICLES_DIR, `${SLUG}.mdx`);
 const INVALID_FILE = path.join(ARTICLES_DIR, `${INVALID_SLUG}.mdx`);
 
+const COMPAT_PORT = 3101;
+const SMOKE_PORT = 3136;
 const LOCAL_PORT = 3141;
 const DRAFT_PORT = 3142;
 const PUBLISHED_PORT = 3143;
-const ALL_PORTS = [LOCAL_PORT, DRAFT_PORT, PUBLISHED_PORT, 3136];
+const ALL_PORTS = [COMPAT_PORT, SMOKE_PORT, LOCAL_PORT, DRAFT_PORT, PUBLISHED_PORT];
 
 const TEN_MINUTES_MS = 600_000;
 const HEARTBEAT_MS = 90_000;
 
 function log(message: string): void {
-  console.log(`[task-8] ${message}`);
+  console.log(`[task-9] ${message}`);
 }
 
 function sha256Bytes(data: string | Buffer): string {
@@ -233,11 +263,11 @@ async function getText(url: string, timeoutMs = 30000): Promise<{ status: number
 }
 
 function fixtureBody(draft: boolean): string {
-  return `---\ntitle: '${TITLE}'\ndescription: 'Dedicated draft-to-published transition fixture for task 8 verification.'\ndate: '2026-09-30'\ncategory: tutorial\ntags: ['task-8-proof']\ndraft: ${draft ? 'true' : 'false'}\nauthor: 'NEHS 攝影社'\n---\n\n## Proof section\n\nThis is a dedicated verification fixture. It carries no images so the article image pipeline stays untouched.\n\n<Callout type="note" title="Proof note">\nDraft visibility is decided by frontmatter plus a production build.\n</Callout>\n`;
+  return `---\ntitle: '${TITLE}'\ndescription: 'Dedicated draft-to-published transition fixture for task 9 verification.'\ndate: '2026-09-30'\ncategory: tutorial\ntags: ['task-9-proof']\ndraft: ${draft ? 'true' : 'false'}\nauthor: 'NEHS 攝影社'\n---\n\n## Proof section\n\nThis is a dedicated verification fixture. It carries no images so the article image pipeline stays untouched.\n\n<Callout type="note" title="Proof note">\nDraft visibility is decided by frontmatter plus a production build.\n</Callout>\n`;
 }
 
 function invalidBody(): string {
-  return `---\ntitle: 'Task 8 Invalid Proof'\ndescription: 'Invalid MDX fixture that must fail the build.'\ndate: '2026-09-30'\ncategory: tutorial\ndraft: true\nauthor: 'NEHS 攝影社'\n---\n\n## Broken\n\n<div>\nUnclosed JSX block must fail MDX compilation.\n`;
+  return `---\ntitle: 'Keystatic Verify Invalid Proof'\ndescription: 'Invalid MDX fixture that must fail the build.'\ndate: '2026-09-30'\ncategory: tutorial\ndraft: true\nauthor: 'NEHS 攝影社'\n---\n\n## Broken\n\n<div>\nUnclosed JSX block must fail MDX compilation.\n`;
 }
 
 function writePhase(name: string, data: Record<string, unknown>): void {
@@ -253,17 +283,33 @@ function assertExcludes(haystack: string, needle: string, label: string): void {
   if (haystack.includes(needle)) throw new Error(`${label}: must NOT contain ${JSON.stringify(needle)}`);
 }
 
-type FiveSurface = { route: number; index: number; category: number; sitemap: number; rss: number };
+type SurfaceStatuses = {
+  route: number;
+  index: number;
+  category: number;
+  sitemap: number;
+  rss: number;
+  admin: number;
+  robots: number;
+};
 
-async function checkFive(base: string, expectPresent: boolean): Promise<{ statuses: FiveSurface; detail: Record<string, boolean> }> {
+async function checkSurfaces(base: string, expectPresent: boolean): Promise<{ statuses: SurfaceStatuses; detail: Record<string, boolean> }> {
   const route = await getText(`${base}/tutorial/${SLUG}`);
   const index = await getText(`${base}/tutorial`);
   const category = await getText(`${base}/tutorial/category/tutorial`);
   const sitemap = await getText(`${base}/sitemap.xml`);
   const rss = await getText(`${base}/rss.xml`);
+  const admin = await getText(`${base}/admin`);
+  const robots = await getText(`${base}/robots.txt`);
   const slugPath = `/tutorial/${SLUG}`;
+  const shared: Record<string, boolean> = {
+    admin200: admin.status === 200,
+    adminHasGateway: admin.text.includes('內容管理') && admin.text.includes('儲存與發佈'),
+    robots200: robots.status === 200
+  };
   const detail: Record<string, boolean> = expectPresent
     ? {
+        ...shared,
         route200: route.status === 200,
         routeHasTitle: route.text.includes(TITLE),
         indexHasSlug: index.text.includes(slugPath),
@@ -272,13 +318,22 @@ async function checkFive(base: string, expectPresent: boolean): Promise<{ status
         rssHasSlug: rss.text.includes(SLUG)
       }
     : {
+        ...shared,
         route404: route.status === 404,
         indexClean: !index.text.includes(SLUG),
         categoryClean: !category.text.includes(SLUG),
         sitemapClean: !sitemap.text.includes(slugPath),
         rssClean: !rss.text.includes(SLUG)
       };
-  const statuses = { route: route.status, index: index.status, category: category.status, sitemap: sitemap.status, rss: rss.status };
+  const statuses: SurfaceStatuses = {
+    route: route.status,
+    index: index.status,
+    category: category.status,
+    sitemap: sitemap.status,
+    rss: rss.status,
+    admin: admin.status,
+    robots: robots.status
+  };
   return { statuses, detail };
 }
 
@@ -289,9 +344,109 @@ function assertAllTrue(detail: Record<string, boolean>, label: string): void {
   if (failed.length > 0) throw new Error(`${label}: failed checks: ${failed.join(', ')}`);
 }
 
+// --- Minimal stored (uncompressed) ZIP writer: dependency-free evidence bundle. ---
+const CRC_TABLE: Uint32Array = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(data: Buffer): number {
+  let crc = 0xffffffff;
+  for (let i = 0; i < data.length; i++) crc = CRC_TABLE[(crc ^ data[i]) & 0xff] ^ (crc >>> 8);
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function zipStore(files: { name: string; data: Buffer }[], outPath: string): void {
+  const encoder = new TextEncoder();
+  const chunks: Buffer[] = [];
+  const central: Buffer[] = [];
+  let offset = 0;
+  for (const file of files) {
+    const nameBytes = Buffer.from(encoder.encode(file.name));
+    const crc = crc32(file.data);
+    const local = Buffer.alloc(30 + nameBytes.length);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(0x0800, 6); // UTF-8 filenames
+    local.writeUInt16LE(0, 8); // method: store
+    local.writeUInt16LE(0, 10); // time
+    local.writeUInt16LE(0x21, 12); // date (1980-01-01)
+    local.writeUInt32LE(crc, 14);
+    local.writeUInt32LE(file.data.length, 18);
+    local.writeUInt32LE(file.data.length, 22);
+    local.writeUInt16LE(nameBytes.length, 26);
+    local.writeUInt16LE(0, 28);
+    nameBytes.copy(local, 30);
+    chunks.push(local, file.data);
+    const header = Buffer.alloc(46 + nameBytes.length);
+    header.writeUInt32LE(0x02014b50, 0);
+    header.writeUInt16LE(20, 4);
+    header.writeUInt16LE(20, 6);
+    header.writeUInt16LE(0x0800, 8);
+    header.writeUInt16LE(0, 10);
+    header.writeUInt16LE(0, 12);
+    header.writeUInt16LE(0x21, 14);
+    header.writeUInt32LE(crc, 16);
+    header.writeUInt32LE(file.data.length, 20);
+    header.writeUInt32LE(file.data.length, 24);
+    header.writeUInt16LE(nameBytes.length, 28);
+    for (let i = 30; i < 44; i++) header[i] = 0;
+    header.writeUInt32LE(offset, 42);
+    nameBytes.copy(header, 46);
+    central.push(header);
+    offset += local.length + file.data.length;
+  }
+  const centralSize = central.reduce((sum, part) => sum + part.length, 0);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(0, 4);
+  end.writeUInt16LE(0, 6);
+  end.writeUInt16LE(files.length, 8);
+  end.writeUInt16LE(files.length, 10);
+  end.writeUInt32LE(centralSize, 12);
+  end.writeUInt32LE(offset, 16);
+  end.writeUInt16LE(0, 20);
+  mkdirSync(path.dirname(outPath), { recursive: true });
+  writeFileSync(outPath, Buffer.concat([...chunks, ...central, end]));
+}
+
+function collectFile(abs: string, arc: string, out: { name: string; data: Buffer }[]): void {
+  if (!existsSync(abs) || !statSync(abs).isFile()) return;
+  out.push({ name: arc, data: readFileSync(abs) });
+}
+
+function writeEvidenceBundle(): string[] {
+  const files: { name: string; data: Buffer }[] = [];
+  collectFile(EVIDENCE_FILE, 'task-9/task-9-git-backed-article-admin.json', files);
+  if (existsSync(PHASES_DIR)) {
+    for (const name of readdirSync(PHASES_DIR).sort()) {
+      collectFile(path.join(PHASES_DIR, name), `task-9/phases/${name}`, files);
+    }
+  }
+  if (existsSync(FLOW_EVIDENCE_DIR)) {
+    for (const name of readdirSync(FLOW_EVIDENCE_DIR).sort()) {
+      const abs = path.join(FLOW_EVIDENCE_DIR, name);
+      if (!statSync(abs).isFile()) continue;
+      if (!/\.(png|json|log)$/.test(name)) continue;
+      if (/^task-9-(local|production)-report\.json$/.test(name) || name === path.basename(EVIDENCE_BUNDLE)) continue;
+      collectFile(abs, `task-9/${name}`, files);
+    }
+  }
+  for (const report of ['task-9-local-report.json', 'task-9-production-report.json']) {
+    collectFile(path.join(ROOT, '.omo', 'evidence', report), `task-9/${report}`, files);
+  }
+  zipStore(files, EVIDENCE_BUNDLE);
+  return files.map((file) => file.name);
+}
+
 async function main(): Promise<void> {
   const startedAt = new Date().toISOString();
-  const evidence: Record<string, unknown> = { task: 8, startedAt, phases: {} };
+  const evidence: Record<string, unknown> = { task: 9, startedAt, phases: {} };
   const failures: string[] = [];
   let localServer: ServerHandle | null = null;
   let prodServer: ServerHandle | null = null;
@@ -320,13 +475,13 @@ async function main(): Promise<void> {
     // Phase 0: snapshot + preflight.
     log('phase 0: snapshot + preflight');
     if (existsSync(MANIFEST_FILE)) manifestBefore = readFileSync(MANIFEST_FILE, 'utf8');
-    for (const port of [LOCAL_PORT, DRAFT_PORT, PUBLISHED_PORT]) {
+    for (const port of ALL_PORTS) {
       if (!(await portClosed(port))) throw new Error(`preflight: port ${port} already bound`);
     }
     if (existsSync(FIXTURE_FILE) || existsSync(INVALID_FILE)) {
       throw new Error('preflight: workflow fixture already exists — refusing to overwrite');
     }
-    const phase0 = { articles: snapshotBefore, portsFree: [LOCAL_PORT, DRAFT_PORT, PUBLISHED_PORT], manifestPresent: manifestBefore !== null };
+    const phase0 = { articles: snapshotBefore, portsFree: ALL_PORTS, manifestPresent: manifestBefore !== null };
     writePhase('00-preflight', phase0);
     (evidence.phases as Record<string, unknown>)['preflight'] = phase0;
 
@@ -415,7 +570,7 @@ async function main(): Promise<void> {
       'draft-prod'
     );
     const draftBase = `http://127.0.0.1:${DRAFT_PORT}`;
-    const draftCheck = await checkFive(draftBase, false);
+    const draftCheck = await checkSurfaces(draftBase, false);
     assertAllTrue(draftCheck.detail, 'draft absence');
     await stopServer(prodServer);
     prodServer = null;
@@ -436,7 +591,7 @@ async function main(): Promise<void> {
       'published-prod'
     );
     const publishedBase = `http://127.0.0.1:${PUBLISHED_PORT}`;
-    const publishedCheck = await checkFive(publishedBase, true);
+    const publishedCheck = await checkSurfaces(publishedBase, true);
     assertAllTrue(publishedCheck.detail, 'published inclusion');
     await stopServer(prodServer);
     prodServer = null;
@@ -444,11 +599,13 @@ async function main(): Promise<void> {
     writePhase('05-published-present', phase5);
     (evidence.phases as Record<string, unknown>)['published'] = phase5;
 
-    // Phase 6: production playwright smoke (own config + own fixed-port server).
+    // Phase 6: production playwright smoke (own config + own fixed-port
+    // server: gateway + publication surfaces + bundle isolation, desktop +
+    // mobile projects).
     log('phase 6: production playwright smoke');
     const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
     const smoke = await run(npxCmd, ['playwright', 'test', '-c', 'playwright.production.config.ts'], { timeoutMs: TEN_MINUTES_MS });
-    await assertPortsReleased([3136], 'playwright-smoke');
+    await assertPortsReleased([SMOKE_PORT], 'playwright-smoke');
     const phase6 = { exit: smoke.exit };
     writePhase('06-production-smoke', phase6);
     (evidence.phases as Record<string, unknown>)['productionSmoke'] = phase6;
@@ -480,7 +637,8 @@ async function main(): Promise<void> {
       JSON.stringify(Object.keys(snapshotAfter).sort()) === JSON.stringify(Object.keys(snapshotBefore).sort()) &&
       Object.entries(snapshotBefore).every(([name, hash]) => snapshotAfter[name] === hash);
     if (!restored) cleanupErrors.push('content/articles tree differs from pre-run snapshot');
-    const cleanup = { portsReleased: cleanupErrors.length === 0, errors: cleanupErrors, restored };
+    const bundled = writeEvidenceBundle();
+    const cleanup = { portsReleased: cleanupErrors.length === 0, errors: cleanupErrors, restored, bundled };
     writePhase('07-cleanup', cleanup);
     (evidence.phases as Record<string, unknown>)['cleanup'] = cleanup;
     evidence['endedAt'] = new Date().toISOString();
@@ -489,6 +647,7 @@ async function main(): Promise<void> {
     mkdirSync(path.dirname(EVIDENCE_FILE), { recursive: true });
     writeFileSync(EVIDENCE_FILE, `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
     log(`evidence: ${EVIDENCE_FILE} status=${evidence['status']}`);
+    log(`bundle: ${EVIDENCE_BUNDLE} entries=${bundled.length}`);
     if (evidence['status'] !== 'PASS') {
       const message = [...failures, ...cleanupErrors].join('; ');
       throw new Error(`workflow FAILED: ${message}`);
@@ -497,6 +656,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error(`[task-8] FATAL: ${(err as Error).message}`);
+  console.error(`[task-9] FATAL: ${(err as Error).message}`);
   process.exit(1);
 });

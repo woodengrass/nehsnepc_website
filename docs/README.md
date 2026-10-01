@@ -40,4 +40,6 @@ GPU behavior, touch gestures, remote services, or asset quality.
 
 Generated/public outputs to check when relevant: `/sitemap.xml`, `/robots.txt`,
 `/rss.xml`, `/opengraph-image`, `public/images/generated/`, `public/models/opt/`.
+Content/admin behavior is additionally covered by `pnpm test:content` (no
+server) and `pnpm test:admin` (serial phases, each with its own server).
 See `technical-stack.md` for the full release checklist.

@@ -11,19 +11,24 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 // stop -> cleanup), so the two webServers never overlap.
 export default defineConfig({
   testDir: './tests/production',
-  testMatch: 'admin-gateway.spec.ts',
+  testMatch: ['admin-gateway.spec.ts', 'bundle-isolation.spec.ts'],
   timeout: 120_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  reporter: [['list'], ['json', { outputFile: '.omo/evidence/task-8-production-report.json' }]],
+  reporter: [['list'], ['json', { outputFile: '.omo/evidence/task-9-production-report.json' }]],
   use: {
     baseURL: BASE_URL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure'
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // Full matrix: desktop 1440x1000 + mobile 390x844. Both specs are cheap
+  // served-HTML/JS asserts, so doubling projects costs seconds, not minutes.
+  projects: [
+    { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } } },
+    { name: 'mobile', use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 } } }
+  ],
   webServer: {
     command: `npx next start -p ${PORT} --hostname 127.0.0.1`,
     url: `${BASE_URL}/admin`,

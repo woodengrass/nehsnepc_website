@@ -46,3 +46,24 @@ test('admin gateway discloses the supported publishing workflow', async ({ page 
   expect(body).not.toContain('commit SHA');
   expect(body).not.toContain('commitSHA');
 });
+
+// Task 9: phase-independent production smoke for the publication surfaces.
+// Runs on ANY production build (no fixture needed): every surface serves,
+// and sitemap/RSS derive from the same content source as the article index.
+test('publication surfaces serve: tutorial, category, sitemap, rss, robots', async ({ request }) => {
+  const tutorial = await request.get('/tutorial');
+  expect(tutorial.status()).toBe(200);
+
+  const category = await request.get('/tutorial/category/tutorial');
+  expect(category.status()).toBe(200);
+
+  const sitemap = await request.get('/sitemap.xml');
+  expect(sitemap.status()).toBe(200);
+  expect(await sitemap.text()).toContain('/tutorial/');
+
+  const rss = await request.get('/rss.xml');
+  expect(rss.status()).toBe(200);
+
+  const robots = await request.get('/robots.txt');
+  expect(robots.status()).toBe(200);
+});
