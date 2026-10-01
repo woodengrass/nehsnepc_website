@@ -232,8 +232,8 @@ test.describe('keystatic compat gate (local loopback)', () => {
       const file = path.join(ARTICLES_DIR, `${fx.slug}.mdx`);
       await openEntry(page, fx.slug);
 
-      // Title field must be editable (slug-field name input).
-      const titleInput = page.getByLabel(/title/i).first();
+      // Title field must be editable (slug-field name input, zh-TW label 標題).
+      const titleInput = page.getByLabel(/標題/).first();
       await expect(titleInput).toBeVisible({ timeout: 60_000 });
 
       // Cover <- hero-1.jpg through the top-level image control (native file
@@ -305,14 +305,14 @@ test.describe('keystatic compat gate (local loopback)', () => {
       const beforeHash = sha256(file);
       await openEntry(page, fx.slug);
 
-      const titles = page.getByLabel(/title/i);
+      const titles = page.getByLabel(/標題/);
       await expect(titles.first()).toBeVisible({ timeout: 60_000 });
       await titles.first().fill(TITLE_PROBE[fx.slug]);
       // First Callout block title lives inside its Edit modal (discriminated
       // by the Type field); the newly appeared Title input is the modal's.
       const titleCountBefore = await titles.count();
       await editFirstBlockWith(page, 'Callout', async () => {
-        const modalTitle = page.getByLabel(/title/i).nth(titleCountBefore);
+        const modalTitle = page.getByLabel(/標題/).nth(titleCountBefore);
         await modalTitle.waitFor({ state: 'visible', timeout: 30_000 });
         await modalTitle.fill(CALLOUT_PROBE);
       });
@@ -375,9 +375,9 @@ async function uploadThroughChooser(
 }
 
 async function uploadFigureThroughModal(page: import('@playwright/test').Page, filePath: string) {
-  // The Figure block lives inside the MDX document editor: open each block
+    // The Figure block lives inside the MDX document editor: open each block
   // Edit modal in document order until the dialog shows the Figure schema
-  // (Width/Height labels). Confirm with the dialog's Done button.
+  // (寬度/高度 labels, zh-TW). Confirm with the dialog's Done button.
   const edits = page.getByRole('button', { name: 'Edit', exact: true });
   const total = await edits.count();
   const dialog = page.getByRole('dialog');
@@ -385,8 +385,8 @@ async function uploadFigureThroughModal(page: import('@playwright/test').Page, f
   for (let i = 0; i < total; i++) {
     await edits.nth(i).click({ timeout: 15_000 });
     await page.waitForTimeout(1_500);
-    const widthVisible = await dialog.getByText('Width', { exact: true }).first().isVisible().catch(() => false);
-    const heightVisible = await dialog.getByText('Height', { exact: true }).first().isVisible().catch(() => false);
+    const widthVisible = await dialog.getByText('寬度', { exact: true }).first().isVisible().catch(() => false);
+    const heightVisible = await dialog.getByText('高度', { exact: true }).first().isVisible().catch(() => false);
     if (widthVisible || heightVisible) {
       opened = true;
       break;
@@ -394,7 +394,7 @@ async function uploadFigureThroughModal(page: import('@playwright/test').Page, f
     await page.keyboard.press('Escape');
     await page.waitForTimeout(1_000);
   }
-  if (!opened) throw new Error('Figure block Edit modal (Width/Height) not found');
+  if (!opened) throw new Error('Figure block Edit modal (寬度/高度) not found');
   // Fixture Figure src points outside the image directory, so the modal shows
   // Choose file; defensively clear a stale value first (dialog-scoped only).
   const modalRemove = dialog.getByRole('button', { name: 'Remove', exact: true });
@@ -420,7 +420,7 @@ async function editFirstBlockWith(
   fn: () => Promise<void>
 ) {
   // Open component-block Edit modals in document order; the Callout schema is
-  // discriminated by its Type select field (Figure/Model3D have no Type).
+  // discriminated by its 類型 (Type) select field (Figure/Model3D have no 類型).
   // Confirm with the dialog's Done button so the modal Title edit commits.
   const edits = page.getByRole('button', { name: 'Edit', exact: true });
   const total = await edits.count();
@@ -430,7 +430,7 @@ async function editFirstBlockWith(
     await edits.nth(i).click({ timeout: 15_000 });
     await page.waitForTimeout(1_500);
     if (label === 'Callout') {
-      const typeVisible = await dialog.getByText('Type', { exact: true }).first().isVisible().catch(() => false);
+      const typeVisible = await dialog.getByText('類型', { exact: true }).first().isVisible().catch(() => false);
       if (typeVisible) {
         opened = true;
         break;

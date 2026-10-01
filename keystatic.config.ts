@@ -44,15 +44,26 @@ const FigureBlock = block({
     createElement(EditorFigurePreview, { src: value.src, alt: value.alt, caption: value.caption }),
   schema: {
     src: fields.image({
-      label: 'Image',
+      label: '圖片',
+      description: '透過上傳選擇內文圖片；儲存後寫入版本化來源並序列化為 managed 路徑。',
       directory: 'assets/articles',
       publicPath: '/images/generated/articles/',
       transformFilename: figureTransformFilename
     }),
-    alt: fields.text({ label: 'Alt', validation: { isRequired: true } }),
-    caption: fields.text({ label: 'Caption' }),
-    width: fields.integer({ label: 'Width' }),
-    height: fields.integer({ label: 'Height' })
+    alt: fields.text({
+      label: '替代文字',
+      description: '必填；請用至少 4 個字描述圖片內容，供螢幕閱讀器使用。',
+      validation: { isRequired: true }
+    }),
+    caption: fields.text({ label: '圖說', description: '選填；顯示於圖片下方的說明文字。' }),
+    width: fields.integer({
+      label: '寬度',
+      description: '必填正整數（像素）；須與高度成對填寫，減少版面位移。'
+    }),
+    height: fields.integer({
+      label: '高度',
+      description: '必填正整數（像素）；須與寬度成對填寫，減少版面位移。'
+    })
   }
 });
 
@@ -60,30 +71,47 @@ const CalloutBlock = wrapper({
   label: 'Callout',
   schema: {
     type: fields.select({
-      label: 'Type',
+      label: '類型',
+      description: '三選一；warning 顯示紅色邊線，note / tip 顯示藍色邊線。',
       options: [
-        { label: 'Note', value: 'note' },
-        { label: 'Tip', value: 'tip' },
-        { label: 'Warning', value: 'warning' }
+        { label: '筆記', value: 'note' },
+        { label: '提示', value: 'tip' },
+        { label: '警告', value: 'warning' }
       ],
       defaultValue: 'note'
     }),
-    title: fields.text({ label: 'Title' })
+    title: fields.text({ label: '標題', description: '選填；留白時顯示類型預設字樣。' })
   }
 });
 
 const Model3DBlock = block({
   label: 'Model3D',
   schema: {
-    src: fields.text({ label: 'Model src (path)', validation: { isRequired: true } }),
-    alt: fields.text({ label: 'Alt', validation: { isRequired: true } }),
-    poster: fields.text({ label: 'Poster (path, text only)' }),
-    caption: fields.text({ label: 'Caption' }),
-    aspect: fields.text({ label: 'Aspect', defaultValue: '4 / 3' }),
-    autoRotate: fields.checkbox({ label: 'Auto rotate', defaultValue: false }),
-    exposure: fields.number({ label: 'Exposure', defaultValue: 1 }),
+    src: fields.text({
+      label: '模型路徑',
+      description: '必填；填 /models/opt/ 下的 .glb 檔案路徑（純文字，不上傳）。',
+      validation: { isRequired: true }
+    }),
+    alt: fields.text({
+      label: '替代文字',
+      description: '必填；請用至少 4 個字描述模型內容。',
+      validation: { isRequired: true }
+    }),
+    poster: fields.text({
+      label: '預覽圖路徑',
+      description: '選填；純文字路徑，不上傳，填 /images/generated/ 下的圖片。'
+    }),
+    caption: fields.text({ label: '圖說', description: '選填；顯示於模型下方的說明文字。' }),
+    aspect: fields.text({ label: '長寬比', description: '外框比例，預設為 4 / 3。', defaultValue: '4 / 3' }),
+    autoRotate: fields.checkbox({
+      label: '自動旋轉',
+      description: '開啟後模型載入即自動旋轉；預設關閉。',
+      defaultValue: false
+    }),
+    exposure: fields.number({ label: '曝光度', description: '模型打光曝光值，預設為 1。', defaultValue: 1 }),
     interactionPrompt: fields.text({
-      label: 'Interaction prompt',
+      label: '操作提示文字',
+      description: '顯示於模型角落的操作提示，預設為中英雙語。',
       defaultValue: 'DRAG TO ROTATE / 拖曳旋轉'
     })
   }
@@ -98,12 +126,31 @@ export default config({
       slugField: 'title',
       format: { contentField: 'content' },
       schema: {
-        title: fields.slug({ name: { label: 'Title', validation: { isRequired: true } } }),
-        description: fields.text({ label: 'Description', multiline: true, validation: { isRequired: true } }),
-        date: fields.date({ label: 'Date', validation: { isRequired: true } }),
-        updated: fields.date({ label: 'Updated' }),
+        title: fields.slug({
+          name: {
+            label: '標題',
+            description: '顯示於站上的文章標題；檔名 slug 由此衍生，中文標題請手動確認 slug 為英文小寫。',
+            validation: { isRequired: true }
+          }
+        }),
+        description: fields.text({
+          label: '摘要',
+          description: '用一句話說明這篇文章解決什麼問題；顯示於列表、SEO 與社群分享。',
+          multiline: true,
+          validation: { isRequired: true }
+        }),
+        date: fields.date({
+          label: '發佈日期',
+          description: '必填；ISO 日期（YYYY-MM-DD），決定排序與 RSS 發佈時間。',
+          validation: { isRequired: true }
+        }),
+        updated: fields.date({
+          label: '更新日期',
+          description: '選填；文章修訂後填寫，顯示於文章頁與 sitemap。'
+        }),
         category: fields.select({
-          label: 'Category',
+          label: '分類',
+          description: '三選一；決定文章所屬版面與網址分類。',
           options: [
             { label: '攝影教學', value: 'tutorial' },
             { label: '社團動態', value: 'news' },
@@ -111,20 +158,35 @@ export default config({
           ],
           defaultValue: 'tutorial'
         }),
-        tags: fields.array(fields.text({ label: 'Tag' }), {
-          label: 'Tags',
-          itemLabel: (props) => props.value ?? 'Tag'
+        tags: fields.array(fields.text({ label: '標籤' }), {
+          label: '標籤',
+          description: '選填；請勿留首尾空白，同一篇文章內勿重複。',
+          itemLabel: (props) => props.value ?? '標籤'
         }),
         cover: fields.image({
-          label: 'Cover',
+          label: '封面圖',
+          description: '選填；須與封面替代文字成對出現，上傳後寫入版本化來源。',
           directory: 'assets/articles',
           publicPath: '/images/generated/articles/'
         }),
-        coverAlt: fields.text({ label: 'Cover alt' }),
-        draft: fields.checkbox({ label: 'Draft', defaultValue: false }),
-        author: fields.text({ label: 'Author', defaultValue: 'NEHS 攝影社' }),
+        coverAlt: fields.text({
+          label: '封面替代文字',
+          description: '選填；須與封面圖成對出現，至少 4 個字，描述封面內容。'
+        }),
+        draft: fields.checkbox({
+          label: '草稿',
+          description: '預設開啟；草稿僅見於開發預覽，不會發佈到正式站。發佈時請關閉。',
+          defaultValue: true
+        }),
+        author: fields.text({
+          label: '作者',
+          description: '預設為 NEHS 攝影社；多人合著時可修改。',
+          defaultValue: 'NEHS 攝影社'
+        }),
         content: fields.mdx({
-          label: 'Content',
+          label: '內文',
+          description:
+            'MDX 內文；支援 GFM 表格與連結，僅可使用 Figure、Callout、Model3D 元件。跨欄位與媒體規則由儲存後驗證把關。',
           extension: 'mdx',
           components: {
             Figure: FigureBlock,
