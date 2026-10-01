@@ -87,9 +87,10 @@ cp .env.example .env.local
 | Variable | Visibility | Rule |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | Public | Optional canonical origin; falls back to `https://nehsnepc.com`. Controls canonical URLs, metadata base, JSON-LD, sitemap, robots sitemap location, RSS links, and absolute structured-data assets. Must never contain a secret. |
-| `KEYSTATIC_GITHUB_CLIENT_ID` | Public identifier | GitHub OAuth App client id, minimum 8 characters. |
-| `KEYSTATIC_GITHUB_CLIENT_SECRET` | Server-only | GitHub OAuth App client secret, minimum 20 characters. |
+| `KEYSTATIC_GITHUB_CLIENT_ID` | Public identifier | GitHub App client id, minimum 8 characters. |
+| `KEYSTATIC_GITHUB_CLIENT_SECRET` | Server-only | GitHub App client secret, minimum 20 characters. |
 | `KEYSTATIC_SECRET` | Server-only | Keystatic session secret, minimum 32 characters (31 fails closed). Generate 32+ random bytes; rotate as below. |
+| `NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` | Public (never a secret) | GitHub App slug from the App's settings page/URL (`github.com/settings/apps/<slug>`), minimum 8 characters (Keystatic requires non-empty). Required by the official `@keystatic/next@5.0.5` route handler + UI bundle (`slugEnvName`); missing/short fails closed with redacted 503. Public by design — it appears in install URLs. |
 | `KEYSTATIC_GITHUB_REPO` | Pinned config | Must stay exactly `woodengrass/nehsnepc_website` (`EXPECTED_GITHUB_REPO`); any other value fails closed. Owner/name split vars (`KEYSTATIC_GITHUB_REPO_OWNER`/`KEYSTATIC_GITHUB_REPO_NAME`) are accepted as an equivalent input shape. |
 | `KEYSTATIC_PRODUCTION_ORIGIN` | Server-only | Exact registered production HTTPS origin, no trailing slash (e.g. `https://nehsnepc.com`). API requests from any other origin get a redacted 403; safe wrong-host UI GETs redirect (308) to this literal origin — the request Host is never reflected. |
 | `NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE` | Dev-only flag | Set to `1` only for loopback `admin:dev` editing (`NODE_ENV=development` is also required). Never set in production or preview: ordinary dev, production, and preview always use GitHub mode. |
@@ -190,9 +191,10 @@ MANUAL checklist (human confirms, never mark green without doing it):
 - [ ] Vercel branch-preview confirmation: pushing a `preview/*` branch produces a Vercel preview deployment, so editors get a pre-publish preview build before merging.
 - [ ] Bypass check: a designated admin can still push a typo fix directly; a non-listed editor cannot.
 
-Vercel production environment variables (all four required in production; preview gets none of the admin surface regardless):
+Vercel production environment variables (all six required in production; preview gets none of the admin surface regardless):
 
 - `KEYSTATIC_GITHUB_CLIENT_ID`, `KEYSTATIC_GITHUB_CLIENT_SECRET`, `KEYSTATIC_SECRET` (the 8/20/32-char minima are enforced at runtime);
+- `NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` (public App slug, 8-char minimum enforced at runtime);
 - `KEYSTATIC_GITHUB_REPO=woodengrass/nehsnepc_website`;
 - `KEYSTATIC_PRODUCTION_ORIGIN` set to the exact registered production HTTPS origin, no trailing slash;
 - `NEXT_PUBLIC_SITE_URL` when generated URLs should point at the production host;
@@ -211,11 +213,15 @@ Then inspect core routes, all article/category routes, sitemap, robots, RSS, Ope
 
 ## Admin Runbooks
 
-### GitHub OAuth App creation (MANUAL — GitHub side, done once)
+### GitHub App creation (MANUAL — GitHub side, done once)
 
-1. As an organization owner, create an OAuth App (GitHub → Settings → Developer settings → OAuth Apps → New OAuth App). Homepage URL is the production origin.
-2. Register exactly one callback URL: `{production-origin}/api/keystatic/github/oauth/callback` (the path is fixed by the installed `@keystatic/core@0.6.9` route handler; the origin must equal `KEYSTATIC_PRODUCTION_ORIGIN` byte-for-byte after normalization).
-3. Copy the client ID and generate a client secret into `.env.local` (local rehearsal) and the Vercel production env (real deployment). Never commit either.
+Create a **GitHub App** (NOT a classic OAuth App) — Keystatic GitHub mode uses
+the guided **"Create GitHub App"** flow launched from `/keystatic` itself, or
+the App can be created manually:
+
+1. As an organization owner, create a GitHub App (GitHub → Settings → Developer settings → GitHub Apps → New GitHub App), or run Keystatic's guided "Create GitHub App" flow from `/keystatic` (it registers the App for you). Homepage URL is the production origin.
+2. Register exactly one callback URL in the App's settings page: `{production-origin}/api/keystatic/github/oauth/callback` (the path is fixed by the installed `@keystatic/core@0.6.9` route handler; the origin must equal `KEYSTATIC_PRODUCTION_ORIGIN` byte-for-byte after normalization).
+3. Copy the client ID and generate a client secret into `.env.local` (local rehearsal) and the Vercel production env (real deployment). Copy the App slug (from the App's settings page/URL, `github.com/settings/apps/<slug>`) into `NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` in both places too — it is public, never a secret. Never commit any of these files/values beyond the placeholder template.
 4. Verify live (MANUAL): open `/admin`, enter `/keystatic`, complete GitHub login, and confirm the `Articles` collection lists `content/articles/*`. Record the result in the task evidence file — never mark it green without performing it.
 
 ### Manual pre-launch checklist (MANUAL — all GitHub/Vercel side)
@@ -224,7 +230,7 @@ Then inspect core routes, all article/category routes, sitemap, robots, RSS, Ope
 - Collaborators who edit hold repository **write** access (Keystatic GitHub mode authorizes repo writers only; there is no narrower role).
 - Editors create `preview/<github-username>` branches through Keystatic's native branch dialog (scoped to `preview/` by `branchPrefix`); nothing lands on `main` except through a self-merged pull request (squash, auto-delete heads). No approvals are required.
 - `main` is branch-protected (MANUAL step — see the branch protection runbook above; until the rule is live, direct writes are still technically possible). Only bypass-listed admins may push `main` directly, for typo fixes only.
-- Vercel production env holds all five values above; preview deployments show the admin-unavailable notice.
+- Vercel production env holds all six values above; preview deployments show the admin-unavailable notice.
 
 ### Normal dev versus loopback admin
 

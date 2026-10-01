@@ -38,6 +38,16 @@ export type GithubSecretsStatus = {
 const MIN_CLIENT_ID = 8;
 const MIN_CLIENT_SECRET = 20;
 const MIN_SESSION_SECRET = 32;
+/**
+ * Public GitHub App slug (`NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG`), required
+ * by the official `@keystatic/next@5.0.5` route handler + UI bundle
+ * (`slugEnvName`). Keystatic itself requires it non-empty (it builds the
+ * `github.com/apps/<slug>/installations/new` link); the gate enforces
+ * min 8 chars, consistent with the client-id rule. Public by design
+ * (it appears in URLs) — errors name it, never its value.
+ */
+const MIN_APP_SLUG = 8;
+export const APP_SLUG_ENV_VAR = 'NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG';
 
 /**
  * GitHub storage is pinned to this repository. Ordinary dev/production/preview
@@ -56,6 +66,8 @@ export function getGithubSecretsStatus(env: NodeJS.ProcessEnv = process.env): Gi
   if ((env.KEYSTATIC_GITHUB_CLIENT_SECRET ?? '').length < MIN_CLIENT_SECRET)
     missing.push('KEYSTATIC_GITHUB_CLIENT_SECRET');
   if ((env.KEYSTATIC_SECRET ?? '').length < MIN_SESSION_SECRET) missing.push('KEYSTATIC_SECRET');
+  if ((env.NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG ?? '').trim().length < MIN_APP_SLUG)
+    missing.push(APP_SLUG_ENV_VAR);
   const repoMissing = getGithubRepo(env).length === 0;
   return { ok: missing.length === 0 && !repoMissing, missing, repoMissing };
 }
@@ -91,7 +103,7 @@ export function missingSecretsBody(status: GithubSecretsStatus): Record<string, 
     error: 'keystatic-github-not-configured',
     missing: status.missing,
     repoMissing: status.repoMissing,
-    hint: 'Set KEYSTATIC_GITHUB_CLIENT_ID, KEYSTATIC_GITHUB_CLIENT_SECRET, KEYSTATIC_SECRET and KEYSTATIC_GITHUB_REPO (owner/name). Local mode requires NODE_ENV=development and NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE=1.'
+    hint: 'Set KEYSTATIC_GITHUB_CLIENT_ID, KEYSTATIC_GITHUB_CLIENT_SECRET, KEYSTATIC_SECRET, NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG and KEYSTATIC_GITHUB_REPO (owner/name). Local mode requires NODE_ENV=development and NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE=1.'
   };
 }
 

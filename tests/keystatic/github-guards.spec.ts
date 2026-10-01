@@ -34,6 +34,7 @@ const FULL_ENV = {
   KEYSTATIC_GITHUB_CLIENT_ID: 'fake-client-id-123',
   KEYSTATIC_GITHUB_CLIENT_SECRET: 'fake-client-secret-1234567890',
   KEYSTATIC_SECRET: 'fake-session-secret-12345678901234',
+  NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG: 'fake-github-app-slug',
   KEYSTATIC_GITHUB_REPO: 'woodengrass/nehsnepc_website',
   KEYSTATIC_PRODUCTION_ORIGIN: CANONICAL
 } as unknown as NodeJS.ProcessEnv;
@@ -55,11 +56,13 @@ test.describe('task 6: github-mode guards (static, no live github)', () => {
       branchPrefix: 'preview/'
     });
 
-    // Minimum lengths: client id 8, client secret 20, session secret 32.
+    // Minimum lengths: client id 8, client secret 20, session secret 32,
+    // public GitHub App slug 8 (official bundle requires it non-empty).
     const base = {
       KEYSTATIC_GITHUB_CLIENT_ID: '12345678',
       KEYSTATIC_GITHUB_CLIENT_SECRET: '12345678901234567890',
       KEYSTATIC_SECRET: '12345678901234567890123456789012',
+      NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG: '12345678',
       KEYSTATIC_GITHUB_REPO: 'woodengrass/nehsnepc_website'
     } as unknown as NodeJS.ProcessEnv;
     expect(getGithubSecretsStatus(base).ok).toBe(true);
@@ -67,6 +70,15 @@ test.describe('task 6: github-mode guards (static, no live github)', () => {
     expect('1234567890123456789012345678901'.length).toBe(31);
     expect(getGithubSecretsStatus(short31).ok).toBe(false);
     expect(getGithubSecretsStatus(short31).missing).toContain('KEYSTATIC_SECRET');
+    // Missing/short public app slug fails closed (names only, never values).
+    const noSlug = { ...base } as unknown as Record<string, string>;
+    delete noSlug.NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG;
+    const noSlugStatus = getGithubSecretsStatus(noSlug as unknown as NodeJS.ProcessEnv);
+    expect(noSlugStatus.ok).toBe(false);
+    expect(noSlugStatus.missing).toContain('NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG');
+    const shortSlug = { ...base, NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG: 'short' } as unknown as NodeJS.ProcessEnv;
+    expect(getGithubSecretsStatus(shortSlug).ok).toBe(false);
+    expect(getGithubSecretsStatus(shortSlug).missing).toContain('NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG');
   });
 
   test('repo pin + canonical origin + preview policy', () => {
@@ -110,6 +122,18 @@ test.describe('task 6: github-mode guards (static, no live github)', () => {
       KEYSTATIC_SECRET: 'x'.repeat(31)
     });
     expect(shortFail?.status).toBe(503);
+
+    // Missing public app slug on the canonical origin -> redacted 503 naming the var.
+    const { NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG: _dropSlug, ...noSlugEnv } = FULL_ENV as Record<string, string>;
+    void _dropSlug;
+    const slugFail = getGithubGateFailure(
+      apiRequest(`${CANONICAL}/api/keystatic/a`),
+      noSlugEnv as unknown as NodeJS.ProcessEnv
+    );
+    expect(slugFail?.status).toBe(503);
+    const slugBody = (await slugFail!.json()) as { error: string; missing: string[] };
+    expect(slugBody.error).toBe('keystatic-github-not-configured');
+    expect(slugBody.missing).toContain('NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG');
 
     // Wrong repo -> redacted 503 (expected repo is public, never a secret).
     const repoFail = getGithubGateFailure(apiRequest(`${CANONICAL}/api/keystatic/a`), {
@@ -156,7 +180,8 @@ test.describe('task 6: github-mode guards (static, no live github)', () => {
     const secrets = {
       KEYSTATIC_GITHUB_CLIENT_ID: 'ghp-fake-secret-value-123',
       KEYSTATIC_GITHUB_CLIENT_SECRET: 'super-client-secret-value-1234567890',
-      KEYSTATIC_SECRET: 'super-secret-session-value-1234567890'
+      KEYSTATIC_SECRET: 'super-secret-session-value-1234567890',
+      NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG: 'fake-app-slug-value-12345678'
     };
     const bodies: string[] = [];
     bodies.push(JSON.stringify(missingSecretsBody(getGithubSecretsStatus({} as NodeJS.ProcessEnv))));
@@ -200,6 +225,7 @@ test.describe('task 6: github-mode guards (static, no live github)', () => {
       'KEYSTATIC_GITHUB_CLIENT_ID',
       'KEYSTATIC_GITHUB_CLIENT_SECRET',
       'KEYSTATIC_SECRET',
+      'NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG',
       'KEYSTATIC_GITHUB_REPO',
       'KEYSTATIC_PRODUCTION_ORIGIN',
       'NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE'
