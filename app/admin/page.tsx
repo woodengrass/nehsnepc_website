@@ -253,10 +253,10 @@ export default function AdminGateway() {
               text-[var(--color-text)]
             `}
           >
-            警告：儲存庫是公開的。你提交的草稿，人人可在 GitHub
-            讀到。網站路由排除草稿。草稿不是機密。你用
+            警告：儲存庫是公開的，已提交的草稿人人可在 GitHub
+            讀到。網站路由排除草稿，但草稿不是機密。以
             preview/&lt;使用者名稱&gt;
-            分支編輯。你按儲存，系統提交到所選分支。你發佈時，你合併到 main。你關閉「草稿」。你等待 Vercel 建置成功。
+            分支編輯，按儲存即提交到所選分支。發佈時合併到 main，關閉「草稿」，等 Vercel 建置成功。
           </aside>
 
           <div
@@ -334,7 +334,7 @@ export default function AdminGateway() {
                 text-[var(--color-text)]
               `}
             >
-              觀念：你組裝的是區塊
+              觀念：組裝的是區塊
             </h2>
             <p
               className={`
@@ -345,8 +345,7 @@ export default function AdminGateway() {
                 text-[var(--color-text)]
               `}
             >
-              「內文」只接受三種區塊。第一種是 Figure。第二種是 Callout。第三種是
-              Model3D。你插入區塊，你填它的欄位。你按儲存，網站套用既有版式。
+              「內文」只接受三種區塊：Figure、Callout、Model3D。插入區塊、填好欄位後按儲存，網站即套用既有版式。
             </p>
             <ul
               className={`
@@ -360,13 +359,13 @@ export default function AdminGateway() {
               `}
             >
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                Figure：你填「圖片」和「替代文字」。你再填「圖說」「寬度」「高度」。即完成一張內文圖片。
+                Figure：填「圖片」和「替代文字」，再補「圖說」「寬度」「高度」，即完成一張內文圖片。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                Callout：你選「類型」，你可加「標題」。「類型」是筆記、提示或警告。即完成一段提示框。
+                Callout：選「類型」（筆記、提示或警告），可另加「標題」，即完成一段提示框。
               </li>
               <li className="border-y border-[var(--color-line-soft)] py-3">
-                Model3D：你填「模型路徑」和「替代文字」。你可調「長寬比」「自動旋轉」「曝光度」。即完成一個 3D 展示。
+                Model3D：填「模型路徑」和「替代文字」，可再調「長寬比」「自動旋轉」「曝光度」，即完成一個 3D 展示。
               </li>
             </ul>
           </section>
@@ -412,7 +411,7 @@ export default function AdminGateway() {
                 text-[var(--color-text)]
               `}
             >
-              下例用 Figure 示範。你照順序做一次，你插入一張圖片。警告：游標須停在文字行。游標不可停在表格裡。
+              下例用 Figure 示範，照順序做一次即可插入一張圖片。游標須停在文字行，不可停在表格裡。
             </p>
             <ol
               className={`
@@ -428,23 +427,23 @@ export default function AdminGateway() {
               `}
             >
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                你把游標移到放圖位置。你輸入 /，你開啟插入選單。你選 Figure。
+                把游標移到放圖位置，輸入 / 開啟插入選單，選 Figure。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                你按 Choose file，你上傳圖片。你選錯時，你按 Remove 重選。
+                按 Choose file 上傳圖片，選錯時按 Remove 重選。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                你填「替代文字」。「替代文字」必填。你用至少 4
-                個字描述圖片。「圖說」選填。「圖說」顯示於圖片下方。
+                填「替代文字」（必填，至少 4
+                個字描述圖片）。「圖說」選填，顯示於圖片下方。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                你成對填「寬度」和「高度」。兩者皆為必填正整數。單位是像素。成對填寫減少版面位移。
+                成對填「寬度」和「高度」（皆為必填正整數，單位是像素），兩者皆填可減少版面位移。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                你按 Done，你關閉面板。你回到「內文」。你要修改時，你按 Edit 重開。
+                按 Done 關閉面板，回到「內文」；要修改時按 Edit 重開。
               </li>
               <li className="border-y border-[var(--color-line-soft)] py-3">
-                警告：打字不會自動儲存。你按 Save，系統寫入並提交。
+                打字不會自動儲存，按 Save 才會寫入並提交。
               </li>
             </ol>
           </section>
@@ -490,9 +489,9 @@ export default function AdminGateway() {
                 text-[var(--color-text)]
               `}
             >
-              發佈走分支流程。你先建分支，你再合併。分支一律叫
+              發佈走分支流程：先建分支、再合併。分支一律叫
               preview/&lt;使用者名稱&gt;。&lt;使用者名稱&gt;
-              是你的 GitHub 帳號。例如 preview/amy。
+              是 GitHub 帳號，例如 preview/amy。
             </p>
             <ol
               className={`
@@ -508,16 +507,16 @@ export default function AdminGateway() {
               `}
             >
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                你在分支選擇器建分支。分支名是 preview/&lt;使用者名稱&gt;。你按 Save，系統提交到該分支。
+                在分支選擇器建分支，分支名是 preview/&lt;使用者名稱&gt;，按 Save 即提交到該分支。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                你到預覽頁檢查排版和圖片。預覽頁只顯示已儲存的提交。未儲存的打字不會出現。
+                到預覽頁檢查排版和圖片；預覽頁只顯示已儲存的提交，未儲存的打字不會出現。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                你等待 Vercel 預覽部署完成。你逐項確認圖片和版式。
+                等 Vercel 預覽部署完成，逐項確認圖片和版式。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                你在 GitHub 合併分支。你合併到 main。你關閉「草稿」。你等待建置成功。公開站才會出現文章。
+                在 GitHub 合併分支到 main，關閉「草稿」，等建置成功後公開站才會出現文章。
               </li>
               <li className="border-y border-[var(--color-line-soft)] py-3">
                 例外：指定管理員可直接提交 main。只限錯字這類小修正。小修正不必走分支。
@@ -673,8 +672,8 @@ export default function AdminGateway() {
                 text-[var(--color-text)]
               `}
             >
-              以下連結是靜態的。你點連結，你前往對應頁面。本站不在此顯示提交編號。本站不在此顯示部署狀態。你要回退時，你執行
-              Git revert。你還原該次提交。或你在 Vercel
+              以下連結是靜態的，點連結即前往對應頁面。本站不在此顯示提交編號或部署狀態。需回退時執行
+              Git revert 還原該次提交，或在 Vercel
               重新部署前一個成功部署。
             </p>
             <div
