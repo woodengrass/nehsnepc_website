@@ -4,7 +4,7 @@ import { block, wrapper } from '@keystatic/core/content-components';
 
 import EditorFigurePreview from './components/mdx/EditorFigurePreview';
 import { figureTransformFilename } from './lib/keystatic/image-naming';
-import { getGithubRepo, githubStorage } from './lib/keystatic/storage';
+import { EXPECTED_GITHUB_REPO, githubStorage } from './lib/keystatic/storage';
 
 // NOTE: `process.env` is read DIRECTLY here (no helper indirection) so that
 // Next.js/Turbopack can statically inline `NEXT_PUBLIC_*` into the admin
@@ -15,7 +15,7 @@ const isLocalAdmin =
   process.env.NODE_ENV === 'development' &&
   process.env.NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE === '1';
 
-const storage = isLocalAdmin ? ({ kind: 'local' } as const) : githubStorage(getGithubRepo());
+const storage = isLocalAdmin ? ({ kind: 'local' } as const) : githubStorage(EXPECTED_GITHUB_REPO);
 
 // Minimum final-shape Keystatic config for the compat gate.
 // - Public rendering stays filesystem-based (`lib/content.ts` + `next-mdx-remote/rsc`);
