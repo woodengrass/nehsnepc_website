@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
 
@@ -22,7 +23,8 @@ import {
   isPreviewEnv,
   isSafeMethod,
   missingSecretsBody,
-  normalizeOrigin
+  normalizeOrigin,
+  originsEquivalent
 } from '../../lib/keystatic/storage';
 
 const ROOT = process.cwd();
@@ -176,6 +178,62 @@ test.describe('task 6: github-mode guards (static, no live github)', () => {
     expect(badOriginHeader?.status).toBe(403);
   });
 
+  test('apex/www alias: single leading www equivalent both directions, siblings still 403', async () => {
+    const wwwEnv = {
+      ...FULL_ENV,
+      KEYSTATIC_PRODUCTION_ORIGIN: 'https://www.nehsnepc.example'
+    } as unknown as NodeJS.ProcessEnv;
+    const apexEnv = {
+      ...FULL_ENV,
+      KEYSTATIC_PRODUCTION_ORIGIN: 'https://nehsnepc.example'
+    } as unknown as NodeJS.ProcessEnv;
+
+    // Unit semantics: a single leading www. is ignored on either side.
+    expect(originsEquivalent('https://www.nehsnepc.example', 'https://nehsnepc.example')).toBe(true);
+    expect(originsEquivalent('https://nehsnepc.example', 'https://www.nehsnepc.example')).toBe(true);
+    expect(originsEquivalent('https://www.nehsnepc.example/', 'https://nehsnepc.example')).toBe(true);
+    // Only ONE leading www. is stripped: www.www. still differs from www.
+    expect(originsEquivalent('https://www.www.nehsnepc.example', 'https://www.nehsnepc.example')).toBe(false);
+    // Siblings and suffix tricks never match.
+    expect(originsEquivalent('https://evilnehsnepc.example', 'https://nehsnepc.example')).toBe(false);
+    expect(originsEquivalent('https://nehsnepc.example.evil.com', 'https://nehsnepc.example')).toBe(false);
+    expect(originsEquivalent('https://app.nehsnepc.example', 'https://www.nehsnepc.example')).toBe(false);
+    expect(originsEquivalent('https://a.b.nehsnepc.example', 'https://nehsnepc.example')).toBe(false);
+
+    // Gate: apex request passes under a www canonical and vice versa.
+    expect(getGithubGateFailure(apiRequest('https://nehsnepc.example/api/keystatic/a'), wwwEnv)).toBeNull();
+    expect(getGithubGateFailure(apiRequest('https://www.nehsnepc.example/api/keystatic/a'), apexEnv)).toBeNull();
+    // Browser Origin header honors the alias too.
+    expect(
+      getGithubGateFailure(
+        apiRequest('https://nehsnepc.example/api/keystatic/a', {
+          method: 'POST',
+          headers: { origin: 'https://www.nehsnepc.example' }
+        }),
+        apexEnv
+      )
+    ).toBeNull();
+
+    // Gate: wrong host, lookalike, suffix-trick, and deep subdomains still 403
+    // under BOTH canonical shapes, with no Host reflection.
+    for (const bad of [
+      'https://evil.example',
+      'https://evilnehsnepc.example',
+      'https://nehsnepc.example.evil.com',
+      'https://app.nehsnepc.example',
+      'https://a.b.nehsnepc.example'
+    ]) {
+      for (const env of [wwwEnv, apexEnv]) {
+        const fail = getGithubGateFailure(apiRequest(`${bad}/api/keystatic/a`), env);
+        expect(fail?.status).toBe(403);
+        const body = JSON.stringify(await fail!.json());
+        expect(body).toContain('keystatic-origin-forbidden');
+        expect(body).not.toContain('evil');
+        expect(body).not.toContain('app.nehsnepc');
+      }
+    }
+  });
+
   test('all failure bodies are redacted (names only, never values)', async () => {
     const secrets = {
       KEYSTATIC_GITHUB_CLIENT_ID: 'ghp-fake-secret-value-123',
@@ -242,6 +300,63 @@ test.describe('task 6: github-mode guards (static, no live github)', () => {
     const src = read('.gitignore');
     expect(src).toContain('.env*');
     expect(src).toContain('!.env.example');
+  });
+
+  test('config storage uses the pinned repo (browser-safe, no server-env read)', async ({}, testInfo) => {
+    testInfo.setTimeout(180_000);
+    // Static: the browser bundle cannot read server-only env (Next.js only
+    // inlines NEXT_PUBLIC_*), so the config must resolve the GitHub repo
+    // from the pinned public constant — never from getGithubRepo().
+    const src = read('keystatic.config.ts');
+    expect(src).toContain('EXPECTED_GITHUB_REPO');
+    expect(src).toContain('githubStorage(EXPECTED_GITHUB_REPO)');
+    expect(src).not.toContain('getGithubRepo');
+    // Local branch intact: still a direct NEXT_PUBLIC_* read (statically
+    // inlinable), still `{ kind: 'local' }`.
+    expect(src).toContain("kind: 'local'");
+    expect(src).toContain('NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE');
+    // storage.ts stays browser-safe: no node:* imports on the config path
+    // (Response/URL/Request are edge-safe).
+    expect(read('lib/keystatic/storage.ts')).not.toContain('node:');
+
+    // Runtime: evaluate the ACTUAL exported config in fresh processes (the
+    // module reads env once at import, so each shape needs its own process).
+    const probeDir = 'C:/Users/maste/AppData/Local/Temp/opencode/keystatic-pin-probe';
+    mkdirSync(probeDir, { recursive: true });
+    const probe = path.join(probeDir, 'probe.mts');
+    writeFileSync(
+      probe,
+      `import { pathToFileURL } from 'node:url';\nconst mod = await import(pathToFileURL(${JSON.stringify(path.join(ROOT, 'keystatic.config.ts'))}).href);\nprocess.stdout.write(JSON.stringify((mod.default as unknown as { storage: unknown }).storage));\n`
+    );
+    try {
+      const run = (env: NodeJS.ProcessEnv): unknown =>
+        JSON.parse(
+          execFileSync(`npx tsx ${JSON.stringify(probe)}`, {
+            cwd: ROOT,
+            env,
+            shell: true,
+            timeout: 120_000,
+            encoding: 'utf8'
+          }) as unknown as string
+        );
+      // Production-like browser bundle: server-only repo vars ABSENT.
+      const prodEnv = { ...process.env, NODE_ENV: 'production' } as Record<string, string | undefined>;
+      delete prodEnv.KEYSTATIC_GITHUB_REPO;
+      delete prodEnv.KEYSTATIC_GITHUB_REPO_OWNER;
+      delete prodEnv.KEYSTATIC_GITHUB_REPO_NAME;
+      delete prodEnv.NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE;
+      expect(run(prodEnv as NodeJS.ProcessEnv)).toEqual({
+        kind: 'github',
+        repo: 'woodengrass/nehsnepc_website',
+        branchPrefix: 'preview/'
+      });
+      // Local flags: loopback storage, unchanged.
+      expect(run({ ...process.env, NODE_ENV: 'development', NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE: '1' })).toEqual({
+        kind: 'local'
+      });
+    } finally {
+      rmSync(probe, { force: true });
+    }
   });
 
   test('dev launcher stays loopback-only for admin (read-only check)', () => {

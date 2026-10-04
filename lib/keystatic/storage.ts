@@ -132,6 +132,40 @@ export function getCanonicalOrigin(env: NodeJS.ProcessEnv = process.env): string
   return normalizeOrigin(env.KEYSTATIC_PRODUCTION_ORIGIN ?? '');
 }
 
+/**
+ * Strip a SINGLE leading `www.` from an already-normalized origin's host.
+ * `www.nehsnepc.com` ≡ `nehsnepc.com`; anything else (siblings, deep
+ * subdomains, suffix tricks) is untouched. Never applied to stored values —
+ * comparison-time only.
+ */
+function stripSingleWwwAlias(normalizedOrigin: string): string {
+  try {
+    const url = new URL(normalizedOrigin);
+    if (url.hostname.toLowerCase().startsWith('www.')) {
+      url.hostname = url.hostname.slice('www.'.length);
+      return url.origin;
+    }
+    return normalizedOrigin;
+  } catch {
+    return normalizedOrigin;
+  }
+}
+
+/**
+ * Apex/www duality for the origin gate: a SINGLE leading `www.` is ignored
+ * on BOTH sides before comparing (`www.nehsnepc.com` ≡ `nehsnepc.com`).
+ * Production observed the OAuth callback landing on the apex while the
+ * canonical origin is `www`, so exact equality 403'd a legitimate login.
+ * Anything beyond one leading `www.` still mismatches. Inputs are normalized
+ * first, so raw or normalized origins are both accepted.
+ */
+export function originsEquivalent(a: string, b: string): boolean {
+  const na = normalizeOrigin(a);
+  const nb = normalizeOrigin(b);
+  if (na === nb) return true;
+  return stripSingleWwwAlias(na) === stripSingleWwwAlias(nb);
+}
+
 /** The canonical origin only counts when it is an exact `https://` origin. */
 export function isCanonicalOriginConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
   const canonical = getCanonicalOrigin(env);
@@ -193,7 +227,7 @@ export function getGithubGateFailure(
   if (getGithubRepo(env) !== EXPECTED_GITHUB_REPO) return buildRepoMismatchResponse();
   if (!isCanonicalOriginConfigured(env)) return buildOriginNotConfiguredResponse();
   const canonical = getCanonicalOrigin(env);
-  if (getRequestOrigin(request) !== canonical) return buildOriginMismatchResponse();
+  if (!originsEquivalent(getRequestOrigin(request), canonical)) return buildOriginMismatchResponse();
   return null;
 }
 

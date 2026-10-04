@@ -92,12 +92,12 @@ cp .env.example .env.local
 | `KEYSTATIC_SECRET` | Server-only | Keystatic session secret, minimum 32 characters (31 fails closed). Generate 32+ random bytes; rotate as below. |
 | `NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` | Public (never a secret) | GitHub App slug from the App's settings page/URL (`github.com/settings/apps/<slug>`), minimum 8 characters (Keystatic requires non-empty). Required by the official `@keystatic/next@5.0.5` route handler + UI bundle (`slugEnvName`); missing/short fails closed with redacted 503. Public by design — it appears in install URLs. |
 | `KEYSTATIC_GITHUB_REPO` | Pinned config | Must stay exactly `woodengrass/nehsnepc_website` (`EXPECTED_GITHUB_REPO`); any other value fails closed. Owner/name split vars (`KEYSTATIC_GITHUB_REPO_OWNER`/`KEYSTATIC_GITHUB_REPO_NAME`) are accepted as an equivalent input shape. |
-| `KEYSTATIC_PRODUCTION_ORIGIN` | Server-only | Exact registered production HTTPS origin, no trailing slash (e.g. `https://nehsnepc.com`). API requests from any other origin get a redacted 403; safe wrong-host UI GETs redirect (308) to this literal origin — the request Host is never reflected. |
+| `KEYSTATIC_PRODUCTION_ORIGIN` | Server-only | Canonical production HTTPS origin, no trailing slash (www canonical, e.g. `https://www.nehsnepc.com`; the apex is accepted as an alias — a single leading `www.` is ignored on both sides before comparing, anything else 403s). API requests from any other origin get a redacted 403; safe wrong-host UI GETs redirect (308) to this literal origin — the request Host is never reflected. Register BOTH apex and www callback URLs in the GitHub App settings. |
 | `NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE` | Dev-only flag | Set to `1` only for loopback `admin:dev` editing (`NODE_ENV=development` is also required). Never set in production or preview: ordinary dev, production, and preview always use GitHub mode. |
 | `NODE_ENV` | Runtime | Controls draft visibility (`!== 'production'` includes drafts). |
 | `VERCEL_ENV` | Platform | `preview` disables the admin UI and API entirely (see below). |
 
-`keystatic.config.ts` reads `process.env` directly (no helper indirection) so Next.js/Turbopack can statically inline `NEXT_PUBLIC_*` into the admin browser bundle; indirect access would silently flip the admin UI into GitHub mode while the API stays local.
+`keystatic.config.ts` reads `process.env` directly (no helper indirection) so Next.js/Turbopack can statically inline `NEXT_PUBLIC_*` into the admin browser bundle; indirect access would silently flip the admin UI into GitHub mode while the API stays local. The GitHub repo itself comes from the pinned `EXPECTED_GITHUB_REPO` constant (server-only repo env is unreadable in the browser bundle — the server gate still 503s on any env value ≠ pin).
 
 ## Keystatic GitHub Mode (Fail-Closed)
 
@@ -109,11 +109,11 @@ The API route (`app/api/keystatic/[...params]/route.ts`, `dynamic = 'force-dynam
 2. Secrets: missing/short secrets answer redacted `503 keystatic-github-not-configured` naming only the missing names (never values).
 3. Repo pin: any repo other than `woodengrass/nehsnepc_website` answers redacted `503 keystatic-github-repo-mismatch`.
 4. Origin configured: an unset/non-HTTPS canonical origin answers redacted `503 keystatic-origin-not-configured`.
-5. Origin equality: a request whose normalized origin (`Origin` header, then `Referer`, then request URL) differs from the canonical origin answers redacted `403 keystatic-origin-forbidden` naming only the env var — the request Host is never reflected.
+5. Origin equality: a request whose normalized origin (`Origin` header, then `Referer`, then request URL) is not equivalent to the canonical origin answers redacted `403 keystatic-origin-forbidden` naming only the env var — the request Host is never reflected. Equivalence ignores a single leading `www.` on either side (www canonical, apex accepted as alias); anything else still 403s.
 
 The UI guard (`app/keystatic/layout.tsx`) mirrors this for safe methods only: preview renders the unavailable notice; a safe GET/HEAD arriving on a non-canonical host is redirected (308) to the literal configured origin. Layouts only serve GET/HEAD, so the redirect is inherently safe-method-only. Missing headers/env render the app so builds without secrets succeed. `permanentRedirect` throws and must stay outside any try/catch — only the `headers()` read is guarded.
 
-Canonical callback: the GitHub OAuth App registers exactly one callback URL — `{KEYSTATIC_PRODUCTION_ORIGIN}/api/keystatic/github/oauth/callback` (login at `/api/keystatic/github/login` under the same single stable origin). No second origin, no preview callback.
+Canonical callback: the GitHub OAuth App registers BOTH callback URLs — apex and www (`{apex}/api/keystatic/github/oauth/callback` and `{www}/api/keystatic/github/oauth/callback`; the path is fixed by the installed `@keystatic/core@0.6.9` route handler). The www origin stays canonical (`KEYSTATIC_PRODUCTION_ORIGIN`); the apex is accepted as an alias by the gate. Login at `/api/keystatic/github/login` under the same origins. No preview callback.
 
 Public-bundle isolation: Keystatic imports live only in `app/keystatic/*` and `keystatic.config.ts` (loaded lazily by the API route). The root layout never imports Keystatic or admin client code and suppresses site chrome on admin surfaces with pure CSS (`body:has([data-admin-root])`); Keystatic internal classes are never targeted. The `test:admin` gate asserts this isolation holds.
 
@@ -220,7 +220,7 @@ the guided **"Create GitHub App"** flow launched from `/keystatic` itself, or
 the App can be created manually:
 
 1. As an organization owner, create a GitHub App (GitHub → Settings → Developer settings → GitHub Apps → New GitHub App), or run Keystatic's guided "Create GitHub App" flow from `/keystatic` (it registers the App for you). Homepage URL is the production origin.
-2. Register exactly one callback URL in the App's settings page: `{production-origin}/api/keystatic/github/oauth/callback` (the path is fixed by the installed `@keystatic/core@0.6.9` route handler; the origin must equal `KEYSTATIC_PRODUCTION_ORIGIN` byte-for-byte after normalization).
+2. Register BOTH callback URLs in the App's settings page (apex + www): `{apex}/api/keystatic/github/oauth/callback` and `{www}/api/keystatic/github/oauth/callback` (the path is fixed by the installed `@keystatic/core@0.6.9` route handler; the www origin stays canonical in `KEYSTATIC_PRODUCTION_ORIGIN`, the apex is accepted as an alias).
 3. Copy the client ID and generate a client secret into `.env.local` (local rehearsal) and the Vercel production env (real deployment). Copy the App slug (from the App's settings page/URL, `github.com/settings/apps/<slug>`) into `NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` in both places too — it is public, never a secret. Never commit any of these files/values beyond the placeholder template.
 4. Verify live (MANUAL): open `/admin`, enter `/keystatic`, complete GitHub login, and confirm the `Articles` collection lists `content/articles/*`. Record the result in the task evidence file — never mark it green without performing it.
 

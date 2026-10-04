@@ -24,6 +24,8 @@ export const metadata: Metadata = {
 // - Preview deployments render an unavailable notice (API answers 403 there).
 // - A safe GET/HEAD arriving on a non-canonical host is redirected (308) to
 //   the literal configured origin — the request Host is never reflected.
+//   (API gate accepts the apex as an alias of the www canonical via
+//   originsEquivalent; the redirect target stays the literal www canonical.)
 // Layouts only serve GET/HEAD, so the redirect is inherently safe-method-only.
 // Prerender-safe: missing headers/env simply render the app so builds without
 // secrets succeed.
