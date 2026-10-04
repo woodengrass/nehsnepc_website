@@ -18,42 +18,42 @@ const GUIDE_BLOCKS = [
   {
     index: '01',
     title: '登入／驗證',
-    body: '點選入口進入編輯器，以授權幹部的 GitHub 帳號登入驗證身分。本頁不保存任何帳號或私人資料，登入狀態僅由編輯器維護。'
+    body: '你點入口，你進入編輯器。你用授權幹部的 GitHub 帳號登入。本頁不儲存帳號或私人資料。登入狀態由編輯器維護。'
   },
   {
     index: '02',
     title: '分支選擇',
-    body: '編輯器提供分支選擇器，本版本無法移除或鎖定。請使用 preview/<使用者名稱> 分支（例如 preview/amy）；儲存會直接提交到所選分支，不會另開審核流程。僅指定的管理員小修正（如錯字）可直接提交 main。'
+    body: '編輯器提供分支選擇器。本版本無法移除或鎖定選擇器。你用 preview/<使用者名稱> 分支。例如 preview/amy。你按儲存，系統提交到所選分支。系統不另開審核流程。警告：只有指定管理員可直接提交 main。只限錯字這類小修正。'
   },
   {
     index: '03',
     title: '儲存與發佈',
-    body: '只有按儲存才會寫入內容檔並提交，打字過程不會自動儲存。新增文章預設為草稿；分支合併到 main 後，僅當文章設為 draft:false 且 Vercel 建置成功，公開站才會出現。'
+    body: '警告：只有你按儲存，系統才寫入。打字過程不會自動儲存。新增文章預設為草稿。你合併到 main 後，文章須關閉「草稿」。即 draft:false。Vercel 建置成功後，公開站才出現文章。'
   },
   {
     index: '04',
     title: '草稿公開性',
-    body: '本站儲存庫為公開，已提交的草稿任何人都能在 GitHub 上讀到。網站路由會排除草稿，但草稿不是機密，請勿寫入不公開資訊。'
+    body: '警告：儲存庫是公開的。已提交的草稿，人人可在 GitHub 讀到。網站路由排除草稿。草稿不是機密。你不可寫入不公開資訊。'
   },
   {
     index: '05',
     title: '同時編輯',
-    body: '多人同時編輯同一檔案可能發生衝突，以後儲存者為準。編輯前請先重新整理確認最新內容，衝突請以 Git 方式處理。'
+    body: '多人同時編輯同一檔案時，後儲存者覆蓋前者。你編輯前，你重新整理確認最新內容。你用 Git 方式處理衝突。'
   },
   {
     index: '06',
     title: '回退',
-    body: '需回退時請以 Git revert 還原該次提交，或在 Vercel 專案中重新部署前一個成功的部署。本頁不顯示部署狀態。'
+    body: '你要回退時，你執行 Git revert。你還原該次提交。或你在 Vercel 重新部署前一個成功部署。本頁不顯示部署狀態。'
   },
   {
     index: '07',
     title: 'Slug 更名',
-    body: '更改 slug 等同刪除舊檔並新增新檔，不會自動產生重新導向，舊連結會 404。對外已分享的連結請手動更新。'
+    body: '警告：更改 slug 會刪除舊檔並新增新檔。系統不產生重新導向。舊連結失效並顯示 404。對外已分享的連結，你手動更新。'
   },
   {
     index: '08',
     title: '發佈前檢查',
-    body: '發佈前請重新建置網站並確認頁面正常顯示；照片請先經 images:build 產生最佳化版本；請勿上傳未授權照片。'
+    body: '你發佈前，你重建網站並確認頁面。你先跑 images:build。你產生最佳化照片版本。警告：你不可上傳未授權照片。'
   }
 ] as const;
 
@@ -124,8 +124,7 @@ export default function AdminGateway() {
           text-[var(--color-text)]
         `}
       >
-        本頁是社團幹部專用的教學文章編輯入口：先讀懂下方的編輯教學與發佈規則，再從入口進入
-        Keystatic 編輯器操作。如需協助請透過「聯絡」頁與我們聯繫。
+        本頁只給社團幹部使用。你先讀完下方教學。你再從入口進入編輯器。你需要協助時，請用「聯絡」頁聯絡我們。
       </p>
 
       <div
@@ -179,7 +178,7 @@ export default function AdminGateway() {
                   items-center
                   justify-between
                   gap-6
-                  py-3.5
+                  py-5
                   text-[0.9rem]
                   tracking-[0.08em]
                   transition-colors
@@ -187,12 +186,7 @@ export default function AdminGateway() {
                   motion-reduce:transition-none
                 `}
               >
-                <span>
-                  前往編輯器
-                  <span className="mt-1 block text-[0.8rem] leading-[1.7] tracking-normal opacity-70">
-                    Keystatic 編輯器，以幹部 GitHub 帳號登入。
-                  </span>
-                </span>
+                <span>前往編輯器</span>
                 <span aria-hidden="true">→</span>
               </Link>
             </li>
@@ -205,7 +199,7 @@ export default function AdminGateway() {
                   items-center
                   justify-between
                   gap-6
-                  py-3.5
+                  py-5
                   text-[0.9rem]
                   tracking-[0.08em]
                   transition-colors
@@ -213,12 +207,7 @@ export default function AdminGateway() {
                   motion-reduce:transition-none
                 `}
               >
-                <span>
-                  教學文章頁面
-                  <span className="mt-1 block text-[0.8rem] leading-[1.7] tracking-normal opacity-70">
-                    公開教學列表，在此確認發佈結果。
-                  </span>
-                </span>
+                <span>教學文章頁面</span>
                 <span aria-hidden="true">→</span>
               </Link>
             </li>
@@ -233,7 +222,7 @@ export default function AdminGateway() {
                   items-center
                   justify-between
                   gap-6
-                  py-3.5
+                  py-5
                   text-[0.9rem]
                   tracking-[0.08em]
                   transition-colors
@@ -241,12 +230,7 @@ export default function AdminGateway() {
                   motion-reduce:transition-none
                 `}
               >
-                <span>
-                  GH倉庫
-                  <span className="mt-1 block text-[0.8rem] leading-[1.7] tracking-normal opacity-70">
-                    公開儲存庫，分支建立與合併在此完成。
-                  </span>
-                </span>
+                <span>GH倉庫</span>
                 <span aria-hidden="true">↗</span>
               </a>
             </li>
@@ -269,11 +253,10 @@ export default function AdminGateway() {
               text-[var(--color-text)]
             `}
           >
-            公開提醒：儲存庫為公開，已提交的草稿任何人都能在 GitHub
-            上讀到；網站路由會排除草稿，但草稿不是機密。編輯時請使用
+            警告：儲存庫是公開的。你提交的草稿，人人可在 GitHub
+            讀到。網站路由排除草稿。草稿不是機密。你用
             preview/&lt;使用者名稱&gt;
-            分支，儲存即提交到所選分支；發佈須合併到 main、將 draft 設為 false
-            並等待 Vercel 建置成功。
+            分支編輯。你按儲存，系統提交到所選分支。你發佈時，你合併到 main。你關閉「草稿」。你等待 Vercel 建置成功。
           </aside>
 
           <div
@@ -317,7 +300,7 @@ export default function AdminGateway() {
                 text-[var(--color-text)]
               `}
             >
-              編輯器把文章拆成「欄位」與「區塊」：上方欄位填寫標題、摘要、分類等資料，內文欄位則用組裝的方式放入圖片與提示框。以下出現的每一個欄位名稱，都與編輯器畫面上的文字一致。
+              編輯器把文章拆成「欄位」和「區塊」。上方欄位收標題、摘要和分類。「內文」欄位只收區塊。以下欄位名稱與編輯器畫面一致。
             </p>
           </div>
 
@@ -362,8 +345,8 @@ export default function AdminGateway() {
                 text-[var(--color-text)]
               `}
             >
-              「內文」欄位只接受三種區塊：Figure（圖片）、Callout（提示框）、Model3D（3D
-              模型）。你不需要手寫標籤或程式碼，只要插入區塊並填寫它的欄位，存檔後網站會自動套用既有的版式呈現。
+              「內文」只接受三種區塊。第一種是 Figure。第二種是 Callout。第三種是
+              Model3D。你插入區塊，你填它的欄位。你按儲存，網站套用既有版式。
             </p>
             <ul
               className={`
@@ -377,13 +360,13 @@ export default function AdminGateway() {
               `}
             >
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                Figure：填「圖片」「替代文字」「圖說」「寬度」「高度」，即完成一張內文圖片。
+                Figure：你填「圖片」和「替代文字」。你再填「圖說」「寬度」「高度」。即完成一張內文圖片。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                Callout：選「類型」（筆記／提示／警告），可加「標題」，即完成一段提示框。
+                Callout：你選「類型」，你可加「標題」。「類型」是筆記、提示或警告。即完成一段提示框。
               </li>
               <li className="border-y border-[var(--color-line-soft)] py-3">
-                Model3D：填「模型路徑」與「替代文字」，可調「長寬比」「自動旋轉」「曝光度」，即完成一個 3D 展示。
+                Model3D：你填「模型路徑」和「替代文字」。你可調「長寬比」「自動旋轉」「曝光度」。即完成一個 3D 展示。
               </li>
             </ul>
           </section>
@@ -429,7 +412,7 @@ export default function AdminGateway() {
                 text-[var(--color-text)]
               `}
             >
-              以最常用的 Figure 為例，照著以下順序做一次，就會插入圖片。游標請停在一般文字行，不要停在表格裡。
+              下例用 Figure 示範。你照順序做一次，你插入一張圖片。警告：游標須停在文字行。游標不可停在表格裡。
             </p>
             <ol
               className={`
@@ -445,22 +428,23 @@ export default function AdminGateway() {
               `}
             >
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                在「內文」欄位中，把游標移到要放圖的位置，輸入 / 開啟插入選單，選擇 Figure。
+                你把游標移到放圖位置。你輸入 /，你開啟插入選單。你選 Figure。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                在彈出的 Figure 面板中，按 Choose file 上傳圖片；若選錯，按 Remove 可移除重選。
+                你按 Choose file，你上傳圖片。你選錯時，你按 Remove 重選。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                填寫「替代文字」（必填，請用至少 4 個字描述圖片內容）與「圖說」（選填，顯示於圖片下方）。
+                你填「替代文字」。「替代文字」必填。你用至少 4
+                個字描述圖片。「圖說」選填。「圖說」顯示於圖片下方。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                成對填寫「寬度」與「高度」（必填正整數，單位像素），可減少版面位移。
+                你成對填「寬度」和「高度」。兩者皆為必填正整數。單位是像素。成對填寫減少版面位移。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                按 Done 關閉面板回到內文；之後想修改，按該區塊的 Edit 可再開啟。
+                你按 Done，你關閉面板。你回到「內文」。你要修改時，你按 Edit 重開。
               </li>
               <li className="border-y border-[var(--color-line-soft)] py-3">
-                按 Save 儲存——打字與填欄位都不會自動儲存，只有 Save 會寫入並提交。
+                警告：打字不會自動儲存。你按 Save，系統寫入並提交。
               </li>
             </ol>
           </section>
@@ -506,8 +490,9 @@ export default function AdminGateway() {
                 text-[var(--color-text)]
               `}
             >
-              發佈不再是直接改 main，而是一條分支流程：分支命名一律為 preview/&lt;使用者名稱&gt;，&lt;使用者名稱&gt;
-              即你的 GitHub 帳號（例如 preview/amy）。
+              發佈走分支流程。你先建分支，你再合併。分支一律叫
+              preview/&lt;使用者名稱&gt;。&lt;使用者名稱&gt;
+              是你的 GitHub 帳號。例如 preview/amy。
             </p>
             <ol
               className={`
@@ -523,20 +508,19 @@ export default function AdminGateway() {
               `}
             >
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                在分支選擇器中建立 preview/&lt;使用者名稱&gt; 分支（&lt;使用者名稱&gt;
-                即你的 GitHub 帳號，例如 preview/amy）；之後按 Save 儲存，都會提交到該分支。
+                你在分支選擇器建分支。分支名是 preview/&lt;使用者名稱&gt;。你按 Save，系統提交到該分支。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                到預覽頁即時檢查排版與圖片（只顯示已儲存的提交，未儲存的打字不會出現）。
+                你到預覽頁檢查排版和圖片。預覽頁只顯示已儲存的提交。未儲存的打字不會出現。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                等待 Vercel 預覽部署完成，逐像素確認圖片與版式。
+                你等待 Vercel 預覽部署完成。你逐項確認圖片和版式。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                在 GitHub 上合併分支；合併到 main、文章設為 draft:false 且建置成功後，公開站才會出現。
+                你在 GitHub 合併分支。你合併到 main。你關閉「草稿」。你等待建置成功。公開站才會出現文章。
               </li>
               <li className="border-y border-[var(--color-line-soft)] py-3">
-                例外：指定的管理員修小錯字等小修正，可直接提交 main，不必走分支。
+                例外：指定管理員可直接提交 main。只限錯字這類小修正。小修正不必走分支。
               </li>
             </ol>
             <p
@@ -551,7 +535,7 @@ export default function AdminGateway() {
               <Link href="/preview" className="underline underline-offset-4">
                 前往預覽頁
               </Link>
-              ：僅顯示已儲存的提交，未儲存的內容不會出現。
+              ：只顯示已儲存的提交。未儲存的內容不會出現。
             </p>
           </section>
 
@@ -689,8 +673,9 @@ export default function AdminGateway() {
                 text-[var(--color-text)]
               `}
             >
-              以下為靜態連結，僅供前往對應頁面；本站不會在此顯示提交編號或部署狀態。回退請以 Git revert
-              還原提交，或在 Vercel 專案中重新部署前一個成功的部署。
+              以下連結是靜態的。你點連結，你前往對應頁面。本站不在此顯示提交編號。本站不在此顯示部署狀態。你要回退時，你執行
+              Git revert。你還原該次提交。或你在 Vercel
+              重新部署前一個成功部署。
             </p>
             <div
               className={`
