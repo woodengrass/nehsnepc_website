@@ -433,11 +433,10 @@ export default function AdminGateway() {
                 按 Choose file 上傳圖片，選錯時按 Remove 重選。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                填「替代文字」（必填，至少 4
-                個字描述圖片）。「圖說」選填，顯示於圖片下方。
+                填替代文字：描述圖片內容給看不見圖片的人聽，必填，至少四個字。圖說是圖片下方的一行小字說明，可不填。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
-                成對填「寬度」和「高度」（皆為必填正整數，單位是像素），兩者皆填可減少版面位移。
+                寬度和高度都要填，填正整數，單位是像素。兩個都填好，圖片載入時版面才不會跳動。
               </li>
               <li className="border-t border-[var(--color-line-soft)] py-3">
                 按 Done 關閉面板，回到「內文」；要修改時按 Edit 重開。
