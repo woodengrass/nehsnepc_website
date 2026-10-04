@@ -75,6 +75,13 @@
     display: none;
   }
 
+  /* 管理入口 sticky 啟用：全站 body 的 overflow-x: hidden 會使其成為捲動容器，
+     導致 Chromium 內視口 sticky 失效。clip 同樣防止水平溢出但不建立捲動容器，
+     因此 /admin 的右側入口面板得以 sticky；僅作用於含 [data-admin-root] 的頁面。 */
+  body:has([data-admin-root]) {
+    overflow-x: clip;
+  }
+
   body:has([data-keystatic-root]) .grain-overlay,
   body:has([data-keystatic-root]) .site-chrome-nav {
     display: none;
