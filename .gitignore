@@ -10,3 +10,4 @@ public/images/generated/articles/
 public/images/generated/articles.manifest.json
 .env*
 !.env.example
+.idea/
