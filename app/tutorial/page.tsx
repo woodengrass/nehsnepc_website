@@ -7,7 +7,7 @@ import TutorialCover from '@/components/articles/TutorialCover';
 
 export const metadata: Metadata = {
   title: 'Tutorial',
-  description: 'NEHS 攝影社教學文章 — 攝影教學、社團動態與 3D 展示。',
+  description: 'NEHS 攝影社教學文章 — 基礎攝影、主題攝影與社團動態。',
   alternates: { canonical: '/tutorial' }
 };
 

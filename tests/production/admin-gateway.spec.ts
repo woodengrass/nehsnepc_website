@@ -54,8 +54,11 @@ test('publication surfaces serve: tutorial, category, sitemap, rss, robots', asy
   const tutorial = await request.get('/tutorial');
   expect(tutorial.status()).toBe(200);
 
-  const category = await request.get('/tutorial/category/tutorial');
+  const category = await request.get('/tutorial/category/basic');
   expect(category.status()).toBe(200);
+
+  const topicCategory = await request.get('/tutorial/category/topic');
+  expect(topicCategory.status()).toBe(200);
 
   const sitemap = await request.get('/sitemap.xml');
   expect(sitemap.status()).toBe(200);

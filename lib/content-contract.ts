@@ -28,14 +28,14 @@ export const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export const SLUG_RE = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/;
 
-export const ALLOWED_CATEGORIES = ['tutorial', 'news', 'showcase'] as const;
+export const ALLOWED_CATEGORIES = ['basic', 'topic', 'news'] as const;
 
 export type AllowedCategory = (typeof ALLOWED_CATEGORIES)[number];
 
 export const CATEGORIES = [
-  { id: 'tutorial', label: '攝影教學', description: '各類教學文章，覆蓋不同程度。' },
-  { id: 'news', label: '社團動態', description: '活動記錄、招新資訊與作品回顧。' },
-  { id: 'showcase', label: '3D 展示', description: '以 3D 模型拆解器材與空間，可旋轉互動。' }
+  { id: 'basic', label: '基礎攝影', description: '曝光、構圖、對焦等入門基本功。' },
+  { id: 'topic', label: '主題攝影', description: '人像、風景、街拍等主題拍攝技法。' },
+  { id: 'news', label: '社團動態', description: '活動記錄、招新資訊與作品回顧。' }
 ] as const;
 
 export type CategoryId = (typeof CATEGORIES)[number]['id'];
@@ -172,7 +172,7 @@ export const frontmatterStrictSchema = z
     description: z.string().min(1, 'description is required and must be non-empty'),
     date: isoDateSchema,
     updated: isoDateSchema.optional(),
-    category: z.enum(ALLOWED_CATEGORIES, { message: 'category must be tutorial | news | showcase' }),
+    category: z.enum(ALLOWED_CATEGORIES, { message: 'category must be basic | topic | news' }),
     tags: z
       .array(z.string())
       .default([])

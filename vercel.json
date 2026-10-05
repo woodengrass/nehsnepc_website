@@ -1,5 +1,7 @@
 {
   "redirects": [
+    { "source": "/tutorial/category/tutorial", "destination": "/tutorial/category/basic", "permanent": true },
+    { "source": "/tutorial/category/showcase", "destination": "/tutorial/category/topic", "permanent": true },
     { "source": "/index.html", "destination": "/", "permanent": true },
     { "source": "/about.html", "destination": "/about", "permanent": true },
     { "source": "/portfolio.html", "destination": "/tools", "permanent": true },

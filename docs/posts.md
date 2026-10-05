@@ -26,7 +26,7 @@ title: 'Required non-empty title'
 description: 'Required non-empty summary'
 date: '2026-08-30'
 updated: '2026-09-01'       # optional
-category: tutorial          # tutorial | news | showcase
+category: basic             # basic | topic | news
 tags: ['exposure']          # optional, defaults to []
 cover: '/images/example.webp' # optional
 coverAlt: 'Description'     # optional
@@ -50,13 +50,13 @@ The strict validator accepts both `draft` values; only the website surfaces deci
 
 ## Categories
 
-`CATEGORIES` in `lib/content.ts` is the source of truth:
+`CATEGORIES` in `lib/content-contract.ts`, re-exported by `lib/content.ts`, is the source of truth:
 
 | ID | Label | Purpose |
 | --- | --- | --- |
-| `tutorial` | 攝影教學 | 各類教學文章，覆蓋不同程度。 |
+| `basic` | 基礎攝影 | 曝光、構圖、對焦等入門基本功。 |
+| `topic` | 主題攝影 | 人像、風景、街拍等主題拍攝技法。 |
 | `news` | 社團動態 | 活動記錄、招新資訊與作品回顧。 |
-| `showcase` | 3D 展示 | Interactive model or spatial demonstrations |
 
 Changing this array affects schema validation, static category params, labels, filters, sitemap entries, and descriptions. Update all related documentation and manually inspect each generated category route.
 
@@ -84,7 +84,7 @@ Reading time counts CJK characters at 400/minute and Latin tokens at 220/minute,
 
 `/tutorial` and category pages render editorial card grids. The first result receives a wider desktop treatment. Grid columns change from three to two to one. Cover images render through the `TutorialCover` component (`components/articles/TutorialCover.tsx`): covers pointing at generated families get AVIF/WebP `srcset` with card-appropriate `sizes` (lazy/async, alt falls back to the title); other paths keep the previous plain lazy `<img>`. Missing covers render an `NEPC` placeholder.
 
-`/tutorial/category/[category]` statically generates the three known category IDs and 404s unknown IDs. Its category-specific metadata currently lacks an explicit canonical. `params` is a Promise and must be awaited under Next 16 conventions.
+`/tutorial/category/[category]` statically generates `basic`, `topic`, and `news` and 404s unknown IDs. Its category-specific metadata currently lacks an explicit canonical. `params` is a Promise and must be awaited under Next 16 conventions.
 
 `/tutorial/[slug]` statically enumerates non-draft slugs, retrieves the article, 404s missing/production drafts, emits article and breadcrumb JSON-LD, renders metadata/lead image (eager `TutorialCover`)/body, and links globally newer/older articles. It does not set `dynamicParams = false`. The optional cover is rendered without a decorative `Lead image / 001` label.
 

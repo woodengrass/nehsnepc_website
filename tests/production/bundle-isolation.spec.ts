@@ -2,7 +2,7 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
 
 // Task 9: bundle isolation, asserted both directions on SERVED production JS.
 //
-// - Public routes (/, /tutorial, /tutorial/category/tutorial, /admin) load
+// - Public routes (/, /tutorial, /tutorial/category/basic, /tutorial/category/topic, /admin) load
 //   ZERO editor code: none of their served `/_next/static/**/*.js` chunks
 //   may mention keystatic (case-insensitive) or EditorFigurePreview.
 // - /keystatic DOES contain editor code (positive control: the isolation is
@@ -12,7 +12,7 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
 // legitimately links to `/keystatic` (href="/keystatic"). The proof is on
 // served JS chunks, which is where an editor import would actually land.
 
-const PUBLIC_ROUTES = ['/', '/tutorial', '/tutorial/category/tutorial', '/admin'] as const;
+const PUBLIC_ROUTES = ['/', '/tutorial', '/tutorial/category/basic', '/tutorial/category/topic', '/admin'] as const;
 
 const EDITOR_MARKERS = [/keystatic/i, /EditorFigurePreview/];
 

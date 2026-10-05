@@ -23,7 +23,7 @@ test.describe('article contract: exact defaults + unchanged public queries', () 
       title: 'T',
       description: 'D',
       date: '2026-09-02',
-      category: 'tutorial'
+      category: 'basic'
     });
     expect(parsed.success).toBe(true);
     if (!parsed.success) return;
@@ -37,7 +37,7 @@ test.describe('article contract: exact defaults + unchanged public queries', () 
       title: 'T',
       description: 'D',
       date: '2026-09-02',
-      category: 'tutorial'
+      category: 'basic'
     });
     expect(legacyDefault.success).toBe(true);
     if (legacyDefault.success) expect(legacyDefault.data.draft).toBe(false);
@@ -46,7 +46,7 @@ test.describe('article contract: exact defaults + unchanged public queries', () 
       title: 'T',
       description: 'D',
       date: '2026-09-02',
-      category: 'tutorial',
+      category: 'basic',
       draft: true
     });
     expect(cmsExplicit.success).toBe(true);
@@ -54,7 +54,7 @@ test.describe('article contract: exact defaults + unchanged public queries', () 
   });
 
   test('contract constants match the documented allowlist', () => {
-    expect([...ALLOWED_CATEGORIES]).toEqual(['tutorial', 'news', 'showcase']);
+    expect([...ALLOWED_CATEGORIES]).toEqual(['basic', 'topic', 'news']);
     expect(ISO_DATE_RE.source).toBe('^\\d{4}-\\d{2}-\\d{2}$');
     expect(SLUG_RE.test('example')).toBe(true);
     expect(SLUG_RE.test('exposure_and_brightness')).toBe(true);
@@ -66,13 +66,13 @@ test.describe('article contract: exact defaults + unchanged public queries', () 
   });
 
   test('title/description required, ISO dates enforced, tags unique', () => {
-    expect(frontmatterStrictSchema.safeParse({ description: 'D', date: '2026-09-02', category: 'tutorial' }).success).toBe(false);
-    expect(frontmatterStrictSchema.safeParse({ title: 'T', date: '2026-09-02', category: 'tutorial' }).success).toBe(false);
+    expect(frontmatterStrictSchema.safeParse({ description: 'D', date: '2026-09-02', category: 'basic' }).success).toBe(false);
+    expect(frontmatterStrictSchema.safeParse({ title: 'T', date: '2026-09-02', category: 'basic' }).success).toBe(false);
     expect(
-      frontmatterStrictSchema.safeParse({ title: 'T', description: 'D', date: '09/02/2026', category: 'tutorial' }).success
+      frontmatterStrictSchema.safeParse({ title: 'T', description: 'D', date: '09/02/2026', category: 'basic' }).success
     ).toBe(false);
     expect(
-      frontmatterStrictSchema.safeParse({ title: 'T', description: 'D', date: '2026-02-30', category: 'tutorial' }).success
+      frontmatterStrictSchema.safeParse({ title: 'T', description: 'D', date: '2026-02-30', category: 'basic' }).success
     ).toBe(false);
     expect(
       frontmatterStrictSchema.safeParse({ title: 'T', description: 'D', date: '2026-09-02', category: 'nope' }).success
@@ -82,7 +82,7 @@ test.describe('article contract: exact defaults + unchanged public queries', () 
         title: 'T',
         description: 'D',
         date: '2026-09-02',
-        category: 'tutorial',
+        category: 'basic',
         tags: ['a', 'a']
       }).success
     ).toBe(false);
@@ -91,7 +91,7 @@ test.describe('article contract: exact defaults + unchanged public queries', () 
         title: 'T',
         description: 'D',
         date: '2026-09-02',
-        category: 'tutorial',
+        category: 'basic',
         cover: '/images/generated/hero-1280.webp'
       }).success
     ).toBe(false);
@@ -121,10 +121,10 @@ test.describe('article contract: exact defaults + unchanged public queries', () 
     const example = getArticle('example');
     expect(example).not.toBeNull();
     expect(example?.slug).toBe('example');
-    expect(example?.category).toBe('tutorial');
+    expect(example?.category).toBe('basic');
     expect(typeof example?.readingMinutes).toBe('number');
 
-    expect(getArticlesByCategory('tutorial').map((article) => article.slug)).toEqual(slugs.filter((slug) => slug === 'example' || slug === 'exposure_and_brightness'));
+    expect(getArticlesByCategory('basic').map((article) => article.slug)).toEqual(slugs.filter((slug) => slug === 'example' || slug === 'exposure_and_brightness'));
     expect(getRelatedArticles('example', 2).length).toBeLessThanOrEqual(2);
     const adjacent = getAdjacentArticles('example');
     expect(adjacent).toHaveProperty('newer');

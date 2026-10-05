@@ -263,11 +263,11 @@ async function getText(url: string, timeoutMs = 30000): Promise<{ status: number
 }
 
 function fixtureBody(draft: boolean): string {
-  return `---\ntitle: '${TITLE}'\ndescription: 'Dedicated draft-to-published transition fixture for task 9 verification.'\ndate: '2026-09-30'\ncategory: tutorial\ntags: ['task-9-proof']\ndraft: ${draft ? 'true' : 'false'}\nauthor: 'NEHS 攝影社'\n---\n\n## Proof section\n\nThis is a dedicated verification fixture. It carries no images so the article image pipeline stays untouched.\n\n<Callout type="note" title="Proof note">\nDraft visibility is decided by frontmatter plus a production build.\n</Callout>\n`;
+  return `---\ntitle: '${TITLE}'\ndescription: 'Dedicated draft-to-published transition fixture for task 9 verification.'\ndate: '2026-09-30'\ncategory: basic\ntags: ['task-9-proof']\ndraft: ${draft ? 'true' : 'false'}\nauthor: 'NEHS 攝影社'\n---\n\n## Proof section\n\nThis is a dedicated verification fixture. It carries no images so the article image pipeline stays untouched.\n\n<Callout type="note" title="Proof note">\nDraft visibility is decided by frontmatter plus a production build.\n</Callout>\n`;
 }
 
 function invalidBody(): string {
-  return `---\ntitle: 'Keystatic Verify Invalid Proof'\ndescription: 'Invalid MDX fixture that must fail the build.'\ndate: '2026-09-30'\ncategory: tutorial\ndraft: true\nauthor: 'NEHS 攝影社'\n---\n\n## Broken\n\n<div>\nUnclosed JSX block must fail MDX compilation.\n`;
+  return `---\ntitle: 'Keystatic Verify Invalid Proof'\ndescription: 'Invalid MDX fixture that must fail the build.'\ndate: '2026-09-30'\ncategory: basic\ndraft: true\nauthor: 'NEHS 攝影社'\n---\n\n## Broken\n\n<div>\nUnclosed JSX block must fail MDX compilation.\n`;
 }
 
 function writePhase(name: string, data: Record<string, unknown>): void {
@@ -296,7 +296,7 @@ type SurfaceStatuses = {
 async function checkSurfaces(base: string, expectPresent: boolean): Promise<{ statuses: SurfaceStatuses; detail: Record<string, boolean> }> {
   const route = await getText(`${base}/tutorial/${SLUG}`);
   const index = await getText(`${base}/tutorial`);
-  const category = await getText(`${base}/tutorial/category/tutorial`);
+  const category = await getText(`${base}/tutorial/category/basic`);
   const sitemap = await getText(`${base}/sitemap.xml`);
   const rss = await getText(`${base}/rss.xml`);
   const admin = await getText(`${base}/admin`);

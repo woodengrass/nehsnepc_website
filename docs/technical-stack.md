@@ -66,7 +66,7 @@ See `frontend.md` for design tokens, fonts, breakpoints, and global body state.
 | `/tools/exposure-calculator` | Client calculator (controlled React + pure exposure module) |
 | `/licensing` | Static licensing and attribution page |
 | `/tutorial` | Filesystem article index |
-| `/tutorial/category/[category]` | Three static category routes |
+| `/tutorial/category/[category]` | Three static category routes: `basic`, `topic`, `news` |
 | `/tutorial/[slug]` | Non-draft static params and server MDX rendering |
 | `/sitemap.xml` | Metadata sitemap |
 | `/robots.txt` | Metadata robots policy (disallows `/admin`) |

@@ -160,11 +160,11 @@ export default config({
           label: '分類',
           description: '三選一；決定文章所屬版面與網址分類。',
           options: [
-            { label: '攝影教學', value: 'tutorial' },
-            { label: '社團動態', value: 'news' },
-            { label: '3D 展示', value: 'showcase' }
+            { label: '基礎攝影', value: 'basic' },
+            { label: '主題攝影', value: 'topic' },
+            { label: '社團動態', value: 'news' }
           ],
-          defaultValue: 'tutorial'
+          defaultValue: 'basic'
         }),
         tags: fields.array(fields.text({ label: '標籤' }), {
           label: '標籤',

@@ -33,7 +33,7 @@ export async function GET() {
   <channel>
     <title>NEHS Photography Club — Tutorial</title>
     <link>${SITE_URL}/tutorial</link>
-    <description>NEHS 攝影社文章 — 攝影教學、社團動態與 3D 展示。</description>
+    <description>NEHS 攝影社文章 — 基礎攝影、主題攝影與社團動態。</description>
     <language>zh-TW</language>
     <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml" />
 ${items}

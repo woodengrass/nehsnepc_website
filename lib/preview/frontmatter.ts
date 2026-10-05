@@ -17,7 +17,7 @@
 
 import { z } from 'zod';
 
-export const PREVIEW_CATEGORIES = ['tutorial', 'news', 'showcase'] as const;
+export const PREVIEW_CATEGORIES = ['basic', 'topic', 'news'] as const;
 
 export type PreviewCategory = (typeof PREVIEW_CATEGORIES)[number];
 
@@ -196,7 +196,7 @@ export function parsePreviewMdx(raw: string, fallbackSlug: string): PreviewParse
     title: typeof record.title === 'string' && record.title.length > 0 ? record.title : fallbackSlug,
     description: typeof record.description === 'string' ? record.description : '',
     date: typeof record.date === 'string' && record.date.length > 0 ? record.date : '1970-01-01',
-    category: typeof record.category === 'string' ? record.category : 'tutorial',
+    category: typeof record.category === 'string' ? record.category : 'basic',
     tags: Array.isArray(record.tags) ? record.tags.map(String) : [],
     draft: typeof record.draft === 'boolean' ? record.draft : false,
     author: typeof record.author === 'string' && record.author.length > 0 ? record.author : 'NEHS 攝影社'
@@ -215,7 +215,7 @@ export function parsePreviewMdx(raw: string, fallbackSlug: string): PreviewParse
         title: fallbackSlug,
         description: '',
         date: '1970-01-01',
-        category: 'tutorial',
+        category: 'basic',
         tags: [] as string[],
         draft: true,
         author: 'NEHS 攝影社'
@@ -233,7 +233,7 @@ export function parsePreviewMdx(raw: string, fallbackSlug: string): PreviewParse
       warnings.push(`updated「${data.updated}」不是有效 ISO 日期，正式建置會失敗。`);
     }
     if (!(PREVIEW_CATEGORIES as readonly string[]).includes(data.category)) {
-      warnings.push(`category「${data.category}」不在 tutorial／news／showcase 之中，正式建置會失敗。`);
+      warnings.push(`category「${data.category}」不在 basic／topic／news 之中，正式建置會失敗。`);
     }
     const tags = data.tags;
     const seen = new Set<string>();
