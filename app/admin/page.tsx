@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: '教學文章編輯',
-  description: 'NEHS 攝影社站內內容管理入口，僅限社團幹部使用，不對外公開。',
+  description: 'NEHS 攝影社站內內容管理入口',
   robots: {
     index: false,
     follow: false,
@@ -124,7 +124,7 @@ export default function AdminGateway() {
           text-[var(--color-text)]
         `}
       >
-        本頁只給社團幹部使用。先讀完下方教學，再從入口進入編輯器。需要協助時，請用「聯絡」頁聯絡我們。
+        先讀完下方教學，再從入口進入編輯器。需要協助時，請聯絡woodengrass@woodengrass.me。
       </p>
 
       <div
@@ -276,7 +276,7 @@ export default function AdminGateway() {
                 text-[var(--color-muted)]
               `}
             >
-              Teaching／先學會，再動手
+              Teaching
             </p>
             <h2
               className={`
@@ -289,7 +289,7 @@ export default function AdminGateway() {
                 text-[var(--color-text)]
               `}
             >
-              Keystatic 不是在寫程式碼
+              Keystatic 基礎教學
             </h2>
             <p
               className={`
@@ -334,7 +334,7 @@ export default function AdminGateway() {
                 text-[var(--color-text)]
               `}
             >
-              觀念：組裝的是區塊
+              插入區塊類型
             </h2>
             <p
               className={`
