@@ -11,6 +11,9 @@ importers:
       '@google/model-viewer':
         specifier: ^4.3.1
         version: 4.3.1(three@0.186.1)
+      '@hcaptcha/react-hcaptcha':
+        specifier: 2.2.0
+        version: 2.2.0
       '@keystatic/core':
         specifier: 0.6.9
         version: 0.6.9(@keystar/ui@0.10.0(next@16.3.8(@playwright/test@1.63.0)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-aria@3.50.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react-stately@3.48.0(react@19.3.0))(react@19.3.0))(react-aria@3.50.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react-stately@3.48.0(react@19.3.0))(react@19.3.0)
@@ -349,6 +352,9 @@ packages:
     resolution: {integrity: sha512-mB9oAsNCm9aM3/SOv4YtBMqZbYj10R7dkq8byBqxGY/ncFwhf2oQzMV+LCRlWoDSEBJ3COiR1yeDvMtsoOsuFQ==}
     peerDependencies:
       graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
+
+  '@hcaptcha/react-hcaptcha@2.2.0':
+    resolution: {integrity: sha512-/HrPgNLRrJziLrh2s+qFRO33ubBSuHn9sdNsQcP0wQElpORxlpR6wnq3X9j/bZGd+uQtYIvPl4QSU2la+Jl9Hg==}
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -2190,6 +2196,8 @@ snapshots:
   '@graphql-typed-document-node/core@3.2.0(graphql@16.14.2)':
     dependencies:
       graphql: 16.14.2
+
+  '@hcaptcha/react-hcaptcha@2.2.0': {}
 
   '@img/colour@1.1.0': {}
 

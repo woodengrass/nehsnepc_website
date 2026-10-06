@@ -12,7 +12,7 @@ This document covers the shared application shell, home page, visual language, s
 | `app/admin/page.tsx` | Noindex Traditional Chinese admin gateway (`data-admin-root`) linking into `/keystatic`; no nav, sitemap, or canonical entry |
 | `app/page.tsx` | Home route metadata and `Hero` composition |
 | `components/home/Hero.tsx` | Server-rendered home identity and route index; no client state or GSAP |
-| `components/SiteNav.tsx` + `components/SiteNavMenu.tsx` | Server header shell with hidden placeholder markup; client menu island (hamburger, overlay, active-route matching, Escape handling, body scroll lock). Ten near-identical link-delay classes collapsed to one base plus inline `transition-delay` |
+| `components/SiteNav.tsx` + `components/SiteNavMenu.tsx` | Server header shell with hidden placeholder markup; client menu island (hamburger, modal overlay, focus containment/restoration, inert background, pathname-change cleanup, active-route matching, body scroll lock). Ten near-identical link-delay classes collapsed to one base plus inline `transition-delay` |
 | `app/globals.css` | Tailwind import, design tokens, base typography, `.grain-overlay`, focus styles, hidden global scrollbar, body state classes, and reduced motion |
 | `app/styles/about.css` | About-only selectors imported by `app/about/layout.tsx`, loaded only on `/about` |
 | `lib/seo.tsx` | Canonical site URL and JSON-LD builders |
@@ -66,19 +66,21 @@ The global body uses the CJK serif stack based on Noto Serif TC, Source Han Seri
 
 ## Shared Navigation
 
-`components/SiteNavMenu.tsx` defines five destinations in the `PAGES` constant: Home, About, Tutorial, Tools, and Contact. Non-home active matching includes child routes, so `/tutorial/...` activates Tutorial and `/tools/exposure-calculator` activates Tools. Overlay link stagger uses one shared class plus per-index inline `transition-delay` (100ms with 50ms steps), identical to the previous delay utilities.
+`components/SiteNavMenu.tsx` imports five destinations from `components/siteNavPages.ts` as `PAGES`: Home, About, Tutorial, Tools, and Contact. Non-home active matching includes child routes, so `/tutorial/...` activates Tutorial and `/tools/exposure-calculator` activates Tools. Overlay link stagger uses one shared class plus per-index inline `transition-delay` (100ms with 50ms steps), identical to the previous delay utilities.
 
-The current visible control is the fixed hamburger menu at all widths. Desktop navigation markup and establishment copy exist but carry `hidden` classes. Opening the menu toggles `body.menu-open`, and global CSS locks scrolling. Escape and selecting a link close the menu. The trigger uses a native button with a Chinese `aria-label` and `aria-expanded`; active links use `aria-current="page"`.
+The current visible control is the fixed hamburger menu at all widths. Desktop navigation markup and establishment copy exist but carry `hidden` classes. Opening the menu toggles `body.menu-open`, and global CSS locks scrolling. The trigger uses a native button with a Chinese `aria-label`, `aria-expanded`, `aria-haspopup="dialog"`, and `aria-controls="site-nav-menu"`; active links use `aria-current="page"`.
 
-Known limitations:
+Modal behavior stays entirely within the shared client island, with no focus-trap dependency or client code added to the root layout:
 
-- no focus transfer into the opened panel;
-- no focus trap or `inert` state;
-- no explicit focus restoration on close;
-- closed links remain mounted and are hidden visually/with `aria-hidden`, not conditionally removed from tab order;
-- an unused `hamburgerRef` remains in the component.
+- While open, a neutral wrapper containing both the hamburger and overlay has `role="dialog"`, `aria-modal="true"`, and the accessible name `網站導覽`. Opening focuses the first overlay link (Home), without changing the scroll position.
+- Tab and Shift+Tab cycle through the five overlay links and the hamburger. In DOM order the cycle is trigger → Home → About → Tutorial → Tools → Contact → trigger; opening starts at Home, so Shift+Tab reaches the close trigger rather than a background link.
+- Sibling branches along the dialog's ancestor chain up to `body` become `inert`. This includes route content such as the Licensing link while leaving the dialog and trigger operable. Each sibling's prior inert value is saved and restored, rather than blindly removing inert set by another owner.
+- Escape, toggling the trigger, selecting a link, or a `usePathname` pathname change closes the menu. Closing restores focus to the hamburger with `preventScroll`. Cleanup removes the open-menu key listener, restores background inert values, and removes `body.menu-open`, including on unmount and React Strict Mode effect remounts.
+- The overlay and links remain mounted for the existing transitions. When closed, the overlay retains `visibility: hidden` and `aria-hidden="true"`, is itself `inert`, and all overlay links have `tabIndex={-1}`; the dialog-only attributes are absent from the wrapper.
 
-Any navigation change must test keyboard order, Escape, focus visibility, route-active behavior, scroll restoration, mobile safe areas, and reduced motion.
+Remaining constraints: the desktop placeholder navigation stays hidden, the hamburger retains its fixed `top-8`/`right-8` offsets without explicit safe-area inset padding, and query/hash-only changes do not trigger pathname cleanup. No layout, color, active-route matching, or animation timing changes accompany the modal behavior.
+
+Any navigation change must test keyboard-only opening, first-link focus, repeated Tab/Shift+Tab wrapping (including the trigger), inability to focus background links while open, Escape/trigger/link close and focus return, closed-link exclusion, visible focus, route-active behavior on child routes, pathname changes including back/forward while open, scroll restoration and lock cleanup, mobile safe areas, and reduced motion. Verify that pre-existing background inert states survive cleanup and that Strict Mode remounts do not leak listeners, inert state, or scroll locks.
 
 ## Admin Gateway
 
@@ -125,8 +127,8 @@ Global `:focus-visible` applies a two-pixel ink outline with four-pixel offset. 
 
 Body classes own global scroll lock:
 
-- `menu-open` from `SiteNav`;
-- `has-modal` from Contact;
+- `menu-open` from `SiteNavMenu`;
+- `has-modal` from Contact (`ShootRequestModal`: set on open, restored on cleanup);
 - `is-focus-locked` from About.
 
 Every client component that sets one must remove it during cleanup, including failed initialization and React Strict Mode remounts.
@@ -149,7 +151,7 @@ Required review for frontend changes:
 
 - Update this file when routes, root metadata, navigation, design tokens, fonts, shared accessibility, breakpoints, home composition, or image conventions change.
 - Keep shared heavy dependencies code-split and outside `app/layout.tsx`.
-- Check global CSS state classes against all owning components.
+- Check global CSS state classes against all owning components; navigation cleanup must also restore saved background inert values and release its key listener on close, pathname change, and unmount/Strict Mode remount. Contact background isolation and `has-modal` ownership live in `contact.md` under the ShootRequest Modal section.
 - Preserve canonical metadata for public pages.
 - Run `npm run build`.
-- Manually test home and navigation on mobile and desktop, with keyboard and reduced motion.
+- Manually test home and navigation on mobile and desktop, with keyboard and reduced motion. For navigation, verify first-link focus, both Tab wrap directions through links plus trigger, inert background (including Licensing), focus restoration on Escape/trigger/link close, closed links excluded from focus, child-route highlighting, back/forward pathname cleanup, preserved scroll position, and mobile safe areas.

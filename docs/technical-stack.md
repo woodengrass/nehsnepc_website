@@ -6,13 +6,14 @@ The repository is a private ESM npm package. The installed stack centers on:
 
 | Technology | Exact version in `package.json` |
 | --- | --- |
-| Next.js | `16.3.3` (pinned), App Router and production server |
+| Next.js | `16.3.8` (pinned), App Router and production server |
 | React / React DOM | `^19.2.8` (19.2 line) |
 | TypeScript | `^7.0.2`, strict and no-emit |
 | Tailwind CSS | `^4.3.3` through `@tailwindcss/postcss` |
 | Keystatic editor | `@keystatic/core` `0.6.9` (pinned), `@keystatic/next` `5.0.5` (pinned) |
 | MDX | `next-mdx-remote` 6, `@mdx-js/mdx` `3.1.1` (pinned), gray-matter, remark-gfm, rehype slug/autolinks; transitive `@markdoc/markdoc` `0.4.0` (via Keystatic, lockfile-resolved) |
 | Validation | Zod 4 |
+| Captcha | `@hcaptcha/react-hcaptcha` `2.2.0` (pinned), lazy contact form only |
 | Motion/3D | GSAP 3, Three.js 0.183, model-viewer 4.3 |
 | Assets | Sharp 0.35, glTF Transform 4.4, draco3dgltf |
 | Test runners | `@playwright/test` `1.63.0` (pinned), `tsx` `4.23.15` (pinned) |
@@ -33,6 +34,11 @@ Next.js and Sharp require Node.js `>=20.9.0`. Use a current Node 20 LTS or newer
 | `pnpm test:admin` | Admin browser gate, composed of `test:admin:guards` (static guard spec `tests/keystatic/github-guards.spec.ts`), `test:admin:local` (loopback compat harness via `playwright.local.config.ts`), and the orchestrator `tsx scripts/test_admin_workflow.ts` (save/publish semantics plus production smoke via `playwright.production.config.ts`): loopback CRUD, draft absence plus publication inclusion across article route/index/category/sitemap/RSS, auth negatives, desktop `1440x1000` plus mobile `390x844` plus keyboard flow, and public-bundle isolation. |
 | `npm run build` | Production build and Next/TypeScript validation. Remains the sole release gate. |
 | `npm run start` | Serve a completed Next production build. |
+| `pnpm test:contact:unit` | Contact contract gate, no server: `request.test.ts` plus `config.test.ts` through `tsx --test` (32 cases) |
+| `pnpm test:contact:browser` | Contact browser gate through `playwright.contact.config.ts` (desktop, mobile, narrow against the configured dev server) |
+| `pnpm test:contact:no-key` | Missing-key browser gate through `playwright.contact.unconfigured.config.ts` (empty-key dev server, fallback only) |
+| `pnpm test:contact` | Full contact gate: unit, then browser, then no-key |
+| `pnpm test:contact:production` | Production contact gate through `playwright.contact.production.config.ts` (explicit build, see task 10) |
 | `npm run models:build` | Transform source GLBs into deployable outputs. |
 
 There are no configured lint, formatter, or standalone type-check scripts. The production build is the release gate; `content:validate`/`test:content`/`test:admin` are narrow content and admin gates that cover only what the build cannot prove (see ADR-0005). Browser interaction and external-service behavior require manual testing.
@@ -61,7 +67,7 @@ See `frontend.md` for design tokens, fonts, breakpoints, and global body state.
 | --- | --- |
 | `/` | Server-rendered home identity/index |
 | `/about` | Client-enhanced focus and optional Three.js story |
-| `/contact` | Client accordions, clipboard, and lazy Tally modal |
+| `/contact` | Client accordions, clipboard, and lazy ShootRequest modal with direct Web3Forms POST |
 | `/tools` | Server catalogue from `lib/tools.ts` |
 | `/tools/exposure-calculator` | Client calculator (controlled React + pure exposure module) |
 | `/licensing` | Static licensing and attribution page |
@@ -94,6 +100,7 @@ cp .env.example .env.local
 | `KEYSTATIC_GITHUB_REPO` | Pinned config | Must stay exactly `woodengrass/nehsnepc_website` (`EXPECTED_GITHUB_REPO`); any other value fails closed. Owner/name split vars (`KEYSTATIC_GITHUB_REPO_OWNER`/`KEYSTATIC_GITHUB_REPO_NAME`) are accepted as an equivalent input shape. |
 | `KEYSTATIC_PRODUCTION_ORIGIN` | Server-only | Canonical production HTTPS origin, no trailing slash (www canonical, e.g. `https://www.nehsnepc.com`; the apex is accepted as an alias — a single leading `www.` is ignored on both sides before comparing, anything else 403s). API requests from any other origin get a redacted 403; safe wrong-host UI GETs redirect (308) to this literal origin — the request Host is never reflected. Register BOTH apex and www callback URLs in the GitHub App settings. |
 | `NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE` | Dev-only flag | Set to `1` only for loopback `admin:dev` editing (`NODE_ENV=development` is also required). Never set in production or preview: ordinary dev, production, and preview always use GitHub mode. |
+| `NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY` | Public (never a secret) | Web3Forms public routing identifier, UUID shape. Build-time inlined, blank until provider readiness passes. Missing or invalid resolves the contact form to unavailable with an email fallback; never commit a real key. |
 | `NODE_ENV` | Runtime | Controls draft visibility (`!== 'production'` includes drafts). |
 | `VERCEL_ENV` | Platform | `preview` disables the admin UI and API entirely (see below). |
 
@@ -163,11 +170,14 @@ Page routes provide metadata and canonical URLs except that the current dynamic 
 | Service | Use | Failure/privacy implication |
 | --- | --- | --- |
 | Google Fonts | Global Noto Serif TC stylesheet/font slices | Typography changes or falls back if blocked; third-party request |
-| Tally | Contact request iframe loaded on first open | Tally owns form data, validation, and availability |
+| Web3Forms | Contact request direct browser POST (`https://api.web3forms.com/submit`) plus hCaptcha widget | Provider owns acceptance, quota, retention, and deliverability; API accepted is not mail delivered |
+| hCaptcha | Contact challenge widget through `@hcaptcha/react-hcaptcha` `2.2.0` | Challenge keys stay inside the cross-origin provider frame; parent Escape/Tab handling suspends while open |
 | `ipwho.is` | Automatic About IP-coordinate lookup | Third-party request; fallback text on failure |
 | Instagram | Contact/About links and Organization JSON-LD | External navigation |
 
-The only first-party API is the Keystatic route handler (`/api/keystatic/[...params]`, lazy fail-closed as documented above). There is no other first-party database, analytics, or form backend; Tally owns contact form data.
+The only first-party API is the Keystatic route handler (`/api/keystatic/[...params]`, lazy fail-closed as documented above). There is no other first-party database, analytics, or form backend; contact submissions go straight from the browser to Web3Forms, and the provider owns that data afterward.
+
+Historical note: the previous contact form was a Tally embed (form `NpRGgl`). Tally is no longer active anywhere in the product. Stored Tally responses were not migrated. The ID is recorded here only so a maintainer can locate the legacy form if rollback is ever discussed.
 
 ## Deployment
 

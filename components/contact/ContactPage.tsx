@@ -2,16 +2,29 @@
 
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ShootRequestDismissalState } from './ShootRequestModal';
 
 const EMAIL = 'contact@nehsnepc.com';
 
-const TallyModal = dynamic(() => import('./TallyModal'), { ssr: false });
+const ShootRequestModal = dynamic(() => import('./ShootRequestModal'), { ssr: false });
+const ShootRequestForm = dynamic(() => import('./ShootRequestForm'), { ssr: false });
 
 type AccordionId = 'contact' | 'social';
 
 export default function ContactPage() {
   const [openItem, setOpenItem] = useState<AccordionId | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [dismissalState, setDismissalState] = useState<ShootRequestDismissalState>('pristine');
+  const [challengeOpen, setChallengeOpen] = useState(false);
+  const cancelPendingRef = useRef<(() => void) | null>(null);
+  const registerCancelPending = useCallback((cancel: (() => void) | null) => {
+    cancelPendingRef.current = cancel;
+  }, []);
+  const cancelPending = useCallback(() => {
+    const cancel = cancelPendingRef.current;
+    cancelPendingRef.current = null;
+    cancel?.();
+  }, []);
   const [emailLabel, setEmailLabel] = useState(EMAIL);
   const contactBodyRef = useRef<HTMLDivElement>(null);
   const socialBodyRef = useRef<HTMLDivElement>(null);
@@ -23,6 +36,8 @@ export default function ContactPage() {
   };
 
   const openModal = () => {
+    setDismissalState('pristine');
+    setChallengeOpen(false);
     setModalOpen(true);
   };
 
@@ -74,6 +89,7 @@ export default function ContactPage() {
       ref={bodyRef}
       id={`acc-${id}-body`}
       aria-hidden={openItem !== id}
+      inert={openItem !== id}
     >
       <div
         className={`
@@ -351,6 +367,7 @@ export default function ContactPage() {
                 `}
                 id="shootTrigger"
                 aria-haspopup="dialog"
+                aria-controls="shoot-request-dialog"
                 aria-expanded={modalOpen}
                 onClick={openModal}
               >
@@ -593,7 +610,13 @@ export default function ContactPage() {
         </div>
       </main>
 
-      {modalOpen ? <TallyModal onClose={closeModal} /> : null}
+      {modalOpen ? (
+        <ShootRequestModal onClose={closeModal} dismissalState={dismissalState}
+          challengeOpen={challengeOpen} onCancelPending={cancelPending}>
+          <ShootRequestForm onClose={closeModal} onDismissalStateChange={setDismissalState}
+            onCancelPendingChange={registerCancelPending} onChallengeOpenChange={setChallengeOpen} />
+        </ShootRequestModal>
+      ) : null}
     </>
   );
 }
