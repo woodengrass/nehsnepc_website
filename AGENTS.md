@@ -183,29 +183,31 @@ Per-page and per-module implementation details live in `docs/` — see `docs/REA
 
 ## Documentation Maintenance
 
-The detailed project documentation lives in `docs/` and is part of the implementation:
+The detailed project documentation lives in `docs/` and records decisions, history/rationale, and external contracts only. It does NOT mirror code facts: do not document field lists, verbatim copy strings, per-component props/state, file-by-file behavior, line references, or exhaustive command tables that duplicate what the code already says. Each document names its implementation source of truth in code; the code wins on conflict.
+
+Ownership map (boundaries only, behavior lives in code):
 
 - `docs/README.md` — documentation index and cross-project maintenance contract
-- `docs/frontend.md` — shared frontend, home, navigation, visual system, responsive behavior, motion, images, and accessibility
-- `docs/tools.md` — tools catalogue and exposure calculator
-- `docs/contact.md` — contact channels, accordion, clipboard, modal, Tally, and imagery
-- `docs/about.md` — focus interaction, GSAP story, Three.js archive, fallbacks, and location service
-- `docs/posts.md` — article schema, categories, MDX, routes, drafts, SEO, sitemap, and RSS
-- `docs/model-preview.md` — `Model3D`, model-viewer lifecycle, GLB assets, and optimization pipeline
-- `docs/technical-stack.md` — dependencies, configuration, commands, assets, external services, SEO, and deployment
+- `docs/frontend.md` — shared frontend decisions, visual system rationale, external font contract, photography and motion policy
+- `docs/tools.md` — calculator ownership split, persistence and validation policy, tool publication decisions
+- `docs/contact.md` — provider and captcha contracts, runbook, no-SLA policy, Tally retirement history
+- `docs/about.md` — fallback and motion-gating decisions, location privacy contract, scene lifecycle policy
+- `docs/posts.md` — content ownership, draft and trust policy, publication flow decisions
+- `docs/model-preview.md` — loading strategy, trust and budget policy, Draco history
+- `docs/technical-stack.md` — version-sensitive decisions, environment contract, deployment model, manual runbooks, known gaps
 
-Documentation updates are mandatory in the same change as the implementation:
+Update the owning document in the same change as the implementation, but only for decision-affecting changes:
 
-- Update `docs/frontend.md` for changes to the root layout, navigation, home, shared styles/tokens/fonts, breakpoints, photography conventions, accessibility baseline, or shared motion.
-- Update `docs/tools.md` for changes to tool data/routes/status, exposure formulas, limits, parsing, controls, events, rendering, or lifecycle.
-- Update `docs/contact.md` for changes to contact channels, accordion behavior, clipboard, modal/focus management, Tally configuration, or contact imagery.
-- Update `docs/about.md` for changes to About content, focus input/math, GSAP timing, Three.js scene, fallbacks, projection, geolocation, cleanup, or performance behavior.
-- Update `docs/posts.md` for changes to article frontmatter, categories, drafts, reading time, tutorial routes/UI, MDX plugins/components, metadata, JSON-LD, sitemap, RSS, or authoring workflow.
-- Update `docs/model-preview.md` for changes to `Model3D` props/states, model-viewer loading or accessibility, model directories, optimizer transforms, or model budgets/workflow.
-- Update `docs/technical-stack.md` for changes to dependencies, commands, Node requirements, environment variables, Next/TypeScript/Tailwind configuration, asset pipelines, external services, redirects, SEO infrastructure, or deployment.
+- Update `docs/frontend.md` only when layout ownership, visual direction, font loading, shared accessibility baseline, image conventions, or scroll-lock ownership change.
+- Update `docs/tools.md` only when catalogue contract, math ownership, persistence policy, validation philosophy, or compensation strategy change.
+- Update `docs/contact.md` only when contact channels, provider or captcha plan, quota or retention policy, runbook paths, or Tally history change.
+- Update `docs/about.md` only when fallback policy, loading gates, motion strategy, accessibility-tree treatment, scene lifecycle, or location provider change.
+- Update `docs/posts.md` only when content ownership, draft or trust policy, publication flow, validation philosophy, media sourcing model, or licensing change.
+- Update `docs/model-preview.md` only when loading strategy, budget policy, trust model, Draco handling, or workflow ownership change.
+- Update `docs/technical-stack.md` only when version-sensitive behavior, build and gate philosophy, environment contract, external services, redirects, deployment model, or runbook steps change.
 - Update `docs/README.md` when documents are added, renamed, removed, or their ownership boundaries change.
 
-If a change affects multiple areas, update every relevant document. Document current code, not planned behavior or historical assumptions. A feature change is not complete until its documentation and verification checklist are accurate.
+Field, copy, payload, timer, prop, formula, value, or wiring edits need no doc update. If a change affects multiple areas, update every relevant document whose decisions changed. A feature change is not complete until its decisions, contracts, and runbooks are accurate.
 
 ## Deployment
 
