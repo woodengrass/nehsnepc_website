@@ -149,9 +149,11 @@ test('captcha lifecycle: blocked script keeps fields editable, zero POST and exp
   // When: the loader fails and the visitor fills/submits anyway.
   await expect(page.getByText('驗證服務無法載入，請稍後重試，或改用 Email 聯絡。')).toBeVisible(); await fill(page);
   await page.getByRole('button', { name: '送出申請', exact: true }).click();
-  // Then: text remains editable, fallback is usable, and retry never invents a token.
+  // Then: text remains editable, submit stands alone, and retry never invents a token.
   expect(contact.requests).toHaveLength(0); await expect(field(page, 'email')).toBeEnabled();
-  await expect(page.getByRole('link', { name: 'contact@nehsnepc.com', exact: true })).toHaveAttribute('href', 'mailto:contact@nehsnepc.com');
+  await expect(page.locator('#shoot-request-dialog a[href^="mailto:"]')).toHaveCount(0);
+  await expect(page.locator('button[type="submit"]').locator('..').locator(':scope > *')).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'Web3Forms 隱私權政策（另開視窗）' })).toHaveAttribute('href', 'https://web3forms.com/privacy');
   const previousLoads = contact.sdkRequests.length;
   await page.getByRole('button', { name: '重試人機驗證' }).click();
   await expect.poll(() => contact.sdkRequests.length).toBeGreaterThan(previousLoads);
@@ -184,7 +186,7 @@ test('modal lifecycle: Tab/Shift-Tab, all pristine close paths, reopen ×3, redu
   for (let cycle = 0; cycle < 3; cycle++) for (const path of ['Close', 'Escape', 'backdrop']) {
     await page.locator('#shootTrigger').click(); await ready(page); await expect(close(page)).toBeFocused();
     await page.keyboard.press('Tab'); await expect(field(page, 'applicant')).toBeFocused();
-    await close(page).focus(); await page.keyboard.press('Shift+Tab'); await expect(page.getByRole('link', { name: 'contact@nehsnepc.com', exact: true })).toBeFocused();
+    await close(page).focus(); await page.keyboard.press('Shift+Tab'); await expect(page.getByRole('button', { name: '送出申請', exact: true })).toBeFocused();
     await page.keyboard.press('Tab'); await expect(close(page)).toBeFocused();
     if (path === 'Close') await close(page).click();
     else if (path === 'Escape') await page.keyboard.press('Escape');

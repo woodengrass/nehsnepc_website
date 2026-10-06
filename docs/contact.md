@@ -157,9 +157,13 @@ Lifecycle: `onLoad`/`onReady` ends the loading state; `onVerify` stores the toke
 
 When `NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY` is blank, a placeholder, malformed, or all-zero, `getContactConfig()` resolves to `{ available: false }` and never throws, so builds stay green before the provider key exists. The form area shows 表單暫時無法使用，請改用 Email 聯絡。 plus a clickable `mailto:contact@nehsnepc.com` link. No captcha loads and no request is issued in this state.
 
+The configured form's submit row contains only the red submit button, with no email link. The unavailable branch retains its mailto as its only contact path; configured-form errors still direct visitors to the Contact page's existing Email channel.
+
 ## Privacy
 
 The form states, above the submit row: 送出後，資料將由 Web3Forms 處理並通知本社，僅用於接拍聯繫。請勿填寫敏感個人資料。 It links to Web3Forms 隱私權政策（另開視窗） at `https://web3forms.com/privacy` (`target="_blank"`, `rel="noopener noreferrer"`).
+
+Privacy copy and the policy link share one compact, neutrally ruled footer note. Its secondary muted line retains: 關閉後，尚未送出的內容將不會保留。停止等待不代表已取消送出。 The policy link and submit button retain 48px minimum touch targets. The missing-token hint stays in the captcha fieldset; when the form alert repeats that exact hint, the hint becomes screen-reader-only while its ID remains available to the submit button's `aria-describedby`.
 
 What is deliberately not claimed: no storage promise, no deletion SLA, no delivery SLA. Submissions travel to Web3Forms and onward to the notification mailbox. Dashboard history, mailbox retention, and provider backups are separate things governed by the provider and the mailbox owner, not by this codebase. See the runbook for the retention target and its evidence rule.
 

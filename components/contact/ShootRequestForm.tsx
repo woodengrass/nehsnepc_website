@@ -254,18 +254,20 @@ export default function ShootRequestForm({
                     if (mounted.current && !closed.current && generation.current === resetKey) onChallengeOpenChange?.(open);
                   }}
                 />}
-                {!captchaToken ? <p id="shoot-request-captcha-help" className="text-sm leading-relaxed">{COPY.captcha}</p> : null}
+                {!captchaToken ? <p id="shoot-request-captcha-help" className={state.status === 'error' && state.message === COPY.captcha ? 'sr-only' : 'text-sm leading-relaxed'}>{COPY.captcha}</p> : null}
               </fieldset>
-              <div className="space-y-3 border-t border-[var(--color-line)] pt-6 text-sm leading-relaxed">
-                <p>送出後，資料將由 Web3Forms 處理並通知本社，僅用於接拍聯繫。請勿填寫敏感個人資料。</p>
-                <a href="https://web3forms.com/privacy" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center text-[var(--color-blue)] underline underline-offset-4">Web3Forms 隱私權政策（另開視窗）</a>
-                <p>關閉後，尚未送出的內容將不會保留。停止等待不代表已取消送出。</p>
-              </div>
-              {state.status === 'error' ? <div role="alert"><h3 ref={resultHeading} tabIndex={-1} className="text-base leading-relaxed">{state.message}</h3></div> : null}
-              {state.status === 'submitting' ? <p role="status">送出中…</p> : null}
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                <button type="submit" disabled={state.status === 'submitting'} aria-describedby={!captchaToken ? 'shoot-request-captcha-help' : undefined} className={`${ACTION} bg-[var(--color-red)] text-[var(--color-paper)] hover:bg-[var(--color-ink)]`}>{state.status === 'submitting' ? '送出中…' : '送出申請'}</button>
-                {emailFallback}
+              <div className="space-y-4">
+                <div className="space-y-2 border-y border-[var(--color-line)] py-4 text-sm leading-relaxed">
+                  <p>送出後，資料將由 Web3Forms 處理並通知本社，僅用於接拍聯繫。請勿填寫敏感個人資料。{' '}
+                    <a href="https://web3forms.com/privacy" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center text-[var(--color-blue)] underline underline-offset-4">Web3Forms 隱私權政策（另開視窗）</a>
+                  </p>
+                  <p className="text-[var(--color-muted)]">關閉後，尚未送出的內容將不會保留。停止等待不代表已取消送出。</p>
+                </div>
+                {state.status === 'error' ? <div role="alert"><h3 ref={resultHeading} tabIndex={-1} className="text-base leading-relaxed">{state.message}</h3></div> : null}
+                {state.status === 'submitting' ? <p role="status">送出中…</p> : null}
+                <div className="flex">
+                  <button type="submit" disabled={state.status === 'submitting'} aria-describedby={!captchaToken ? 'shoot-request-captcha-help' : undefined} className={`${ACTION} bg-[var(--color-red)] text-[var(--color-paper)] hover:bg-[var(--color-ink)]`}>{state.status === 'submitting' ? '送出中…' : '送出申請'}</button>
+                </div>
               </div>
             </form>
           </>
