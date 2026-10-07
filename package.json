@@ -47,7 +47,7 @@
     "@gltf-transform/functions": "^4.4.2",
     "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^26.6.3",
+    "@types/node": "^26.6.4",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "draco3dgltf": "^1.5.7",
