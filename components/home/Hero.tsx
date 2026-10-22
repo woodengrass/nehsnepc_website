@@ -143,6 +143,9 @@ const FILM_FRAMES = [
 ] as const;
 
 export default function Hero() {
+  // 首頁為靜態預渲染，年份在每次部署建置時更新。
+  const year = new Date().getFullYear();
+
   return (
     <main className={`
       relative
@@ -183,7 +186,6 @@ export default function Hero() {
           top-[2.2rem]
           left-[35%]
           z-[2]
-          font-[family-name:var(--font-body-next)]
           text-[0.58rem]
           tracking-[0.16em]
           text-[var(--color-muted)]
@@ -198,7 +200,6 @@ export default function Hero() {
           top-[45%]
           left-[1.2rem]
           z-[2]
-          font-[family-name:var(--font-body-next)]
           text-[0.58rem]
           tracking-[0.16em]
           text-[var(--color-muted)]
@@ -214,7 +215,6 @@ export default function Hero() {
           left-[9%]
           z-[1]
           whitespace-nowrap
-          font-[family-name:var(--font-body-next)]
           text-[clamp(5.5rem,12vw,12rem)]
           leading-[0.8]
           font-bold
@@ -258,7 +258,6 @@ export default function Hero() {
               flex
               flex-col
               items-start
-              font-[family-name:var(--font-body-next)]
               text-[clamp(5.4rem,14.3vw,14rem)]
               leading-[0.67]
               font-bold
@@ -337,7 +336,6 @@ export default function Hero() {
             top-[1.05rem]
             left-[2.2rem]
             z-[2]
-            font-[family-name:var(--font-body-next)]
             text-[0.48rem]
             tracking-[0.17em]
             max-[767px]:left-[1.7rem]
@@ -386,6 +384,11 @@ export default function Hero() {
                   srcSet="/images/generated/hero-640.avif 640w, /images/generated/hero-1280.avif 1280w"
                   sizes="(max-width: 767px) 45vw, 18vw"
                 />
+                <source
+                  type="image/webp"
+                  srcSet="/images/generated/hero-640.webp 640w, /images/generated/hero-1280.webp 1280w"
+                  sizes="(max-width: 767px) 45vw, 18vw"
+                />
                 <img
                   className={position}
                   src="/images/generated/hero-1280.webp"
@@ -402,7 +405,6 @@ export default function Hero() {
             right-[0.65rem]
             bottom-4
             z-[2]
-            font-[family-name:var(--font-body-next)]
             text-[0.48rem]
             leading-[2]
             tracking-[0.17em]
@@ -426,7 +428,6 @@ export default function Hero() {
           bg-[#101d2b]
           px-3
           py-2
-          font-[family-name:var(--font-body-next)]
           text-[0.62rem]
           tracking-[0.12em]
           text-[var(--color-paper)]
@@ -481,14 +482,13 @@ export default function Hero() {
           max-[767px]:block
         `}>
           <p className={`
-            font-[family-name:var(--font-body-next)]
             text-[0.62rem]
             leading-[1.7]
             tracking-[0.12em]
             uppercase
             opacity-62
           `}>
-            Club 2026
+            Club {year}
           </p>
         </header>
 
@@ -516,11 +516,10 @@ export default function Hero() {
               max-[767px]:min-h-34
               max-[767px]:grid-cols-[2rem_1fr_2rem]
               max-[767px]:gap-2
-            `} href={item.href} key={item.href}>
+            `} href={item.href} key={item.href} prefetch={item.href === '/about' ? false : undefined}>
               <span className={`
                 self-start
                 pt-4
-                font-[family-name:var(--font-body-next)]
                 text-[0.62rem]
                 tracking-[0.12em]
                 opacity-62
@@ -529,7 +528,6 @@ export default function Hero() {
                 {item.index}
               </span>
               <span className={`
-                font-[family-name:var(--font-heading-next)]
                 text-[clamp(3.5rem,8vw,8.5rem)]
                 leading-[0.85]
                 tracking-[-0.055em]
@@ -561,7 +559,6 @@ export default function Hero() {
               </span>
               <span className={`
                 justify-self-end
-                font-[family-name:var(--font-body-next)]
                 text-[clamp(1.3rem,2.4vw,2.5rem)]
                 font-light
                 max-[767px]:col-start-3
@@ -580,7 +577,6 @@ export default function Hero() {
           border-t
           border-[rgba(248,247,244,0.35)]
           pt-4
-          font-[family-name:var(--font-body-next)]
           text-[0.58rem]
           tracking-[0.12em]
           uppercase
@@ -588,7 +584,7 @@ export default function Hero() {
           max-[767px]:mt-24
           max-[767px]:leading-[1.5]
         `}>
-          <span>© 2026 NEHS NEPC. All rights reserved.</span>
+          <span>© {year} NEHS NEPC</span>
           <span className={`
             flex
             gap-6

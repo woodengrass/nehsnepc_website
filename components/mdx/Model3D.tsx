@@ -58,13 +58,18 @@ export default function Model3D({
     };
   }, [shouldLoad]);
 
-  const attachViewer = (element: HTMLElement | null) => {
-    viewerRef.current = element;
-    if (element) {
-      element.addEventListener('load', () => setModelLoaded(true));
-      element.addEventListener('error', () => setModelFailed(true));
-    }
-  };
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!shouldLoad || !viewer) return;
+    const handleLoad = () => setModelLoaded(true);
+    const handleError = () => setModelFailed(true);
+    viewer.addEventListener('load', handleLoad);
+    viewer.addEventListener('error', handleError);
+    return () => {
+      viewer.removeEventListener('load', handleLoad);
+      viewer.removeEventListener('error', handleError);
+    };
+  }, [shouldLoad]);
 
   return (
     <figure className={`
@@ -95,7 +100,7 @@ export default function Model3D({
       >
         {shouldLoad ? (
           <model-viewer
-            ref={attachViewer}
+            ref={viewerRef}
             src={src}
             alt={alt}
             camera-controls

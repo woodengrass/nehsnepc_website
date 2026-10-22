@@ -7,11 +7,11 @@ export const metadata: Metadata = {
 };
 
 const UNSPLASH_CREDITS = [
-  { satellite: 'about-satellite-06-640', photographer: 'Andre Benz', url: 'https://unsplash.com/photos/PpsgIw3iWZ4' },
-  { satellite: 'about-satellite-07-640', photographer: 'Blake Verdoorn', url: 'https://unsplash.com/photos/cssvEZacHvQ' },
-  { satellite: 'about-satellite-08-640', photographer: 'Kazuend', url: 'https://unsplash.com/photos/2KXEb_8G5vo' },
-  { satellite: 'about-satellite-09-640', photographer: 'Laura Smetsers', url: 'https://unsplash.com/photos/St08jKkPVHw' },
-  { satellite: 'about-satellite-10-640', photographer: 'Wan San Yip', url: 'https://unsplash.com/photos/tLK02oHjT8c' }
+  { label: 'About 衛星圖 06', photographer: 'Andre Benz', url: 'https://unsplash.com/photos/PpsgIw3iWZ4' },
+  { label: 'About 衛星圖 07', photographer: 'Blake Verdoorn', url: 'https://unsplash.com/photos/cssvEZacHvQ' },
+  { label: 'About 衛星圖 08', photographer: 'Kazuend', url: 'https://unsplash.com/photos/2KXEb_8G5vo' },
+  { label: 'About 衛星圖 09', photographer: 'Laura Smetsers', url: 'https://unsplash.com/photos/St08jKkPVHw' },
+  { label: 'About 衛星圖 10', photographer: 'Wan San Yip', url: 'https://unsplash.com/photos/tLK02oHjT8c' }
 ];
 
 export default function LicensingPage() {
@@ -100,7 +100,7 @@ export default function LicensingPage() {
         `}>
           {UNSPLASH_CREDITS.map((credit) => (
             <li
-              key={credit.satellite}
+              key={credit.label}
               className={`
                 flex
                 flex-wrap
@@ -116,7 +116,7 @@ export default function LicensingPage() {
               <span className={`
                 text-[var(--color-muted)]
               `}>
-                {credit.satellite}
+                {credit.label}
               </span>
               <a
                 href={credit.url}

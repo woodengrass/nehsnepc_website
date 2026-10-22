@@ -5,7 +5,7 @@ import { TOOLS } from '@/lib/tools';
 
 export const metadata: Metadata = {
   title: 'Tools',
-  description: 'NEHS 攝影社實用工具 — 曝光計算、景深試算、底片記錄等。',
+  description: 'NEHS 攝影社實用工具 — 曝光計算器等外拍試算小工具。',
   alternates: { canonical: '/tools' }
 };
 
@@ -255,7 +255,7 @@ export default function ToolsPage() {
                   group-hover:opacity-18
                 `} aria-hidden="true" />
               </div>
-              <h2 className={`
+              <h2 id={`tool-${tool.id}-title`} className={`
                 mb-3
                 text-[clamp(1.35rem,2vw,1.8rem)]
                 leading-[1.35]
@@ -263,7 +263,7 @@ export default function ToolsPage() {
               `}>
                 {tool.title}
               </h2>
-              <p className={`${DESC_BASE} ${isAvailable ? DESC_AVAILABLE : ''}`}>
+              <p id={`tool-${tool.id}-description`} className={`${DESC_BASE} ${isAvailable ? DESC_AVAILABLE : ''}`}>
                 {tool.description}
               </p>
               <span className={`
@@ -287,7 +287,8 @@ export default function ToolsPage() {
             <Link
               key={tool.id}
               href={tool.href}
-              aria-label={tool.title}
+              aria-labelledby={`tool-${tool.id}-title`}
+              aria-describedby={`tool-${tool.id}-description`}
               className={`group ${CARD_WRAPPER}`}
             >
               {card}

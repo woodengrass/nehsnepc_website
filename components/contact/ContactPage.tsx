@@ -69,6 +69,7 @@ export default function ContactPage() {
     try {
       await navigator.clipboard.writeText(EMAIL);
       setEmailLabel('copied');
+      if (copyTimerRef.current !== undefined) clearTimeout(copyTimerRef.current);
       copyTimerRef.current = window.setTimeout(() => setEmailLabel(EMAIL), 1800);
     } catch {
       window.location.href = `mailto:${EMAIL}`;
@@ -177,7 +178,7 @@ export default function ContactPage() {
                 tracking-[-0.085em]
                 min-[768px]:max-[980px]:text-[clamp(4rem,9vw,7rem)]
                 max-[767px]:mt-[3.2rem]
-                max-[767px]:text-[clamp(4rem,21vw,6rem)]
+                max-[767px]:text-[clamp(3.6rem,19vw,6rem)]
               `}
             >
               CONTACT
@@ -316,26 +317,31 @@ export default function ContactPage() {
               </button>
               {renderAccordionBody(
                 'contact',
-                <button
-                  id="copyEmail"
-                  className={`
-                    border-b
-                    border-[var(--color-line)]
-                    pb-[0.35rem]
-                    text-[clamp(0.8rem,1.2vw,1rem)]
-                    tracking-[0.08em]
-                    text-[rgba(10,10,10,0.82)]
-                    transition-[color,border-color]
-                    duration-[260ms]
-                    ease-[cubic-bezier(0.22,1,0.36,1)]
-                    hover:border-[var(--color-text)]
-                    hover:text-[var(--color-text)]
-                    motion-reduce:transition-none
-                  `}
-                  onClick={copyEmail}
-                >
-                  {emailLabel}
-                </button>,
+                <>
+                  <button
+                    id="copyEmail"
+                    className={`
+                      border-b
+                      border-[var(--color-line)]
+                      pb-[0.35rem]
+                      text-[clamp(0.8rem,1.2vw,1rem)]
+                      tracking-[0.08em]
+                      text-[rgba(10,10,10,0.82)]
+                      transition-[color,border-color]
+                      duration-[260ms]
+                      ease-[cubic-bezier(0.22,1,0.36,1)]
+                      hover:border-[var(--color-text)]
+                      hover:text-[var(--color-text)]
+                      motion-reduce:transition-none
+                    `}
+                    onClick={copyEmail}
+                  >
+                    {emailLabel}
+                  </button>
+                  <span className="sr-only" aria-live="polite">
+                    {emailLabel === EMAIL ? '' : '已複製 Email 地址'}
+                  </span>
+                </>,
                 contactBodyRef
               )}
             </div>
@@ -367,7 +373,7 @@ export default function ContactPage() {
                 `}
                 id="shootTrigger"
                 aria-haspopup="dialog"
-                aria-controls="shoot-request-dialog"
+                aria-controls={modalOpen ? 'shoot-request-dialog' : undefined}
                 aria-expanded={modalOpen}
                 onClick={openModal}
               >

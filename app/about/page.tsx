@@ -34,8 +34,8 @@ export default function AboutPage() {
         <canvas className="obscura-archive-canvas" id="archiveCanvas" aria-hidden="true" />
 
         <div className="obscura-hud" aria-hidden="true">
-          <span className="obscura-coordinate obscura-coordinate-top">35.0123 N / 121.5429 E</span>
-          <span className="obscura-reading" aria-live="polite"><b id="focusReading"></b></span>
+          <span className="obscura-coordinate obscura-coordinate-top">{ABOUT_FOCUS_CONTENT.coordinatePlaceholder}</span>
+          <span className="obscura-reading"><b id="focusReading"></b></span>
           <div className="focusing-screen" aria-hidden="true">
             <canvas className="microprism-canvas" id="microprismCanvas" />
             <div className="split-focus">

@@ -17,7 +17,7 @@ test('missing-key: actual empty-key harness offers Email without captcha or POST
   expect(contact.sdkRequests).toHaveLength(0);
   expect(contact.requests).toHaveLength(0);
   if (info.project.name === 'desktop') await page.screenshot({ path: '.omo/evidence/contact-web3forms/task-7-missing-key.png' });
-  await page.locator('#shoot-request-dialog button[aria-label="關閉表單"]').last().click();
+  await page.locator('#shoot-request-dialog').getByRole('button', { name: 'Close / 關閉', exact: true }).click();
   await expect(page.locator('#shootTrigger')).toBeFocused();
   await page.locator('[aria-controls="acc-contact-body"]').click();
   await page.locator('#copyEmail').click();

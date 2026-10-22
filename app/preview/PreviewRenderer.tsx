@@ -150,12 +150,10 @@ function PreviewFigure({
   return (
     <figure
       className={`
+      article-figure
       my-[3em]
-      [&>img]:h-auto
-      [&>img]:w-full
-      [&>img]:grayscale-[0.4]
-      [&>img]:contrast-[1.06]
-      [&>img]:brightness-[0.9]
+      [&_img]:h-auto
+      [&_img]:w-full
       [&>figcaption]:mt-[0.8rem]
       [&>figcaption]:text-right
       [&>figcaption]:text-[0.68rem]
@@ -268,7 +266,7 @@ export default function PreviewRenderer({ slug, branch, parsed }: PreviewRendere
           max-[767px]:text-[0.55rem]
         `}
         >
-          <Link href="/tutorial">Journal / 文章索引</Link>
+          <Link href="/tutorial">Tutorial / 文章索引</Link>
           <span>
             Preview／{branch}／{slug}
           </span>
@@ -474,6 +472,8 @@ export default function PreviewRenderer({ slug, branch, parsed }: PreviewRendere
         max-[767px]:text-base
         max-[767px]:[&_.article-figure]:mx-[-1.2rem]
         max-[767px]:[&_.article-model]:mx-[-1.2rem]
+        max-[767px]:[&_.article-figure>figcaption]:px-[1.2rem]
+        max-[767px]:[&_.article-model>figcaption]:px-[1.2rem]
       `}
       >
         {compileError ? (

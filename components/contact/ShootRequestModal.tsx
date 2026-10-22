@@ -223,7 +223,6 @@ export default function ShootRequestModal({
           ref={modalCloseRef}
           type="button"
           onClick={requestDismissal}
-          aria-label="關閉表單"
         >
           Close / 關閉
         </button>

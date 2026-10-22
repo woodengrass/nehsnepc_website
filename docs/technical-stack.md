@@ -24,7 +24,7 @@ Node.js `>=20.9.0` is required. The tracked lockfile with the pinned package man
 
 ## Environment and Deploy Runbook
 
-`.env.example` holds placeholders only, never real secrets. Copy it to `.env.local` (gitignored) and fill values from the GitHub App plus Vercel project settings. The contact key (`NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY`) is a public routing identifier inlined at build time: set it in the Vercel production environment and redeploy; blank keeps the safe email fallback. Never set `NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE` on Vercel. Never commit real keys.
+`.env.example` holds placeholders only, never real secrets. Copy it to `.env.local` (gitignored) and fill values from the GitHub App plus Vercel project settings. The contact key (`NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY`) is a public routing identifier inlined at build time: set it in the Vercel production environment and redeploy; blank keeps the safe email fallback. Never set `NEXT_PUBLIC_KEYSTATIC_LOCAL_MODE` on Vercel. Never commit real keys. Physical-device dev testing reads LAN hostnames from `DEV_ALLOWED_ORIGINS` in `.env.local`; machine-specific IPs never go into `next.config.ts`.
 
 Vercel is Git-triggered: every push to `main` rebuilds, and a failed build leaves the prior deployment serving. Publish intent takes effect only after a green build. `vercel.json` holds only permanent migration redirects; preserve them unless legacy URLs are intentionally retired. There is no Deploy Hook: rebuilds come from Git pushes only.
 

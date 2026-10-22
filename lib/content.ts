@@ -44,7 +44,6 @@ export function readingMinutes(text: string): number {
 function parseArticleFile(fileName: string): Article | null {
   const slug = fileName.replace(/\.mdx?$/, '');
   const filePath = path.join(ARTICLES_DIR, fileName);
-  if (!fs.existsSync(ARTICLES_DIR)) return null;
   const raw = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(raw);
   const parsed = frontmatterSchema.safeParse(data);
@@ -60,19 +59,20 @@ function parseArticleFile(fileName: string): Article | null {
   };
 }
 
-function includeDrafts(): boolean {
+function shouldIncludeDrafts(): boolean {
   return process.env.NODE_ENV !== 'production';
 }
 
-export function getAllArticles(includeDrafts?: boolean): ArticleMeta[] {
-  const drafts = includeDrafts ?? (process.env.NODE_ENV !== 'production');
+export function getAllArticles(includeDrafts = shouldIncludeDrafts()): ArticleMeta[] {
+  if (!fs.existsSync(ARTICLES_DIR)) return [];
   return fs
     .readdirSync(ARTICLES_DIR)
     .filter((fileName) => /\.mdx?$/.test(fileName))
     .map(parseArticleFile)
     .filter((article): article is Article => article !== null)
-    .filter((article) => drafts || !article.draft)
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
+    .filter((article) => includeDrafts || !article.draft)
+    // 新到舊；同日期依 slug 排序，讓上一篇／下一篇在每次建置都穩定。
+    .sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug));
 }
 
 export function getArticle(slug: string): Article | null {
@@ -83,7 +83,7 @@ export function getArticle(slug: string): Article | null {
   if (!fileName) return null;
   const article = parseArticleFile(fileName);
   if (!article) return null;
-  if (article.draft && !includeDrafts()) return null;
+  if (article.draft && !shouldIncludeDrafts()) return null;
   return article;
 }
 
@@ -92,10 +92,11 @@ export function getArticlesByCategory(id: CategoryId): ArticleMeta[] {
 }
 
 export function getRelatedArticles(slug: string, limit = 2): ArticleMeta[] {
-  const article = getAllArticles().find((item) => item.slug === slug);
+  const articles = getAllArticles();
+  const article = articles.find((item) => item.slug === slug);
   if (!article) return [];
-  const sameCategory = getAllArticles().filter((item) => item.slug !== slug && item.category === article.category);
-  const others = getAllArticles().filter((item) => item.slug !== slug && item.category !== article.category);
+  const sameCategory = articles.filter((item) => item.slug !== slug && item.category === article.category);
+  const others = articles.filter((item) => item.slug !== slug && item.category !== article.category);
   return [...sameCategory, ...others].slice(0, limit);
 }
 

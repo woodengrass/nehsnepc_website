@@ -6,9 +6,10 @@
  * The React form owns state/rendering; this module never touches the DOM,
  * imports no React/backend modules and reads no secrets.
  *
- * Binding contract: `.omo/plans/contact-web3forms.md` (field order/labels,
- * four verbatim notices, payload keys, 20s abort, no-auto-retry, token
- * one-use semantics for the caller).
+ * Binding contract (field order/labels, four verbatim notices, payload keys,
+ * 20s abort, no-auto-retry, token one-use semantics for the caller) is
+ * enforced by `tests/contact/request.test.ts` and `tests/contact/contact.spec.ts`;
+ * policy lives in `docs/contact.md`.
  */
 
 /** Ten public user fields in display order. */

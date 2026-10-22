@@ -12,7 +12,7 @@ import ReadingProgress from '@/components/articles/ReadingProgress';
 import TutorialCover from '@/components/articles/TutorialCover';
 import { getAdjacentArticles, getAllArticles, getArticle, getCategory } from '@/lib/content';
 import { formatDate } from '@/lib/format';
-import { JsonLd, articleJsonLd, breadcrumbJsonLd } from '@/lib/seo';
+import { BASE_OPEN_GRAPH, DEFAULT_OG_IMAGE, JsonLd, articleJsonLd, breadcrumbJsonLd } from '@/lib/seo';
 
 export function generateStaticParams() {
   // 構建期只展開正式文章；草稿由 getArticle 在開發環境動態提供。
@@ -23,6 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const article = getArticle(slug);
   if (!article) return {};
+  const images = article.cover ? [{ url: article.cover, alt: article.coverAlt ?? article.title }] : [DEFAULT_OG_IMAGE];
   return {
     title: article.title,
     description: article.description,
@@ -32,6 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       canonical: `/tutorial/${article.slug}`
     },
     openGraph: {
+      ...BASE_OPEN_GRAPH,
       type: 'article',
       title: article.title,
       description: article.description,
@@ -40,7 +42,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       modifiedTime: article.updated ?? article.date,
       authors: [article.author],
       tags: article.tags,
-      images: article.cover ? [{ url: article.cover, alt: article.coverAlt ?? article.title }] : undefined
+      images
+    },
+    twitter: {
+      card: 'summary_large_image',
+      images
     }
   };
 }
@@ -88,7 +94,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           text-[var(--color-muted)]
           max-[767px]:text-[0.55rem]
         `}>
-          <Link href="/tutorial">Journal / 文章索引</Link>
+          <Link href="/tutorial">Tutorial / 文章索引</Link>
           <span>Scroll to read / 向下閱讀</span>
         </div>
         <div className={`
@@ -302,6 +308,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         max-[767px]:text-base
         max-[767px]:[&_.article-figure]:mx-[-1.2rem]
         max-[767px]:[&_.article-model]:mx-[-1.2rem]
+        max-[767px]:[&_.article-figure>figcaption]:px-[1.2rem]
+        max-[767px]:[&_.article-model>figcaption]:px-[1.2rem]
       `}>
         <MDXRemote
           source={article.content}

@@ -24,26 +24,77 @@ const MENU_LINK_BASE_CLASSES = `
 export default function SiteNavMenu() {
   const pathname = usePathname();
   const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previousPathnameRef = useRef(pathname);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleKeydown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMenuOpen(false);
-    };
-    document.addEventListener('keydown', handleKeydown);
-    return () => document.removeEventListener('keydown', handleKeydown);
-  }, []);
+    if (previousPathnameRef.current !== pathname) {
+      previousPathnameRef.current = pathname;
+      setMenuOpen(false);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     document.body.classList.toggle('menu-open', menuOpen);
     return () => document.body.classList.remove('menu-open');
   }, [menuOpen]);
 
+  useEffect(() => {
+    const hamburger = hamburgerRef.current;
+    const menu = menuRef.current;
+    const panel = panelRef.current;
+    if (!menuOpen || !hamburger || !menu || !panel) return;
+
+    const links = Array.from(panel.querySelectorAll<HTMLAnchorElement>('a[href]'));
+    const focusable = [hamburger, ...links];
+    const background = new Map<HTMLElement, boolean>();
+    // Inert sibling branches up to body, never the dialog or its trigger.
+    for (let branch: HTMLElement | null = menu; branch && branch !== document.body; branch = branch.parentElement) {
+      for (const sibling of branch.parentElement?.children ?? []) {
+        if (sibling instanceof HTMLElement && sibling !== branch) {
+          background.set(sibling, sibling.inert);
+          sibling.inert = true;
+        }
+      }
+    }
+
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMenuOpen(false);
+      }
+      if (event.key !== 'Tab') return;
+      event.preventDefault();
+      const index = focusable.findIndex((element) => element === document.activeElement);
+      const nextIndex = event.shiftKey
+        ? (index <= 0 ? focusable.length - 1 : index - 1)
+        : (index + 1) % focusable.length;
+      focusable[nextIndex]?.focus({ preventScroll: true });
+    };
+    document.addEventListener('keydown', handleKeydown);
+    (links[0] ?? hamburger).focus({ preventScroll: true });
+
+    return () => {
+      document.removeEventListener('keydown', handleKeydown);
+      for (const [element, inert] of background) element.inert = inert;
+      hamburger.focus({ preventScroll: true });
+    };
+  }, [menuOpen]);
+
   const toggleMenu = () => setMenuOpen((open) => !open);
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <>
+    <div
+      ref={menuRef}
+      {...(menuOpen ? {
+        role: 'dialog',
+        'aria-modal': true,
+        'aria-label': '網站導覽'
+      } as const : {})}
+    >
       <button
         ref={hamburgerRef}
         className={menuOpen ? `
@@ -80,6 +131,8 @@ export default function SiteNavMenu() {
         type="button"
         aria-label={menuOpen ? '關閉選單' : '開啟選單'}
         aria-expanded={menuOpen}
+        aria-haspopup="dialog"
+        aria-controls="site-nav-menu"
         onClick={toggleMenu}
       >
         <span className={menuOpen ? `
@@ -141,6 +194,8 @@ export default function SiteNavMenu() {
       </button>
 
       <div
+        ref={panelRef}
+        id="site-nav-menu"
         className={menuOpen ? `
           visible
           fixed
@@ -171,6 +226,7 @@ export default function SiteNavMenu() {
           motion-reduce:transition-none
         `}
         aria-hidden={!menuOpen}
+        inert={!menuOpen}
       >
         <nav className={`
           flex
@@ -184,9 +240,12 @@ export default function SiteNavMenu() {
               <Link
                 key={href}
                 href={href}
+                // 預取 /about 會連帶 preload 該路由專屬的 about.css，讓每一頁都多下載一份用不到的樣式。
+                prefetch={href === '/about' ? false : undefined}
                 className={`${MENU_LINK_BASE_CLASSES} ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'}`}
                 style={{ transitionDelay: `${100 + index * 50}ms` }}
                 aria-current={active ? 'page' : undefined}
+                tabIndex={menuOpen ? undefined : -1}
                 onClick={() => setMenuOpen(false)}
               >
                 <span className={active ? `
@@ -201,6 +260,6 @@ export default function SiteNavMenu() {
           })}
         </nav>
       </div>
-    </>
+    </div>
   );
 }

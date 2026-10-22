@@ -18,7 +18,7 @@ Known lifecycle defects are preserved as awareness items in code: ref listeners 
 
 ## Runbook
 
-Place an authored GLB in `public/models/src/`, check provenance and licensing and simplify before ingestion, run `npm run models:build`, inspect the optimized output for actual extensions, geometry, textures, animation, and size, reference it from MDX with useful description and preferably a poster, then test delayed loading, success, failure, touch scrolling, camera interaction, narrow layout, keyboard use, reduced motion, disabled WebGL, slow and offline networks, and multiple instances. Remove stale `public/models/opt/` files deliberately when sources are removed.
+Place an authored GLB in `assets/models/` (kept outside `public/` so source models are never deployed), check provenance and licensing and simplify before ingestion, run `npm run models:build`, inspect the optimized output for actual extensions, geometry, textures, animation, and size, reference it from MDX with useful description and preferably a poster, then test delayed loading, success, failure, touch scrolling, camera interaction, narrow layout, keyboard use, reduced motion, disabled WebGL, slow and offline networks, and multiple instances. Remove stale `public/models/opt/` files deliberately when sources are removed.
 
 ## Change Rule
 

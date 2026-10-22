@@ -21,7 +21,7 @@ const KEYBOARD_TITLE = 'Editor Flow Keyboard Probe Title';
 const FIGURE_ALT = '鍵盤流程探測用圖片描述文字';
 
 function fixtureBody(title: string): string {
-  return `---\ntitle: '${title}'\ndescription: 'Deterministic keyboard/mobile/component fixture for task 9 verification.'\ndate: '2026-09-30'\ncategory: basic\ntags: ['task-9-proof']\ndraft: true\nauthor: 'NEHS 攝影社'\n---\n\n## Component section\n\n<Figure src="/images/generated/hero-1280.webp" alt="${FIGURE_ALT}" caption="探測圖說" width={800} height={600} />\n\n<Callout type="note" title="探測提示">\n鍵盤流程探測用提示內容。\n</Callout>\n\n<Model3D src="/models/opt/DamagedHelmet.glb" alt="探測模型描述文字" poster="/images/generated/hero-1280.webp" caption="探測模型" />\n`;
+  return `---\ntitle: '${title}'\ndescription: 'Deterministic keyboard/mobile/component fixture for task 9 verification.'\ndate: '2026-09-30'\ncategory: basic\ntags: ['task-9-proof']\ndraft: true\nauthor: 'NEHS 攝影社'\n---\n\n## Component section\n\n<Figure src="/images/generated/hero-1280.webp" alt="${FIGURE_ALT}" caption="探測圖說" width={800} height={600} />\n\n<Callout type="note" title="探測提示">\n鍵盤流程探測用提示內容。\n</Callout>\n\n<Model3D src="/models/opt/probe.glb" alt="探測模型描述文字" poster="/images/generated/hero-1280.webp" caption="探測模型" />\n`;
 }
 
 test.describe('editor flow: components + keyboard + mobile', () => {
@@ -48,7 +48,7 @@ test.describe('editor flow: components + keyboard + mobile', () => {
     expect(findFigureUsages(raw)[0].src).toBe('/images/generated/hero-1280.webp');
     expect(raw).toContain('<Callout');
     expect(raw).toContain('<Model3D');
-    expect(raw).toContain('/models/opt/DamagedHelmet.glb');
+    expect(raw).toContain('/models/opt/probe.glb');
     // The body still compiles as MDX (unknown-component/JSX check).
     const { compile } = (await import('@mdx-js/mdx')) as unknown as {
       compile: (source: string, options?: unknown) => Promise<unknown>;

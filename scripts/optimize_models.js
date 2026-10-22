@@ -10,7 +10,8 @@ import { dedup, prune, resample, textureCompress } from '@gltf-transform/functio
 import draco3d from 'draco3dgltf';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const inputDirectory = path.join(projectRoot, 'public', 'models', 'src');
+// Sources stay out of public/ so only optimized models are deployed.
+const inputDirectory = path.join(projectRoot, 'assets', 'models');
 const outputDirectory = path.join(projectRoot, 'public', 'models', 'opt');
 
 const io = new NodeIO()
@@ -27,7 +28,7 @@ const files = fs.existsSync(inputDirectory)
   : [];
 
 if (files.length === 0) {
-  console.log('No .glb files found in public/models/src/ — nothing to do.');
+  console.log('No .glb files found in assets/models/ — nothing to do.');
   process.exit(0);
 }
 

@@ -74,6 +74,8 @@ interface CommitFieldProps
   > {
   value: string;
   onCommit: (raw: string) => void;
+  /** Size the field to its text so a prefix such as "ISO" stays next to the value. */
+  fitContent?: boolean;
 }
 
 /**
@@ -81,8 +83,9 @@ interface CommitFieldProps
  * the parent commits on Enter or blur. Invalid commits are ignored by the
  * caller, so the field falls back to the formatted `value` prop.
  */
-function CommitField({ value, onCommit, onKeyDown, ...rest }: CommitFieldProps) {
+function CommitField({ value, onCommit, onKeyDown, fitContent = false, style, ...rest }: CommitFieldProps) {
   const [draft, setDraft] = useState<string | null>(null);
+  const shown = draft ?? value;
 
   const commit = (raw: string) => {
     setDraft(null);
@@ -92,7 +95,8 @@ function CommitField({ value, onCommit, onKeyDown, ...rest }: CommitFieldProps) 
   return (
     <input
       {...rest}
-      value={draft ?? value}
+      style={fitContent ? { ...style, width: `${Math.max(shown.length, 2) + 0.5}ch` } : style}
+      value={shown}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={(event) => commit(event.target.value)}
       onKeyDown={(event) => {
@@ -750,7 +754,6 @@ export default function ExposureCalculator() {
             [&_.lock]:tracking-[0.06em]
             [&_.lock]:text-[var(--color-muted)]
             [&_.lock_input]:accent-[var(--color-text)]
-            [&_[data-direct]]:w-[4em]
             [&_[data-direct]]:border-0
             [&_[data-direct]]:bg-transparent
             [&_[data-direct]]:p-0
@@ -769,7 +772,7 @@ export default function ExposureCalculator() {
             [&_.long-exposure]:py-1
             [&_.long-exposure]:text-[0.72rem]
             [&_.long-exposure]:outline-none
-            max-[560px]:[&_.parameter-row]:grid-cols-[58px_1fr_65px]
+            max-[560px]:[&_.parameter-row]:grid-cols-[58px_minmax(0,1fr)_max-content]
             max-[560px]:[&_.parameter-row]:gap-[9px]
             max-[560px]:[&_output]:col-start-3
             max-[560px]:[&_.lock]:col-start-1
@@ -796,6 +799,7 @@ export default function ExposureCalculator() {
                   <span>{CAMERA_PREFIX[key]}</span>
                   <CommitField
                     data-direct={key}
+                    fitContent
                     aria-label={`直接輸入${label}`}
                     value={formatEditableValue(key, state.camera[key])}
                     onCommit={(raw) => handleDirectCommit(key, raw)}

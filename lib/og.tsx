@@ -69,7 +69,7 @@ export function getImageResponse() {
             opacity: 0.55
           }}
         >
-          LOOK CLOSER. / NEPC JOURNAL
+          LOOK CLOSER. / NEPC TUTORIAL
         </div>
       </div>
     ),

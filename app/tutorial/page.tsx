@@ -52,7 +52,7 @@ export default function TutorialPage() {
             tracking-[0.14em]
             text-[var(--color-muted)]
           `}>
-            NEHS NEPC / JOURNAL
+            NEHS NEPC / TUTORIAL
           </p>
           <h1 className={`
             max-w-full
@@ -128,7 +128,7 @@ export default function TutorialPage() {
         `}>
           Filter / 分類
         </span>
-        <Link href="/tutorial" className={`
+        <Link href="/tutorial" aria-current="page" className={`
           relative
           flex
           min-w-40
@@ -239,7 +239,8 @@ export default function TutorialPage() {
               >
                 {String(index + 1).padStart(2, '0')}
               </span>
-              <Link href={`/tutorial/${article.slug}`} className={`
+              {/* 封面與標題連到同一篇；封面連結僅供滑鼠／觸控，避免鍵盤與讀屏重複。 */}
+              <Link href={`/tutorial/${article.slug}`} tabIndex={-1} aria-hidden="true" className={`
                 relative
                 block
                 aspect-[4/3]

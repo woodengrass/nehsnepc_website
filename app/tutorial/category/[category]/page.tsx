@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { CATEGORIES, getCategory, getArticlesByCategory, isCategoryId } from '@/lib/content';
 import { formatDate } from '@/lib/format';
 import TutorialCover from '@/components/articles/TutorialCover';
+import { BASE_OPEN_GRAPH, DEFAULT_OG_IMAGE } from '@/lib/seo';
 
 export function generateStaticParams() {
   return CATEGORIES.map((category) => ({ category: category.id }));
@@ -16,7 +17,16 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
   const categoryInfo = getCategory(category);
   return {
     title: categoryInfo?.label ?? 'Tutorial',
-    description: categoryInfo?.description
+    description: categoryInfo?.description,
+    alternates: {
+      canonical: `/tutorial/category/${category}`
+    },
+    openGraph: {
+      ...BASE_OPEN_GRAPH,
+      type: 'website',
+      url: `/tutorial/category/${category}`,
+      images: [DEFAULT_OG_IMAGE]
+    }
   };
 }
 
@@ -64,7 +74,7 @@ export default async function ArticleCategoryPage({ params }: { params: Promise<
             tracking-[0.14em]
             text-[var(--color-muted)]
           `}>
-            NEHS NEPC / JOURNAL
+            NEHS NEPC / TUTORIAL
           </p>
           <h1 className={`
             max-w-full
@@ -120,7 +130,7 @@ export default async function ArticleCategoryPage({ params }: { params: Promise<
         max-[767px]:my-[1.4rem]
         max-[767px]:mb-12
         max-[767px]:overflow-x-auto
-      `}>
+      `} aria-label="文章分類">
         <span className={`
           flex
           min-w-[25%]
@@ -160,6 +170,7 @@ export default async function ArticleCategoryPage({ params }: { params: Promise<
           <Link
             key={item.id}
             href={`/tutorial/category/${item.id}`}
+            aria-current={item.id === category ? 'page' : undefined}
             className={`
               relative
               flex
@@ -251,7 +262,8 @@ export default async function ArticleCategoryPage({ params }: { params: Promise<
               >
                 {String(index + 1).padStart(2, '0')}
               </span>
-              <Link href={`/tutorial/${article.slug}`} className={`
+              {/* 封面與標題連到同一篇；封面連結僅供滑鼠／觸控，避免鍵盤與讀屏重複。 */}
+              <Link href={`/tutorial/${article.slug}`} tabIndex={-1} aria-hidden="true" className={`
                 relative
                 block
                 aspect-[4/3]

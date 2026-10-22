@@ -11,3 +11,10 @@ public/images/generated/articles.manifest.json
 .env*
 !.env.example
 .idea/
+# TypeScript incremental build cache (rewritten by every build).
+*.tsbuildinfo
+# Local agent/tool working directories.
+.omo/
+.playwright-mcp/
+# Playwright failure artifacts.
+test-results/

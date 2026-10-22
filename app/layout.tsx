@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
 import SiteNav from '@/components/SiteNav';
-import { SITE_NAME, SITE_URL, JsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
+import { BASE_OPEN_GRAPH, SITE_URL, JsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 
 import './globals.css';
 
@@ -19,9 +19,8 @@ export const metadata: Metadata = {
   },
   description: '竹科實中攝影社 NEPC 官方網站 — 分享攝影知識，不論程度都能一起探索攝影的樂趣',
   openGraph: {
-    type: 'website',
-    siteName: SITE_NAME,
-    locale: 'zh_TW'
+    ...BASE_OPEN_GRAPH,
+    type: 'website'
   },
   twitter: {
     card: 'summary_large_image'

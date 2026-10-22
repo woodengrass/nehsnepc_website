@@ -1,18 +1,9 @@
 @import 'tailwindcss';
 
+/* 只有需要產生 Tailwind utility（font-source）的 token 放在 @theme；
+   其餘設計 token 定義在下方 :root，經由 var() 使用。 */
 @theme {
-  --color-page: #f8f7f4;
-  --color-surface: #ffffff;
-  --color-ink: #0a0a0a;
-  --color-brand-red: #c41e2a;
-  --color-brand-blue: #1e4d7a;
   --font-source: 'Noto Serif TC', 'Source Han Serif TC', 'Source Han Serif', 'Songti TC', serif;
-  --font-heading: var(--font-heading-next), 'Cormorant Garamond', serif;
-  --font-body: var(--font-body-next), 'Raleway', sans-serif;
-}
-
-@theme inline {
-  --animate-contact-drift: contact-photo-drift 15s ease-in-out infinite alternate;
 }
 
 @custom-variant film-short (@media (max-height:740px));
@@ -141,12 +132,6 @@
       scroll-behavior: auto !important;
       transition-duration: 0.01ms !important;
     }
-  }
-}
-
-@keyframes contact-photo-drift {
-  to {
-    transform: translateX(0) scale(1.09);
   }
 }
 

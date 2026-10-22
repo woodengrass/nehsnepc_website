@@ -74,7 +74,7 @@ cp .env.example .env.local
 | `npm run start` | 本地跑正式建置結果。 |
 | `npm run images:build` | 改過來源圖片後執行。重新產生已提交的 AVIF/WebP 家族＋文章衍生圖（需 `sharp`）。 |
 | `npm run images:articles` | 只產生文章衍生圖（`prebuild` 與 dev 監看也會跑）。 |
-| `npm run models:build` | 改過 `public/models/src/` 的 GLB 後執行。輸出最佳化檔案到 `public/models/opt/`。 |
+| `npm run models:build` | 改過 `assets/models/` 的 GLB 後執行。輸出最佳化檔案到 `public/models/opt/`。 |
 
 發布順序：
 
@@ -141,8 +141,8 @@ content/articles/       repo 自管的 MDX 文章
 assets/articles/        版控的文章圖片版本化來源
 public/                 靜態素材：images/generated/
                         （非文章變體已提交；文章衍生圖＋manifest 為 git 忽略
-                        的建置產物）、models/src|opt/
-assets/                 版控圖片來源：sources/、satellites/
+                        的建置產物）、models/opt/
+assets/                 版控來源：sources/、satellites/、models/
 scripts/                optimize_images.js、optimize_article_images.js、
                         validate_articles.ts、dev_with_article_images.mjs、
                         optimize_models.js、test_admin_workflow.ts

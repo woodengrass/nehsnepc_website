@@ -159,17 +159,17 @@ The goal is to minimize unnecessary complexity.
 
 ## Commands
 
-- `npm run dev` — Next.js dev server (Turbopack)
+- `npm run dev` — Next.js dev server (Turbopack) via `scripts/dev_with_article_images.mjs`, which generates and watches article image derivatives
 - `npm run build` — production Next.js build and TypeScript validation
 - `npm run start` — serve production build
 - `npm run images:build` — regenerate AVIF/WebP variants into `public/images/generated/` (requires `sharp`, sources in `assets/sources/` and `assets/satellites/`)
-- `npm run models:build` — transform GLB models from `public/models/src/*.glb` to `public/models/opt/*.glb` (deduplication, pruning, resampling, and WebP textures via glTF Transform; inspect `scripts/optimize_models.js` before claiming Draco geometry compression)
+- `npm run models:build` — transform GLB models from `assets/models/*.glb` to `public/models/opt/*.glb` (deduplication, pruning, resampling, and WebP textures via glTF Transform; inspect `scripts/optimize_models.js` before claiming Draco geometry compression)
 
 No lint, typecheck, test, or formatter is configured beyond `next build`'s TS check.
 
 ## Architecture
 
-Next.js 16.3.3 (App Router, TypeScript, build-time prerendering where possible). The current application is on `main`. `next.config.ts` does not set `output: 'export'`, so do not describe it as a pure static export.
+Next.js 16.3.8 (App Router, TypeScript, build-time prerendering where possible). The current application is on `main`. `next.config.ts` does not set `output: 'export'`, so do not describe it as a pure static export.
 
 Per-page and per-module implementation details live in `docs/` — see `docs/README.md` for the ownership map. Do not duplicate them here; document current behavior in the owning document instead:
 

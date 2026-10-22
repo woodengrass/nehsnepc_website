@@ -20,6 +20,8 @@ export const ABOUT_FOCUS_CONTENT = {
   title: '關於我們',
   prompt: '捲動以完成對焦',
   lockedPrompt: '對焦完成，繼續捲動進入畫面',
+  // 未執行 JS 或定位前顯示社團所在地（新竹，同首頁 N24°48′ / E120°58′），格式同訪客定位結果。
+  coordinatePlaceholder: '24.80 N / 120.97 E',
   coordinateFallback: 'LOCATION UNAVAILABLE'
 };
 

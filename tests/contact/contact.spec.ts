@@ -10,7 +10,8 @@ const values = { applicant: ' 測試社團 ', eventName: '測試活動', email: 
   phone: 'test-phone', otherContact: 'test-contact', eventDate: '2026-11-01',
   startTime: '22:00', endTime: '01:00', eventDetails: '合法多行內容\n'.repeat(100), notes: '測試備註' } as const;
 const field = (page: Page, key: string) => page.locator(`#shoot-request-${key}`);
-const close = (page: Page) => page.locator('#shoot-request-dialog button[aria-label="關閉表單"]').last();
+// The header close button is named by its visible text and precedes the form's own close action.
+const close = (page: Page) => page.locator('#shoot-request-dialog').getByRole('button', { name: 'Close / 關閉', exact: true }).first();
 async function open(page: Page) {
   await page.goto('/contact');
   await page.locator('#shootTrigger').click();

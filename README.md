@@ -75,7 +75,7 @@ origins get a redacted 403. Full rules and runbooks live in
 | `npm run start` | Serve the production build locally. |
 | `npm run images:build` | After changing source images. Regenerates committed AVIF/WebP families plus article derivatives (requires `sharp`). |
 | `npm run images:articles` | Article derivatives only (also runs in `prebuild` and the dev watcher). |
-| `npm run models:build` | After changing GLB sources in `public/models/src/`. Writes optimized files to `public/models/opt/`. |
+| `npm run models:build` | After changing GLB sources in `assets/models/`. Writes optimized files to `public/models/opt/`. |
 | `pnpm test:content` | Content contract: validator + contract spec (fast, no server). |
 | `pnpm test:admin` | Admin workflow: static guards, then loopback browser specs, then the draft/publish orchestrator with production smoke (each phase manages and tears down its own server). |
 
@@ -153,8 +153,8 @@ assets/articles/        Tracked versioned article image sources
 public/                 Static assets: images/generated/
                         (committed non-article variants; article derivatives
                         plus manifest are gitignored build artifacts),
-                        models/src|opt/
-assets/                 Versioned image sources: sources/, satellites/
+                        models/opt/
+assets/                 Versioned sources: sources/, satellites/, models/
 scripts/                optimize_images.js, optimize_article_images.js,
                         validate_articles.ts, dev_with_article_images.mjs,
                         optimize_models.js, test_admin_workflow.ts

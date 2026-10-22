@@ -14,7 +14,7 @@
  * The desktop LIVE test fetches the real committed `example` article from
  * the public GitHub repo (branch `main`) and asserts the client renderer
  * produces the production structure: title, heading order,
- * Callout/Figure/Model3D presence, cover, noindex, and the
+ * Callout/Figure presence, cover, noindex, and the
  * saved-commits-only honesty note. Error states (missing slug, stalled
  * connection, malformed slug) are asserted in Traditional Chinese.
  */
@@ -62,10 +62,10 @@ test.describe('preview renders committed article like production', () => {
     await expect(article.locator('h1')).toHaveText('格式範例文章');
     await expect(article.locator('[data-preview-body] h2')).toHaveText(EXPECTED_H2);
 
-    // Same component census as the committed source: 2 Callouts, 1 Figure, 1 Model3D.
+    // Same component census as the committed source: 2 Callouts, 1 Figure, no Model3D.
     await expect(article.locator('[data-preview-body] aside[data-type]')).toHaveCount(2);
     await expect(article.locator('[data-preview-body] figure').first()).toBeVisible();
-    await expect(article.locator('figure.article-model')).toBeVisible();
+    await expect(article.locator('figure.article-model')).toHaveCount(0);
 
     // Cover: either the generated responsive image or the honest placeholder.
     const coverImg = article.locator('img[alt="攝影社成員在戶外觀察拍攝場景"]');

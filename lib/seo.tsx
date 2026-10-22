@@ -4,6 +4,22 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nehsnepc.co
 
 export const SITE_NAME = '竹科實中攝影社 NEPC';
 
+export const DEFAULT_OG_IMAGE_ALT = 'NEHS Photography Club — NEPC';
+
+// Next 只做淺層合併：頁面一旦自訂 openGraph 就會整組覆蓋 layout 的設定，
+// 也會失去根目錄 opengraph-image 檔案產生的預設分享圖，所以頁面要從這裡展開補齊。
+export const BASE_OPEN_GRAPH = {
+  siteName: SITE_NAME,
+  locale: 'zh_TW'
+} as const;
+
+export const DEFAULT_OG_IMAGE = {
+  url: '/opengraph-image',
+  width: 1200,
+  height: 630,
+  alt: DEFAULT_OG_IMAGE_ALT
+} as const;
+
 export function absoluteUrl(pathname: string): string {
   return new URL(pathname, SITE_URL).toString();
 }

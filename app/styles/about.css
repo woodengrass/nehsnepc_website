@@ -6,14 +6,13 @@ body:has(.obscura) {
   background: #080808;
 }
 
-html:has(.obscura:not(.is-unlocked)),
+/* Only the validated JS controller owns the focus lock; SSR stays scrollable. */
 html.is-focus-locked {
   height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
 }
 
-body:has(.obscura:not(.is-unlocked)),
 body.is-focus-locked {
   position: fixed;
   inset: 0;
@@ -28,13 +27,13 @@ body.is-focus-locked {
   --focus-error: 0.92;
   --split-offset: 16.56px;
   --story-defocus: 0;
-  --font-about-cjk: 'Noto Serif TC', 'Cormorant Garamond', serif;
+  --font-about-cjk: 'Noto Serif TC', serif;
   position: relative;
   padding-top: 100lvh;
   background: #080808;
 }
 
-.obscura:not(.is-unlocked) {
+html.is-focus-locked .obscura:not(.is-unlocked) {
   touch-action: none;
 }
 
@@ -246,7 +245,6 @@ body.is-focus-locked {
   line-height: 0.76;
   letter-spacing: -0.035em;
   color: #fff;
-  font-family: var(--font-about-cjk);
 }
 
 .obscura-intro h1 i { font-weight: 300; }
@@ -270,7 +268,20 @@ body.is-focus-locked {
 }
 
 .obscura.is-archive-3d .obscura-panel {
-  display: none;
+  /* Visually hidden canvas equivalents remain in DOM reading order for AT. */
+  position: absolute;
+  inset: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  opacity: 1;
+  transform: none;
+}
+
+.obscura.is-archive-3d .obscura-panel::before {
+  content: none;
 }
 
 .obscura.is-archive-preparing .obscura-panel {
@@ -280,19 +291,29 @@ body.is-focus-locked {
   pointer-events: none;
 }
 
-.obscura:not(.is-archive-preparing):not(.is-archive-3d) .obscura-story {
+.obscura:not(.is-archive-preparing):not(.is-archive-3d) .obscura-story,
+.obscura.reduced-motion .obscura-story {
+  --obscura-panel-inset: clamp(2rem, 9vw, 10rem);
   height: auto;
   pointer-events: auto;
 }
 
-.obscura:not(.is-archive-preparing):not(.is-archive-3d) .obscura-panel {
+.obscura:not(.is-archive-preparing):not(.is-archive-3d) .obscura-panel,
+.obscura.reduced-motion .obscura-panel {
   position: relative;
+  inset: auto;
+  margin-inline: var(--obscura-panel-inset);
   min-height: 100svh;
   opacity: 1;
   transform: none;
   /* 僅 DOM 備援（無 pin 量測）啟用，3D pin 模式不加，避免影響 ScrollTrigger 量測。 */
   content-visibility: auto;
   contain-intrinsic-size: auto 100svh;
+}
+
+.obscura:not(.is-archive-preparing):not(.is-archive-3d) .obscura-panel-practice,
+.obscura.reduced-motion .obscura-panel-practice {
+  margin-left: auto;
 }
 
 .obscura-panel {
@@ -458,7 +479,6 @@ body.is-focus-locked {
   content: '';
   position: absolute;
   inset: 0;
-  display: none;
   display: none;
   background: linear-gradient(135deg, rgba(16, 43, 78, 0.28), transparent 50%, rgba(104, 19, 28, 0.34));
   mix-blend-mode: multiply;
@@ -635,6 +655,10 @@ body.is-focus-locked {
   .obscura-panel-practice::before { right: -1rem; left: auto; }
   .obscura-panel-manifesto, .obscura-panel-contact { left: 2rem; }
   .obscura-panel-practice { right: 2rem; }
+  .obscura:not(.is-archive-preparing):not(.is-archive-3d) .obscura-story,
+  .obscura.reduced-motion .obscura-story {
+    --obscura-panel-inset: 2rem;
+  }
   .obscura-panel h2 { font-size: clamp(2.6rem, 12vw, 4.5rem); }
   .obscura-panel > p:last-child { font-size: 1.25rem; line-height: 1.75; letter-spacing: 0.02em; }
   .obscura-afterword {
@@ -672,19 +696,6 @@ body.is-focus-locked {
 .obscura.reduced-motion .obscura-camera {
   position: absolute;
   will-change: auto;
-}
-
-.obscura.reduced-motion .obscura-story {
-  height: auto;
-}
-
-.obscura.reduced-motion .obscura-panel {
-  position: relative;
-  min-height: 100svh;
-  opacity: 1;
-  transform: none;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 100svh;
 }
 
 .obscura.reduced-motion .obscura-exit {
