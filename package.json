@@ -50,7 +50,7 @@
     "@types/node": "^26.6.5",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
-    "draco3dgltf": "^1.5.8",
+    "draco3dgltf": "^1.5.9",
     "sharp": "^0.35.4",
     "tailwindcss": "^4.3.3",
     "tsx": "4.23.15",

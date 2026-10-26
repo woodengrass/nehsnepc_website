@@ -82,8 +82,8 @@ importers:
         specifier: ^19.2.5
         version: 19.3.0(@types/react@19.3.0)
       draco3dgltf:
-        specifier: ^1.5.8
-        version: 1.5.8
+        specifier: ^1.5.9
+        version: 1.5.9
       sharp:
         specifier: ^0.35.4
         version: 0.35.5(@types/node@26.6.5)
@@ -1103,8 +1103,8 @@ packages:
     resolution: {integrity: sha512-GYqKi1aH7PJXxdhTeZBFrg8vUBeKXi+cNprXsC1kpJcbcVnV9wBsrOu1cQEdG0WeQwlfHiy3XvnKfIrJ2R0NzQ==}
     hasBin: true
 
-  draco3dgltf@1.5.8:
-    resolution: {integrity: sha512-gA5A8yIr9V8Y78rHrCjNWvuslq9995rfM9i6pbWIVeBv5P6O/c6rwVof6safnlupHB9HG0xrrZ9jpd0eUeTS6g==}
+  draco3dgltf@1.5.9:
+    resolution: {integrity: sha512-nIRZumqUwjqVYAdtt8q0F3FZc5qo2rCPTBH2hHhfSvHSPVJazzaepEHFdAZv4wrQKk5CkaclWGHhpyJ4eUdcJQ==}
 
   emery@1.4.4:
     resolution: {integrity: sha512-mMoO3uGDoiw/DmZ/YekT9gEoC0IFAXNWzYVukY8+/j0Wt8un1IDraIYGx+cMbRh+fHaCDE6Ui7zFAN8ezZSsAA==}
@@ -2896,7 +2896,7 @@ snapshots:
 
   direction@1.0.4: {}
 
-  draco3dgltf@1.5.8: {}
+  draco3dgltf@1.5.9: {}
 
   emery@1.4.4: {}
 
